@@ -1,0 +1,36 @@
+# $Id: cfg,v 1.1.2.3 2002/09/13 21:40:10 jbogden Exp $
+#
+# !!! ALL UNCOMMENTED LINES MUST BEGIN WITH A LEADING SPACE !!!
+# (due to nodes being matched as " nodename ")
+
+##### Bebopd
+ node.n-0.b-1 : local_disk portals default_route=134.253.138.254 mount_nfs=sana017g:/vol/cplant_home/home,/home mount_nfs=sana017g:/vol/cplant_home/projects,/projects ntpd=134.253.138.254 enfs_client=10.0.0.2,10.0.0.4,10.0.0.6,10.0.0.8,10.0.0.10,10.0.0.12,10.0.0.14,10.0.0.16,10.0.0.18,10.0.0.20,10.0.0.22,10.0.0.24 user-env=bebopd+pbs pbs-env=bebopd-support-only
+
+##### PBS scheduler node
+ node.n-2.b-1 : local_disk portals default_route=134.253.138.254 mount_nfs=sana017g:/vol/cplant_home/home,/home mount_nfs=sana017g:/vol/cplant_home/projects,/projects ntpd=134.253.138.254 enfs_client=10.0.0.2,10.0.0.4,10.0.0.6,10.0.0.8,10.0.0.10,10.0.0.12,10.0.0.14,10.0.0.16,10.0.0.18,10.0.0.20,10.0.0.22,10.0.0.24 pbs-env=scheduler pbs-env=server user-env=yod sshd
+
+##### Login nodes
+ node.n-4.b-1 node.n-6.b-1 node.n-0.b-2 node.n-2.b-2 node.n-4.b-2 node.n-6.b-2 node.n-0.b-3 node.n-2.b-3 node.n-4.b-3 node.n-6.b-3 : local_disk portals default_route=134.253.138.254 mount_nfs=sana017g:/vol/cplant_home/home,/home mount_nfs=sana017g:/vol/cplant_home/projects,/projects ntpd=134.253.138.254 enfs_client=10.0.0.2,10.0.0.4,10.0.0.6,10.0.0.8,10.0.0.10,10.0.0.12,10.0.0.14,10.0.0.16,10.0.0.18,10.0.0.20,10.0.0.22,10.0.0.24 pbs-env=mom user-env=yod-support sshd
+
+
+##### IO proxy nodes
+ node.n-1.b-1 : ram_disk=16384 portals set_mtu=eth1,9000 enfsd_config=172.28.9.1:/enfs/tmp,/
+ node.n-3.b-1 : ram_disk=16384 portals set_mtu=eth1,9000 enfsd_config=172.28.10.1:/enfs/tmp,/
+ node.n-5.b-1 : ram_disk=16384 portals set_mtu=eth1,9000 enfsd_config=172.28.11.1:/enfs/tmp,/
+ node.n-7.b-1 : ram_disk=16384 portals set_mtu=eth1,9000 enfsd_config=172.28.12.1:/enfs/tmp,/
+
+ node.n-1.b-2 : ram_disk=16384 portals set_mtu=eth1,9000 enfsd_config=172.28.9.1:/enfs/tmp,/
+ node.n-3.b-2 : ram_disk=16384 portals set_mtu=eth1,9000 enfsd_config=172.28.10.1:/enfs/tmp,/
+ node.n-5.b-2 : ram_disk=16384 portals set_mtu=eth1,9000 enfsd_config=172.28.11.1:/enfs/tmp,/
+ node.n-7.b-2 : ram_disk=16384 portals set_mtu=eth1,9000 enfsd_config=172.28.12.1:/enfs/tmp,/
+
+ node.n-1.b-3 : ram_disk=16384 portals set_mtu=eth1,9000 enfsd_config=172.28.9.1:/enfs/tmp,/
+ node.n-3.b-3 : ram_disk=16384 portals set_mtu=eth1,9000 enfsd_config=172.28.10.1:/enfs/tmp,/
+ node.n-5.b-3 : ram_disk=16384 portals set_mtu=eth1,9000 enfsd_config=172.28.11.1:/enfs/tmp,/
+ node.n-7.b-3 : ram_disk=16384 portals set_mtu=eth1,9000 enfsd_config=172.28.12.1:/enfs/tmp,/
+
+##### compute nodes
+ default : ram_disk=16384 portals enfs_client=10.0.0.2,10.0.0.4,10.0.0.6,10.0.0.8,10.0.0.10,10.0.0.12,10.0.0.14,10.0.0.16,10.0.0.18,10.0.0.20,10.0.0.22,10.0.0.24 user-env=pct
+
+##### disabled nodes
+# disabled : node.n-5.b-3

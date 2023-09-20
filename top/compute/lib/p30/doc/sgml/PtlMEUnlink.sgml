@@ -1,0 +1,49 @@
+<!--
+    $Id: PtlMEUnlink.sgml,v 1.1 2001/01/10 21:42:53 rbbrigh Exp $
+-->
+
+<!doctype qwertz system>
+
+<manpage title="PtlMEUnlink" sectnum="3" date='"04 Jan 2001"'
+    footer='"Portals 3.0"' main='"Portals 3.0 Library"'>
+
+<sect1> NAME
+    <p>
+    <bf/PtlMEUnlink/ &mdash Unlink a match entry from the list
+
+<sect1> SYNOPSIS
+    <p>
+     #include "p30.h"
+
+     int PtlMEUnlink( ptl_handle_me_t entry );
+
+<sect1> PARAMETERS
+    <p>
+     <descrip>
+     <tag /entry/
+     A handle for the match entry to be unlinked
+     </descrip>
+
+<sect1> DESCRIPTION
+    <p>
+    <bf /PtlMEUnlink/ unlinks a match entry from a match list.  This
+    operation also releases any resources associated with the match entry
+    (including the list of associated memory descriptors).
+
+<sect1> RETURN VALUES
+    <p>
+    <descrip>
+    <tag /PTL_OK/
+    Indicates success
+    <tag /PTL_NOINIT/
+    Indicates that the Portals API has not been successfully initialized
+    <tag /PTL_INV_ME/
+    Indicates that <bf /entry/ is not a valid match entry handle
+    </descrip>
+
+<sect1> SEE ALSO
+    <p>
+    <bf /PtlMEAttach(3)/, <bf /PtlMEInsert(3)/<newline>
+    <bf /Portals 3.0 Message Passing Interface document/
+
+</manpage>

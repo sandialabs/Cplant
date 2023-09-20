@@ -1,0 +1,55 @@
+top/compute/OS/linux-patches/linux-2.4.7/README.
+
+This directory contains the Cplant "patch" for the 
+linux 2.4.7 kernel.
+
+The Cplant patch is pretty minimal,
+w/o support for portals syscalls and other things.
+We just hack a small handful of kernel files.
+
+The Cplant patch for axp 2.4.x is a subset of the
+linux tree w/ alternate files...
+It uses the stock kernel from the standard sites:
+
+   http://www.sunsite.unc.edu/pub/Linux/kernel/v2.4/
+           linux-2.4.x.tar.gz
+
+    0) run $ARCH.bash by doing "make" (in that case
+       the linux*tar.gz file should be in the location
+       specified in ./Makefile) 
+
+      OR 
+
+        do everything by hand:
+
+-------------------------------------------------------------
+
+    1) obtain and unarchive the above package in the
+       same directory that has this README:
+
+          % tar xvfz linux-2*.tar.gz
+
+    2) apply the Cplant patch from this dir:
+
+          % cp -a axp-cplant/* linux 
+
+    3) set up the linux link in Cplant/top/compute/OS:
+
+          % cd ../..         
+          % ln -s linux-patches/linux-2.4.x/linux linux
+
+       i.e. top/compute/OS/linux should point to top/compute/
+       OS/linux-patches/linux-2.4.x/linux which should have the 
+       kernel you just patched.
+
+    4) there is a linux/config.CPLANT file: 
+
+                % cd linux
+                % cp config.CPLANT .config
+                % make config
+                % make dep
+                % make 
+                % make bootpfile
+              OR
+                % make bzImage
+

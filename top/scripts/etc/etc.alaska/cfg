@@ -1,0 +1,20 @@
+##### Bebopd
+ if-0.n-7.r-1 : local_disk portals user-env=bebopd+pbs pbs-env=bebopd-support-only
+
+##### PBS scheduler node
+ if-0.n-7.r-3 : local_disk portals default_route=132.175.138.254 pbs-env=scheduler pbs-env=server mount_nfs=134.253.181.198:/vol/cplant/home,/home mount_nfs=134.253.181.198:/vol/cplant/projects,/projects user-env=yod-support enfs_client=10.0.0.232,10.0.0.240,10.0.0.248,10.0.1.0
+
+##### Login nodes
+ if-0.n-7.r-5 if-0.n-7.r-7 if-0.n-7.r-9 if-0.n-7.r-11 if-0.n-7.r-15 if-0.n-7.r-17 if-0.n-7.r-19 if-0.n-7.r-33 : ram_disk=16384 portals default_route=132.175.138.254 pbs-env=mom mount_nfs=134.253.181.198:/vol/cplant/home,/home mount_nfs=134.253.181.198:/vol/cplant/projects,/projects user-env=yod-support enfs_client=10.0.0.232,10.0.0.240,10.0.0.248,10.0.1.0 sshd
+
+##### IO proxy nodes
+ if-0.n-7.r-28 : ram_disk=16384 portals set_mtu=eth2,9000 enfsd_config=172.28.1.1:/enfs/tmp,/
+ if-0.n-7.r-29 : ram_disk=16384 portals set_mtu=eth2,9000 enfsd_config=172.28.1.2:/enfs/tmp,/
+ if-0.n-7.r-30 : ram_disk=16384 portals set_mtu=eth2,9000 enfsd_config=172.28.1.3:/enfs/tmp,/
+ if-0.n-7.r-31 : ram_disk=16384 portals set_mtu=eth2,9000 enfsd_config=172.28.1.4:/enfs/tmp,/
+
+##### compute nodes
+ default : ram_disk=16384 portals enfs_client=10.0.0.232,10.0.0.240,10.0.0.248,10.0.1.0 user-env=pct 
+
+##### disabled nodes
+# disabled : if-0.n-1.r-2

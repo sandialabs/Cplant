@@ -1,0 +1,88 @@
+The node on which the bebopd is running must be set up to send qmgr
+commands.  So it must have the local PBS runtime directory and access
+to client executables.
+ 
+The first time the server is run, it only accepts manager commands from
+root on the machine it is running on.  It compares the string in
+PBS_HOME/PBSserver to the name of the host on the incoming command.  If
+they don't match exactly, the request is rejected.  So it may be
+neccesary to add or remove a domain name from the name in PBSserver
+so that these very first commands may be submitted by root on the
+machine the server is running on.
+ 
+The server's acl_hosts attribute should list every node from which
+requests will be received.  Again, it has to match exactly the
+hostname on the incoming request.
+ 
+The server's manager attribute must include root on the node on which
+the bebopd is running, because the bebopd submits qmgr commands to
+set the resources_available.size.
+ 
+#
+# Create queues and set their attributes.
+#
+#
+# Create and define queue prime
+#
+create queue prime
+set queue prime queue_type = Execution
+set queue prime resources_default.size = 1
+set queue prime resources_default.walltime = 00:10:00
+set queue prime resources_max.walltime = 10:00:00
+set queue prime Priority = 5
+set queue prime enabled = True
+set queue prime started = True
+#
+# Create and define queue nonprime
+#
+create queue nonprime
+set queue nonprime queue_type = Execution
+set queue nonprime resources_default.size = 1
+set queue nonprime resources_default.walltime = 00:10:00
+set queue nonprime Priority = 10
+set queue nonprime enabled = True
+set queue nonprime started = True
+#
+# Set server attributes.
+#
+set server scheduling = True
+set server acl_host_enable = True
+set server default_queue = prime
+set server log_events = 511
+set server mail_from = adm
+set server resources_default.size = 1
+set server resources_default.walltime = 00:10:00
+set server resources_max.walltime = 24:00:00
+set server scheduler_iteration = 120
+set server query_other_jobs = True
+#
+# The "size" resource represents the Cplant
+# compute nodes.  "available" refers to
+# nodes that are running PBS jobs or available
+# to run PBS jobs.
+# 
+# These two will be set to correct values by
+# the bebopd if it is run in PBSupdate mode.
+#
+set server resources_available.size = 100
+set server resources_max.size = 100
+#
+# list fully qualified host name of every host from
+# which PBS requests will be made
+#
+set server acl_hosts = service-9.sandia.gov
+set server acl_hosts += service-8.sandia.gov
+set server acl_hosts += service-7.sandia.gov
+set server acl_hosts += service-6.sandia.gov
+set server acl_hosts += service-5.sandia.gov
+set server acl_hosts += service-4.sandia.gov
+set server acl_hosts += service-3.sandia.gov
+set server acl_hosts += service-2.sandia.gov
+set server acl_hosts += service-0.sandia.gov
+#
+# list each user allowed to configure server and queues,
+# and list root at the node the bebopd is running on
+#
+set server managers=root@service-0.sandia.gov
+set server managers+=lafisk@*,jhlaros@*,gmcgir@*
+

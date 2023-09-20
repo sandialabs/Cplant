@@ -1,0 +1,101 @@
+<!--
+  $Id: CplantJobSize.sgml,v 1.1 2001/11/24 23:23:17 lafisk Exp $
+-->
+
+<!doctype qwertz system>
+
+<manpage title="CPLANTJOBSIZE" sectnum="3" date='"20 November 2001"'
+    footer='"CPLANT MANPAGE"' main='"Cplant Runtime Libraries"'>
+
+
+<sect1> NAME
+    <p>
+    CplantJobSize, CplantJobNidMap,  CplantJobPidMap, CplantJobStatus 
+    </p>
+
+
+<sect1> SYNOPSIS
+    <p>
+    <bf/#include &lt;cplant.h>/
+    </p>
+    <p>
+    <bf/int CplantJobSize(int /<it/job-id/<bf/)/    <newline>
+    <bf/int CplantJobNidMap(int /<it/job-id/ <bf/, int **/ <it/nid-map/ <bf/)/   <newline>
+    <bf/int CplantJobPidMap(int /<it/job-id/ <bf/, int **/ <it/pid-map/ <bf/)/   <newline>
+    <bf/int CplantJobStatus(int /<it/job-id/ <bf/, job_info **/ <it/status/ <bf/)/   <newline>
+    </p>
+
+<sect1> DESCRIPTION
+    <p>
+    These functions may be called by Cplant parallel applications to obtain 
+    information about any running Cplant job.  The information is obtained by
+    sending a request to the <bf/bebopd/.
+    <p>
+    The function <bf/CplantJobSize/ returns the number of processes in the
+    Cplant application identified by job number <it/job-id/.
+    </p>
+    <p>
+    The functions <bf/CplantJobNidMap/ and <bf/CplantJobPidMap/ allocate
+    memory for a physical node ID map and portals process ID map respectively
+    for the
+    Cplant application identified by job number <it/job-id/.  The address
+    of the map is written to <it/nid-map/ or <it/pid-map/ respectively, and
+    may be freed by the caller when it is no longer needed.
+    </p>
+    <p>
+    The function <bf/CplantJobStatus/ returns a array of status structures
+    for the Cplant job identified by <it/job-id/.  The <bf/job_info/ structure
+    looks like this:
+    </p>
+    <p><tt>
+typedef struct{ <newline>
+    short rank;       /* process rank */   <newline>
+    short job_id;     /* cplant job id */   <newline>
+    int   nid;        /* physical node id */   <newline>
+    int   u_stat;     /* process status   */   <newline>
+    int   session_id; /* job's PBS job id */   <newline>
+    int   parent_id;  /* cplant job ID of spawning parent */   <newline>
+    int   job_pid;    /* process' system pid  */   <newline>
+    time_t       elapsed;    /* seconds since fork        */   <newline>
+    int   niceKillCountdown; /* non-zero if job is being killed */   <newline>
+    int         priority;    /* 1 - regular, 2 - scavenger */   <newline>
+} <bf/job_info/;  <newline>
+    </tt></p>
+    <p>
+    The <it/u_stat/ status bits that may be of interest to callers are these:
+    </p>
+    <p><tt>
+#define  NEW_JOB            (1 << 0) /* PCT is still setting up */<newline>
+#define  STARTED            (1 << 1)   /* user's executable has started */<newline>
+#define  SENT_TO_MAIN       (1 << 9)   /* it has begun executing user code */<newline>
+#define  CHILD_DONE         (1 << 10)  /* process completed normally */<newline>
+#define  CHILD_NACK         (1 << 11)  /* process exited before entering user code*/<newline>
+#define  SENT_KILL_1        (1 << 12)  /* process was sent a SIGTERM */<newline>
+#define  SENT_KILL_2        (1 << 13)  /* process was sent a SIGKILL */<newline>
+#define  NICE_KILL_JOB_STARTED  (1 << 16)  /* process is being "nice-killed" */<newline>
+    </tt></p>
+    <p>
+    The <it/status/ array should be freed by the caller when it is no longer needed.
+    See the <bf/pingd/ man page for an explanation of the <it/nice-kill/ operation.
+    </p>
+
+<sect1> ERRORS
+    <p>
+    All functions return -1 on error, and 0 on success.
+    </p>
+
+<sect1> BUGS
+    <p>
+    <bf/CplantJobNidMap/ and <bf/CplantJobPidMap/ return maps in physical
+    node number order rather than process rank order.  This is being
+    corrected.  The array returned by <bf/CplantJobStatus/ also need not
+    be in process rank order.
+    </p>
+
+<sect1> SEE ALSO
+    <p>
+    <bf/bebopd/
+    <bf/pingd/
+    </p>
+
+</manpage>

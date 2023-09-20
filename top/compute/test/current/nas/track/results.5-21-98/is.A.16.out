@@ -1,0 +1,78 @@
+
+
+ NAS Parallel Benchmarks 2.3 -- IS Benchmark
+
+ Size:  8388608  (class A)
+ Iterations:   10
+ Number of processes:     16
+
+   iteration
+        1
+        2
+        3
+        4
+        5
+        6
+        7
+        8
+        9
+        10
+
+
+ IS Benchmark Completed
+ Class           =                        A
+ Size            =                  8388608
+ Iterations      =                       10
+ Time in seconds =                    41.42
+ Total processes =                       16
+ Compiled procs  =                       16
+ Mop/s total     =                     2.03
+ Mop/s/process   =                     0.13
+ Operation type  =              keys ranked
+ Verification    =               SUCCESSFUL
+ Version         =                      2.3
+ Compile date    =              20 May 1998
+
+ Compile options:
+    MPICC        = /Net/mp/cplant/bin/cc
+    CLINK        = $(MPICC)
+    CMPI_LIB     = -L$(MPIPATH) -lmpi
+    CMPI_INC     = -I$(MPIPATH)/include
+    CFLAGS       = -O3
+    CLINKFLAGS   = (none)
+
+
+ Please send the results of this run to:
+
+ NPB Development Team
+ Internet: npb@nas.nasa.gov
+ 
+ If email is not available, send this to:
+
+ MS T27A-1
+ NASA Ames Research Center
+ Moffett Field, CA  94035-1000
+
+ Fax: 415-604-3957
+
+Contacting node allocation daemon...
+16 nodes are allocated to your job ID 819
+
+   Node name        Rank  Node   PID   Elapsed  Exit Code  Terminating Signal
+------------------- ----  ----  -----  -------  ---------  ------------------
+                       0    18  13772  0:00:49       0       none
+                       1    19  13778  0:00:49       0       none
+                       2    20  13774  0:00:49       0       none
+                       3    21  13778  0:00:49       0       none
+                       4    22  13778  0:00:49       0       none
+                       5    23  13778  0:00:49       0       none
+                       6    24  13771  0:00:49       0       none
+                       7    25  13771  0:00:49       0       none
+                       8    26  13777  0:00:49       0       none
+                       9    28  13766  0:00:49       0       none
+                      10    29  13772  0:00:49       0       none
+                      11    30  13776  0:00:49       0       none
+                      12    32  14086  0:00:49       0       none
+                      13    33  13942  0:00:49       0       none
+                      14    34  13903  0:00:49       0       none
+                      15    35  13895  0:00:49       0       none

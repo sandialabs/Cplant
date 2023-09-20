@@ -1,0 +1,221 @@
+Cplant Fault Recovery Patch for PBS
+September, 2000
+Lee Ann Fisk, lafisk@sandia.gov
+(contact: Jeanette Johnston, jjohnst@sandia.gov)
+
+What this is:
+------------
+The patch file that creates PBS for Cplant is quite large.  The
+cplantFRpatch file in this directory is a subset of that patch
+file.  It contains fault recovery code only.  It would be
+applicable to non-Cplant sites as well as Cplant sites.
+
+How to patch PBS:
+-----------------
+The patch file was built from Open PBS v 2.2, patch level 8.  It 
+will probably patch later revisions without trouble.  If not, the 
+patches are simple and you should be able to read the patch file 
+and patch your code manually.
+
+[7/9/01 - I downloaded Open PBS 2.3.12 and it patched
+and compiled without error - lafisk]
+
+We build PBS on Linux/Alpha machines.  We have thousands, running
+everything from Red Hat 5.1 to Red Hat 6.1.  The patches just use 
+libc functions and will most likely build and run with the desired
+result on other systems as well.
+
+To patch the PBS source, cd to the top of your PBS source tree
+(where "src" and "doc" and "configure" are) and (assuming the
+patch file is here too) :
+
+   patch -N -p1 -l < cplantFRpatch
+
+(I'm using "patch" version 2.5, Larry Wall, Free Software Foundation.)
+
+The new code is ifdef'd out.  You need to define CPLANT_SERVICE_NODE
+and CPLANT_NONBLOCKING_CONNECTIONS to get the patches included when
+you compile.  The two problems solved by these two enhancements are 
+described below.
+
+Problem 1:
+----------
+
+The first problem is that every scheduling cycle, the server sends a
+list of MOMs to the scheduler (we use the FIFO scheduler).  The scheduler 
+tries to contact each MOM to get resource information so it can make 
+an intelligent scheduling decision.  If the MOM or the MOM's node 
+is no longer talking, the scheduler hangs for three minutes (or 
+whatever number of seconds it's "-a" argument specified) and then 
+takes an alarm and exits.
+
+The patches ifdef'd with CPLANT_SERVICE_NODE make it far less likely
+that the server will hand the MOM a bad node.  It can still happen,
+but the window between when the server tests the state of the MOM
+node and when the server hands the scheduler a list of MOMs is greatly 
+reduced.
+
+This message I sent to the PBS users list explains the details:
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+From lafisk Thu Apr 27 09:13:43 2000
+Subject: Re: [PBS-USERS] machine crash cause PBS to cease op
+To: tim.leight@evsx.com (Timothy S. Leight)
+Date: Thu, 27 Apr 2000 09:13:43 -0600 (MDT)
+Cc: berend@growthnetworks.com (Berend Ozceri),
+        hender@pbspro.com (Bob Henderson), pbs-users@pbspro.com ('PBS Users')
+In-Reply-To: <3908474B.88DEF804@evsx.com> from "Timothy S. Leight" at Apr 27, 2000 01:57
+:31 PM
+X-Mailer: ELM [version 2.5 PL2]
+Content-Length: 2693
+Status: OR
+ 
+I greatly reduced the likelihood of the scheduler getting a
+bad node from the server with these three changes to ping_nodes()
+in server/node_manager.c.  (The server normally pings nodes every
+5 minutes, and only if they are in an unknown state or some other
+routine in the server marked them as needing a ping.  And it
+doesn't ping nodes it believes are running a job.)
+ 
+Remove this code:
+ 
+       if (np->nd_state & (INUSE_JOB|INUSE_JOBSHARE)) {
+           if (!(np->nd_state & INUSE_NEEDS_HELLO_PING))
+            continue;
+        }
+ 
+It causes the server to skip nodes that are running a job.
+ 
+Replace the NEEDS_HELLO check like this:
+ 
+#ifdef CPLANT_SERVICE_NODE
+        /*
+        ** In our environment, nodes are down until proven otherwise
+        */
+        com = IS_HELLO;
+        np->nd_state |= INUSE_DOWN;
+#else
+        if (np->nd_state & INUSE_NEEDS_HELLO_PING)
+            com = IS_HELLO;
+#endif
+ 
+The IS_HELLO requires an acknowledgement from the node and the state
+of the node is set to DOWN until we hear from it.
+ 
+And set the ping interval to your taste.  We are pinging all nodes
+every 2 minutes:
+ 
+#ifdef CPLANT_SERVICE_NODE
+            /*
+            ** Let's try a ping every 2 minutes.
+            */
+            i = 120;
+#else
+            i = 300;    /* relaxed ping rate for normal run  */
+#endif
+ 
+There is still a window of time where a node can crash after the
+server has pinged it and before the scheduler is invoked.  But this
+rarely happens now.  I haven't seen a scheduler toolong alarm in
+quite a while now.
+ 
+Also, ping nodes uses datagram sockets so it doesn't hang like
+the connections made for qstat.
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+
+
+Problem 2:
+----------
+The second problem is that the server hangs if it tries to contact
+a MOM on a dead node.  The solution implemented here is to use non-blocking 
+sockets and timeout with an error.  
+
+This code is ifdef'd CPLANT_NONBLOCKING_SOCKETS.
+
+These are the affected files:
+
+lib/Libnet/net_client.c - In client_to_svr() open non-blocking sockets, 
+   wait 5 seconds for the connection, and return PBS_NET_RC_RETRY 
+   if connection times out.
+
+include/pbs_config.h.in - Redefine read() and write() to check EAGAIN.
+   pbs_config.h is conveniently included in every file.
+
+server/node_func.c - New function bad_node_warning() writes a
+   warning to server's log file if MOM or scheduler can't be reached.  It
+   writes no more than once per hour per node.  It also uses set_task 
+   to schedule a trip to the ping_nodes function.   ping_nodes will 
+   discover the node is down and set the appropriate status fields for
+   the node.  For this to work you need CPLANT_SERVICE_NODE defined
+   (that's Problem 1) so that ping_nodes will be sure to ping the node.  
+
+   New function addr_ok() tests if a node is down or OK.
+
+pbs_nodes.h - Add a field in struct pbsnode that notes at what time
+    the last warning was written to the log file that the node is down.
+
+server/run_sched.c - In contact_sched(), test addr_ok() before contacting 
+    the scheduler.  Return EHOSTDOWN if it's not OK.   If it is
+    OK, and if connection to scheduler fails, call bad_node_warning().
+
+    NOTE: This is commented out, since the default case is to run the
+    scheduler on the same node as the server.  If you run the scheduler
+    on a node listed in the server's nodes file, then uncomment this
+    check before compiling to prevent server hangs when contacting
+    the scheduler on a dead node.
+    
+
+server/svr_connect.c - In svr_connect(), test addr_ok() before contacting
+    a MOM.  Return EHOSTDOWN if !addr_ok().  If socket connection to MOM
+    fails, call bad_node_warning().
+
+That's all it takes. 
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+
+Revision history:
+
+3/29/01 - implemented fix to node_func.c sent in by chuck@primaryknowledge.com:
+in addr_ok(), test if node state is (INUSE_OFFLINE|INUSE_DELETED) before
+accessing nd_addrs[0].
+
+10/25/01 - added a change to conn_qsub so MOM uses a *blocking* socket for
+connection to interactive ("qsub -I") PBS job.  Otherwise MOM loops in
+attempt to to read from interactive shell, thereby hogging the CPU.  Sent 
+in by Gary.Skouson@pnl.gov.
+
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+
+Other notes:
+
+Date: Thu, 17 May 2001 17:57:17 -0400
+From: Pete Wyckoff <pw@osc.edu>
+To: Matt Harrington <matt@msg.ucsf.edu>
+Cc: pbs-users@openpbs.com
+Subject: Re: [PBS-USERS] What to do when a node goes down?
+
+matt@msg.ucsf.edu said:
+> I frequently drop a node and then my whole PBS system is not happy.  What
+> is the best way to deal with a node which is down?  I run pbs 2.2 and 2.3
+> on separate groups of machines.
+
+Cplant reliability patch.
+
+http://www.cs.sandia.gov/cplant/doc/pbs/pbs.html
+
+Be warned that it triggers a compiler bug in gcc "2.96" as shipped with
+linux redhat 7.0 for x86, at least in our pbs-2.3.12 tree which also has
+a few other little patches.  I can give you the code which puts the
+write_nonblocking...  functions into a C file instead of letting the
+compiler generate bad code on the static inline.  The sane thing to do
+would be to upgrade your compiler or distro, however.
+
+                -- Pete
+
+=============================================================================
+Lee Ann Fisk                                              Phone: 505-844-2059
+Scalable Computing Systems Department (9223)              FAX:   505-845-7442
+Sandia National Labs, Mail Stop 1110              Email: lafisk@mp.sandia.gov
+Albuquerque, NM  87185-1110                   http://www.cs.sandia.gov/cplant
+=============================================================================
+

@@ -1,0 +1,21 @@
+#! /bin/sh
+
+VERSION=RELEASE
+
+OS=`uname`
+if [ "$OS" != "OSNAME" ]; then
+  echo "This Cplant compiler must run under OSNAME";
+  exit 1;
+fi
+
+#
+# CPLANT_PATH - Base directory for startup files, include files, and libraries
+# 
+CPLANT_PATH=${CPLANT_PATH-DEFAULT_PATH/$VERSION}
+
+INCLUDE_DIR="-I"$CPLANT_PATH"/include"
+
+LIB_DIR="-L"$CPLANT_PATH"/lib"
+
+STARTUP_DIR="$CPLANT_PATH/lib"
+

@@ -1,0 +1,140 @@
+
+ NAS Parallel Benchmarks 2.3 -- EP Benchmark
+
+ Number of random numbers generated:    536870912  
+ Number of active processes:                   72
+
+EP Benchmark Results:
+
+CPU Time =    3.1865
+N = 2^   28
+No. Gaussian Pairs =     210832767.
+Sums =    -4.295875165632180D+03   -1.580732573678687D+04
+Counts:
+  0      98257395.
+  1      93827014.
+  2      17611549.
+  3       1110028.
+  4         26536.
+  5           245.
+  6             0.
+  7             0.
+  8             0.
+  9             0.
+
+
+ EP Benchmark Completed.
+ Class           =                        A
+ Size            =                536870912  
+ Iterations      =                        0
+ Time in seconds =                     3.19
+ Total processes =                       72
+ Compiled procs  =                       72
+ Mop/s total     =                   168.48
+ Mop/s/process   =                     2.34
+ Operation type  = Random numbers generated
+ Verification    =               SUCCESSFUL
+ Version         =                      2.3
+ Compile date    =              21 May 1998
+
+ Compile options:
+    MPIF77       = /Net/mp/cplant/bin/f77 
+    FLINK        = $(MPIF77)
+    FMPI_LIB     = -L$(MPIPATH) -lmpi 
+    FMPI_INC     = -I$(MPIPATH)/include
+    FFLAGS       = -O3 -align records -align dcommons
+    FLINKFLAGS   = (none)
+    RAND         = randi8
+
+
+ Please send the results of this run to:
+
+ NPB Development Team 
+ Internet: npb@nas.nasa.gov
+ 
+ If email is not available, send this to:
+
+ MS T27A-1
+ NASA Ames Research Center
+ Moffett Field, CA  94035-1000
+
+ Fax: 415-604-3957
+
+
+Contacting node allocation daemon...
+72 nodes are allocated to your job ID 819
+
+   Node name        Rank  Node   PID   Elapsed  Exit Code  Terminating Signal
+------------------- ----  ----  -----  -------  ---------  ------------------
+                       0    18  14215  0:00:06       0       none
+                       1    19  14221  0:00:06       0       none
+                       2    20  14214  0:00:06       0       none
+                       3    21  14218  0:00:06       0       none
+                       4    22  14221  0:00:06       0       none
+                       5    23  14221  0:00:06       0       none
+                       6    24  14214  0:00:07       0       none
+                       7    25  14214  0:00:06       0       none
+                       8    26  14220  0:00:06       0       none
+                       9    28  14209  0:00:06       0       none
+                      10    29  14212  0:00:06       0       none
+                      11    30  14219  0:00:06       0       none
+                      12    32  14531  0:00:06       0       none
+                      13    33  14382  0:00:06       0       none
+                      14    34  14346  0:00:06       0       none
+                      15    35  14338  0:00:06       0       none
+                      16    36  14473  0:00:06       0       none
+                      17    37  14294  0:00:06       0       none
+                      18    38  14261  0:00:06       0       none
+                      19    39  14314  0:00:06       0       none
+                      20    40  14037  0:00:06       0       none
+                      21    41  14052  0:00:06       0       none
+                      22    42  14031  0:00:06       0       none
+                      23    43  14025  0:00:06       0       none
+                      24    44  14078  0:00:06       0       none
+                      25    45  14022  0:00:06       0       none
+                      26    46  14029  0:00:06       0       none
+                      27    48  27589  0:00:06       0       none
+                      28    49  27508  0:00:06       0       none
+                      29    50  27516  0:00:06       0       none
+                      30    51  27494  0:00:06       0       none
+                      31    52  27486  0:00:06       0       none
+                      32    53  27510  0:00:06       0       none
+                      33    54  27482  0:00:06       0       none
+                      34    55  27481  0:00:06       0       none
+                      35    56  27494  0:00:06       0       none
+                      36    57  27470  0:00:06       0       none
+                      37    58  27482  0:00:06       0       none
+                      38    59  27487  0:00:06       0       none
+                      39    60  27482  0:00:06       0       none
+                      40    61  27461  0:00:06       0       none
+                      41    62  27528  0:00:06       0       none
+                      42    64  27482  0:00:06       0       none
+                      43    65  27446  0:00:06       0       none
+                      44    66  27533  0:00:06       0       none
+                      45    67  27540  0:00:06       0       none
+                      46    68  27549  0:00:06       0       none
+                      47    69  27546  0:00:06       0       none
+                      48    70  27564  0:00:06       0       none
+                      49    71  27543  0:00:06       0       none
+                      50    72  27521  0:00:06       0       none
+                      51    73  27508  0:00:06       0       none
+                      52    74  27519  0:00:06       0       none
+                      53    75  27519  0:00:06       0       none
+                      54    76  27519  0:00:06       0       none
+                      55    77  27516  0:00:06       0       none
+                      56    78  27421  0:00:06       0       none
+                      57    80  27471  0:00:06       0       none
+                      58    81  27525  0:00:06       0       none
+                      59    82  27519  0:00:06       0       none
+                      60    83  27510  0:00:06       0       none
+                      61    84  27512  0:00:06       0       none
+                      62    85  27524  0:00:06       0       none
+                      63    86  27521  0:00:06       0       none
+                      64    87  27530  0:00:06       0       none
+                      65    88  27530  0:00:06       0       none
+                      66    89  27527  0:00:06       0       none
+                      67    90  27515  0:00:06       0       none
+                      68    91  27505  0:00:06       0       none
+                      69    92  27499  0:00:06       0       none
+                      70    93  27494  0:00:06       0       none
+                      71    94  27500  0:00:06       0       none

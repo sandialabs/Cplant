@@ -1,0 +1,106 @@
+#!/usr/bin/expect --
+# Usage: rps2 <plug> on|off
+#
+set USAGE "Usage: $argv0 \[-D <device>\] \[-v\] <plug> <on|off>"
+set TIMEOUT "RPC-2 is not responding: "
+set ERROR "RPC-2 error: "
+
+set timeout 10
+
+set device "/dev/ttyS0"
+set device_speed "9600"
+
+#  This keeps expect from replacing carriage returns.   Needed for
+# connections that are not fully handshaken.
+set stty_init raw
+
+set plug_list "0 1 2 3 4 5 6"
+set all_plugs 0
+
+set Verbose 0
+
+# Parse command line arguments, discarding switches as we go.   This
+# should leave us with just the plug-command pairs in argv.
+while { 1 } {
+    switch -regexp -- [lindex $argv 0] {
+	-D   {
+	    if {[scan [lindex $argv 1] %s device] == 1} {
+		set argv [lrange $argv 1 end]
+	    } else {
+		puts "Missing device name."
+		puts "$USAGE"
+		exit
+	    }
+	}
+
+	-v   {set Verbose 1}
+
+	-.*  {  		# Matches any other flagged argument.
+	    puts "Unrecognized flag $arg"
+	    puts "$USAGE"
+	    exit
+	}
+
+	default {break} # No more flags, break out of while loop.
+    }
+    # Discard the first element of argv.
+    set argv [lrange $argv 1 end]
+}
+
+# Get and check the plug number.
+set plug [lindex $argv 0]
+switch -regexp -- $plug {
+    all 	{set plug $all_plugs}
+
+    {([0-9]+)} 	{ 
+	if {[lsearch $plug_list $plug] == -1} {
+	    puts "Plug $plug out of range ($plug_list)."
+	    puts $USAGE
+	    exit
+	}
+    }
+
+    default	{
+	puts "Plug $plug incorrect or out of range ($plug_list)."
+	puts $USAGE
+	exit
+    }
+}
+
+# Get and check the command.
+set command [lindex $argv 1]
+switch -- $command {
+    off { } 
+    on { }
+    status { }
+    default {
+	puts "Unknown command $command."
+	puts "$USAGE"
+	exit
+    }
+}
+
+if { $Verbose == 1 } {
+    puts "Device = $device, plug = $plug, command = $command"
+}
+
+log_user 0
+
+spawn cu -l $device -s $device_speed
+
+# Send a carriage return, wait for the "RPC>" prompt, then send the command.
+expect {
+    timeout { puts "$TIMEOUT $expect_out(buffer)"; exit }
+    "Connected." { send "\r"; exp_continue }
+    "RPC>" { send "$command $plug\r" }
+}
+
+# Look for the Y/N (confirmation) prompt and respond with "Y", then
+# look for another "RPC>" prompt and exit.   Also look out for errors
+# and report them.
+expect {
+    timeout { puts "$TIMEOUT $expect_out(buffer)"; exit }
+    "*Y/N)?" { send "Y\r"; exp_continue }
+    "*ERROR*" { puts "$ERROR $expect_out(buffer)"; exit }
+    "*RPC>" { close; wait; exit }
+}

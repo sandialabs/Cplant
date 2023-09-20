@@ -1,0 +1,26 @@
+
+$Id: README.Myricom,v 1.3 2000/11/27 18:33:42 rolf Exp $
+
+The files below this directory are used to build a Linux module
+to access a Myricom LANai board, an MCP to run on that board, a
+library and several utilities to load the MCP, test, and inspect
+it. The rtscts and the myrIP module below this directory depend
+on other modules, particularly the cTask, the portals (P2), and
+the p3 module. See top/scripts/etc/ptl-config to see the order in
+which this modules have to be loaded and set up.
+
+Some of the files in the directories "include", "lib", and "rtscts"
+came from Myricom's software distributions. These files have been
+changed to work with Puma portals. All of them have been considerably
+reformatted and reduced in size by removing functionality that is not
+required for Puma portals (the Myricom API is gone, for example). The
+original Myricom copyright has been left in place in the files that
+came originally from Myricom.  Basically, we use Myricom code to
+map the LANai into host memory, to initialize the board and assist
+with loading the MCP, and to generate the routes. All other code
+has been written by Sandia.
+
+Myricom has given us permission to redistribute the portions of
+their code needed to make our software work. Myricom has asked
+that their Copyright information be retained in the files that are
+substantially similar to their original distribution.

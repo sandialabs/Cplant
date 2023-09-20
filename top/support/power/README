@@ -1,0 +1,8 @@
+    This directory contains the programs and info for the various power 
+control devices used in Cplant.   Currently includes stuff for the EECI
+PAC-D boxes and the Baytech RPC-2 controllers.
+
+Makefile - Make directives to build power program for EECI boxes.
+power.c - Power control program for the EECI boxes.   Build with Makefile.
+rpc2 - Power control script for Baytech rpc2 boxes.   Needs expect and cu
+    installed on controlling system.

@@ -1,0 +1,30 @@
+.TH REQ 1 "Cplant Myrinet Utilities" "Cplant" \" -*- nroff -*-
+.SH NAME
+.B req 
+\- utility (for verifying myrinet routes on Cplant)
+.SH SYNOPSIS
+.B req 
+\ node-id0 node-id1
+
+.SH DESCRIPTION
+.B req 
+must be run as the superuser.
+
+.B req
+is a 2-way ping utility for myrinet on Cplant. It is run 
+on a service in order to request that one compute node 
+myrinet-ping another
+compute node and to report back the results.
+It takes as arguments, first, the node id of the machine
+to initiate the ping, and second, the node id of the machine
+receiving the ping.
+.B req 
+relies on the Cplant rtscts myrinet driver/module running on all
+three
+machines in question.
+
+.B req 
+must be run as the superuser.
+
+.SH SEE ALSO
+vping(1) (a 2-way ping utility run directly on the initiator node)

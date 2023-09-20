@@ -1,0 +1,28 @@
+The files system made available by FYOD is addressed as 
+
+	/raid_xxi/tmp/your_file_or_directory_name
+
+where i is either zero or one and xx is a number between 01 and 06.
+For example, /raid_010/tmp/file1.
+(This is a file name so /raid_10/tmp/xyz, will not open a file on 
+unit 10, /raid_010/tmp.)
+
+For now, to create the directory, or to moved files to or from the 
+external world requires logging on to the Service node,  xxxxxxxx,
+which is attached to the I/O subsystem.   All of the /raid_xxi files
+systems are NFS mounted there.
+
+
+The presently available units are
+	/raid_010/tmp
+	/raid_020/tmp
+	/raid_030/tmp
+	/raid_040/tmp
+	/raid_050/tmp
+	/raid_060/tmp
+
+
+
+
+
+README.user

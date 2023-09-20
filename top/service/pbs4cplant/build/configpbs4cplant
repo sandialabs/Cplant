@@ -1,0 +1,85 @@
+#!/bin/bash
+#
+ 
+#
+#  This script sets up the necessary environment to configure the PBS
+#  distribution prior to building it.
+#
+#  It assumes that the machine on which you are building PBS has a file
+#  system which will be accessible by the nodes running the PBS binaries,
+#  and that the absolute path names to this file system are the same on
+#  build machine and on the target machines.  If this is not the case, you
+#  can configure one way before you "make" the code (with pathnames relative
+#  to the target machine) and another way before you "install" the code
+#  (this time with pathnames relative to the build machine). 
+#
+
+#
+# The PBS server runs on one service node in the vm.  The PBS commands
+# and MOM run on any service node in the vm.  All three will access configuration
+# files and write log files to the PBS_HOME area defined in this file.
+#
+
+#
+# location of PBS source directory
+#
+SRCDIR=/usr/local1/lafisk/pbs/new/patched
+
+OPTS=" "
+#
+# --prefix specifies prefix of install directories.  
+#          User commands will go in prefix/bin, admin
+#          commands will go in prefix/sbin, libraries in prefix/lib, etc.
+#
+OPTS=$OPTS"--prefix=/usr/local/pbs/ "
+ 
+OPTS=$OPTS"--srcdir=$SRCDIR "
+ 
+OPTS=$OPTS"--mandir=/usr/local/pbs/man "
+ 
+#
+# For debugging, deamons stay in foreground, and dump debugging data
+# to stdout.  Comment this out if not debugging.
+#
+OPTS=$OPTS"--enable-debug "
+#
+ 
+#
+# build the C scheduler
+#
+OPTS=$OPTS"--set-sched=c --set-sched-code=fifo "
+#
+# --set-server-home defines the directory for the PBS server's working
+#                   files.  It is PBS_HOME.
+#
+# This directory should not be shared among service nodes.  (But we
+# are anyway.  Do we need to fix something to make this work?)
+#
+OPTS=$OPTS"--set-server-home=/usr/local/pbs/working "
+
+# --set-server-name-file sets the name of the file naming the
+# the PBS server.  It is written to PBS_HOME.
+#
+OPTS=$OPTS"--set-server-name-file=PBSserver "
+#
+
+#
+# --set-default-server names the default machine that the PBS server is
+#                      running on.  
+#
+#  This value goes in the PBSserver file in the working directory.  Before
+#  starting PBS you may want to change it to the name of the node hosting 
+#  the PBS server.
+#
+OPTS=$OPTS"--set-default-server=service-6.sandia.gov "
+ 
+#
+# CPLANT_SERVICE_NODE causes the pbs_server to get it's host name 
+# from the PBSserver file in the working directory rather than from 
+# gethostname, which can return the name at an alternate interface.
+#
+# Now configure directories to build and/or install PBS.
+#
+ 
+echo $SRCDIR/configure $OPTS  --set-cflags='-DCPLANT_SERVICE_NODE -64'
+$SRCDIR/configure $OPTS  --set-cflags='-DCPLANT_SERVICE_NODE -64'

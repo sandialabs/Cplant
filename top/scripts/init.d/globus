@@ -1,0 +1,258 @@
+#! /bin/sh
+
+# Globus Startup Script
+#
+# This script should be placed in /etc/rc3.d/S[nn]globus
+# where nn is a number in the range 00..99
+
+
+PROGRAM_NAME=`echo $0 | ${GLOBUS_SH_SED-sed} -e 's|.*/||g'`
+PROGRAM_VERSION=`echo '$Revision: 1.1.2.1 $' | ${GLOBUS_SH_CUT-cut} -d' ' -f2`
+
+
+globus_hostname=""
+if [ -n "${globus_hostname}" ]; then
+    GLOBUS_HOSTNAME="${globus_hostname}"
+    export GLOBUS_HOSTNAME
+fi
+
+
+# Inserted by configure.
+
+    ################# BEGIN    Inserted by configure #############
+
+GLOBUS_DEPLOY_PATH=/tmp/globus/globus
+GLOBUS_DEPLOYED='TRUE'
+gssapi_authentication=krb5
+
+if [ -n "${GSI_INSTALL_PATH}" -a -z "${GLOBUS_INSTALL_PATH}" ]; then
+    GLOBUS_INSTALL_PATH=${GSI_INSTALL_PATH}
+fi
+
+if [ -n "${GSI_DEPLOY_PATH}" -a -z "${GLOBUS_DEPLOY_PATH}" ]; then
+    GLOBUS_DEPLOY_PATH=/tmp/globus/globus
+fi
+
+if [ "X${GLOBUS_DEPLOYED}" = "XTRUE" ]; then
+    if [ -z "${GLOBUS_DEPLOY_PATH}" ]; then
+	echo "ERROR: environment variable GLOBUS_DEPLOY_PATH not defined"  1>&2
+	exit 1
+    fi
+    if [ -z "${GLOBUS_INSTALL_PATH}" ]; then
+	if [ ! -r "${GLOBUS_DEPLOY_PATH}/etc/globus-install-path.sh" ]; then
+	    echo "ERROR: cannot read ${GLOBUS_DEPLOY_PATH}/etc/globus-install-path.sh" 1>&2
+	    exit 1
+	fi
+	. "${GLOBUS_DEPLOY_PATH}/etc/globus-install-path.sh"
+	if [ -z "${GLOBUS_INSTALL_PATH}" ]; then
+	    echo "ERROR: environment variable GLOBUS_INSTALL_PATH not defined"  1>&2
+	    echo "in ${GLOBUS_DEPLOY_PATH}/etc/globus-install-path.sh"         1>&2
+	    exit 1
+	fi
+    fi
+else 
+    if [ -z "${GLOBUS_INSTALL_PATH}" ]; then
+	echo "ERROR: environment variable GLOBUS_INSTALL_PATH not defined"  1>&2
+	# for easier development testing, fall back on ${prefix} and don't exit
+	# GLOBUS_INSTALL_PATH=/projects/globus/globusdist-gs-1-3-prod/gtk/globus-install
+	exit 1
+    fi
+fi
+
+if [ "X${GLOBUS_DEPLOYED}" = "XTRUE" ]; then
+    export GLOBUS_DEPLOY_PATH
+    prefix=${GLOBUS_DEPLOY_PATH}
+    exec_prefix=${GLOBUS_DEPLOY_PATH}
+    arch="`${prefix}/sbin/config.guess`"
+    arch_sysconfdir="${prefix}/etc/${arch}"
+else
+    prefix="${GLOBUS_INSTALL_PATH}"
+    exec_prefix=${GLOBUS_INSTALL_PATH}/services/alpha-unknown-linux-gnu
+    if [ "X${GLOBUS_ARCHITECTURE_INDEPENDENT}" = "XTRUE" ]; then
+	if [ '${GLOBUS_INSTALL_PATH}/services/alpha-unknown-linux-gnu' != '${prefix}' ] ; then
+	    arch="`${GLOBUS_INSTALL_PATH}/sbin/config.guess`"
+	    exec_prefix="${prefix}/services/${arch}"
+	    arch_sysconfdir="${prefix}/etc/${arch}"
+	fi
+    fi
+fi
+
+export GLOBUS_INSTALL_PATH
+sbindir=${exec_prefix}/sbin
+bindir=${exec_prefix}/bin
+libdir=${exec_prefix}/lib
+libexecdir=${exec_prefix}/libexec
+includedir=${exec_prefix}/include
+datadir=${prefix}/share
+sysconfdir=${prefix}/etc
+sharedstatedir=${prefix}/com
+localstatedir=${prefix}/var
+tmpdir=${prefix}/tmp
+local_tmpdir=/tmp
+secure_tmpdir=${local_tmpdir}
+[ -z "${arch_sysconfdir}" ] && arch_sysconfdir=/projects/globus/globusdist-gs-1-3-prod/gtk/globus-install/etc/alpha-unknown-linux-gnu
+
+
+if [ -z "${GLOBUS_SSL_PATH}" ]; then
+    if [ -r "${arch_sysconfdir}/globus-ssl-path-32.sh" ] ; then
+	globus_ssl_path_sh="${arch_sysconfdir}/globus-ssl-path-32.sh"
+    elif [ -r "${arch_sysconfdir}/globus-ssl-path-64.sh" ] ; then
+	globus_ssl_path_sh="${arch_sysconfdir}/globus-ssl-path-64.sh"
+    else
+	echo "ERROR: cannot resolve path to SSL installation -- excepted" 1>&2
+	echo "to find this information in ${arch_sysconfdir}"             1>&2
+	echo "Set environment variable GLOBUS_SSL_PATH and try again"     1>&2
+	exit 1
+    fi
+    . "${globus_ssl_path_sh}"
+    if [ -z "${GLOBUS_SSL_PATH}" ]; then
+	echo "ERROR: value for GLOBUS_SSL_PATH not defined"  1>&2
+	echo "in ${globus_ssl_path_sh}"                      1>&2
+	exit 1
+    fi
+fi
+if [ -z "$GLOBUS_SH_VARIABLES_SET" ]; then
+    if [ ! -r ${arch_sysconfdir}/globus-sh-commands.sh ] ; then
+	echo "ERROR: cannot read ${arch_sysconfdir}/globus-sh-commands.sh" 1>&2
+	exit 1
+    fi
+    . ${arch_sysconfdir}/globus-sh-commands.sh
+    for _var in `${GLOBUS_SH_SED} -n '/^GLOBUS_SH/s/=.*$//p' \
+	${arch_sysconfdir}/globus-sh-commands.sh`
+    do
+	export ${_var}
+    done
+    GLOBUS_SH_VARIABLES_SET="Y"
+    export GLOBUS_SH_VARIABLES_SET
+fi
+
+
+globus_source () {
+
+  # Check if file exists and source it
+  if [ ! -f "$1" ] ; then
+     ${GLOBUS_SH_PRINTF-printf} "$1 not found.\n" >&2
+     exit 1
+  fi
+
+  . "$1"
+}
+
+globus_get_ldap_path () {
+
+if [ -z "${GLOBUS_LDAP_PATH}" ]; then
+    if [ -r "${arch_sysconfdir}/globus-ldap-path-32.sh" ] ; then
+	globus_ldap_path_sh="${arch_sysconfdir}/globus-ldap-path-32.sh"
+    elif [ -r "${arch_sysconfdir}/globus-ldap-path-64.sh" ] ; then
+	globus_ldap_path_sh="${arch_sysconfdir}/globus-ldap-path-64.sh"
+    else
+	echo "ERROR: cannot resolve path to LDAP installation -- excepted" 1>&2
+	echo "to find this information in ${arch_sysconfdir}"             1>&2
+	echo "Set environment variable GLOBUS_LDAP_PATH and try again"     1>&2
+	exit 1
+    fi
+    . "${globus_ldap_path_sh}"
+    if [ -z "${GLOBUS_LDAP_PATH}" ]; then
+	echo "ERROR: value for GLOBUS_LDAP_PATH not defined"  1>&2
+	echo "in ${globus_ldap_path_sh}"                      1>&2
+	exit 1
+    fi
+fi
+}
+
+################# END    Inserted by configure #############
+
+
+
+
+if [ "X${GLOBUS_DEPLOYED}" = "XFALSE" ]; then
+    echo "$PROGRAM_NAME should only be executed from the \"deploy\" directory"
+    exit 1;
+fi
+
+. ${sbindir}/globus-startup-lib.sh
+
+
+
+# Setup the log files
+${GLOBUS_SH_TOUCH-touch} ${CONSOLE}
+${GLOBUS_SH_TOUCH-touch} ${DAEMONS_LOG}
+
+if [ "`${GLOBUS_SH_WHOAMI-whoami}`" = "root" ] ; then
+   ${GLOBUS_SH_CHOWN-chown} ${GLOBUS_UID} ${CONSOLE}
+   ${GLOBUS_SH_CHOWN-chown} ${GLOBUS_UID} ${DAEMONS_LOG}
+   if [ -n "${GLOBUS_GID}" ] ; then
+     ${GLOBUS_SH_CHGRP-chgrp} ${GLOBUS_GID} ${CONSOLE}
+     ${GLOBUS_SH_CHGRP-chgrp} ${GLOBUS_GID} ${DAEMONS_LOG}
+   fi
+   ${GLOBUS_SH_CHMOD-chmod} 664 ${CONSOLE}
+   ${GLOBUS_SH_CHMOD-chmod} 664 ${DAEMONS_LOG}
+fi
+
+
+# Laydown a Break in the log file
+echo "------------------------------------------------------------" \
+      >> $CONSOLE 2>&1 
+echo  >> $CONSOLE 2>&1 
+echo "------------------------------------------------------------" \
+      >> $CONSOLE 2>&1 
+
+
+# Define "command" to be either start or stop
+
+command="$1"
+
+if [ -z "$command" ] ; then
+   case "$PROGRAM_NAME" in
+       S*globus) 
+            command="start"
+            ;;
+       K*globus)
+            command="stop"
+            ;;
+   esac
+fi
+
+
+case "$command" in
+
+  'start')
+    
+	if [ -f ${sysconfdir}/globus-gatekeeper.cert ]; then
+	
+	    globus_read_subject ${sysconfdir}/globus-gatekeeper.cert \
+	    > /dev/null
+	    
+
+	    ${GLOBUS_SH_SED-sed} \
+		"s|^-globus-gatekeeper-subject.*$|-globus-gatekeeper-subject \'${GRAM_SUBJECT}\'|" \
+ 		${sysconfdir}/globus-jobmanager.conf > \
+ 		${secure_tmpdir}/globus-jobmanager.$$
+	
+	    ${GLOBUS_SH_MV-mv} ${secure_tmpdir}/globus-jobmanager.$$ \
+		${sysconfdir}/globus-jobmanager.conf
+
+	fi
+
+
+
+      # The gatekeeper must run as root
+      ${sbindir}/globus-gatekeeper-controller start
+
+      # The following need not run as root
+      globus_user_execute ${sbindir}/globus-system-controller start
+      ;;
+
+  'stop')
+      # The following need not run as root
+      globus_user_execute ${sbindir}/globus-system-controller stop
+    
+      # The following must run as root
+      ${sbindir}/globus-gatekeeper-controller stop
+      ;;
+esac
+
+
+
+
+

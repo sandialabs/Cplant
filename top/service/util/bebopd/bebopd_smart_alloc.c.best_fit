@@ -1,0 +1,250 @@
+#include <string.h>
+#include "puma.h"
+
+
+typedef enum{
+  DEFAULT_ALLOCATOR,
+  NOT_TOO_DUMB_ALLOCATOR,
+  FIRST_FIT_ALLOCATOR,   
+  BEST_FIT_ALLOCATOR,
+  SUM_OF_SQUARES_ALLOCATOR,
+  LAST_ALLOCATOR
+} bebopd_allocation_type;
+
+bebopd_allocation_type  allocType = BEST_FIT_ALLOCATOR;
+bebopd_allocation_type testing = LAST_ALLOCATOR;
+/*
+** $Id: bebopd_smart_alloc.c.best_fit,v 1.1 2001/08/07 02:24:39 rlrubin Exp $
+**
+**    Plug in your own smart allocator here.  The bebopd will
+**    call this with the list of free nodes and the number of
+**    nodes required by the job.  Write the allocated nodes
+**    to the caller's "go" buffer.
+*/
+
+int
+smart_alloc(nid_type *free, /* list of free nodes (physical node IDs) */
+            int len,        /* number of free nodes on the list */
+	    int want,       /* number of free nodes wanted      */
+	    nid_type *go)   /* list of allocated nodes          */
+{
+  int found;
+  int count, where, begin, beginReal, binsize, bestbinsize;
+  int numbinofsize[len+1], wherelocated[len+1];
+  int i, sum, min, temp;
+  //log_msg("i want %d nodes but there are %d nodes", want, len);
+
+
+
+log_msg("Dude");
+
+  //  for (i=0; i<len; i++)
+  //log_msg("node %d is on the list", free[i]);
+
+  if (want > len){
+    return -1;
+  }
+
+  log_msg("alloc type is %d and last alloc is %d", allocType, testing);
+
+    if ((allocType < 0) ||(allocType >= LAST_ALLOCATOR)){
+//ask what this is!!!
+      //log_msg("in here");
+    return -1;
+    }
+
+  if (allocType == DEFAULT_ALLOCATOR){
+    memcpy((void *)go, (void *)free, sizeof(nid_type) * want);    
+  }
+
+
+
+  if (allocType == FIRST_FIT_ALLOCATOR){
+    found = 0;
+    where =0;
+    count=1;
+    begin=0;
+
+    log_msg("in first fit");
+
+    if(want==1)
+      found = 1;
+    
+    while ((found ==0)&&(where<len)){ //see if there is a fit
+      where++;
+      if(free[where-1]==(free[where]-1)){
+	count++;
+	//log_msg(" supposedly %d %d at %d", free[where-1], free[where], where);
+      }
+      else{
+	count=1;
+	begin = where;
+      }
+
+      if(count == want)
+	found=1;
+
+
+    }
+
+    //    log_msg("found is %d begin is %d", found, begin);
+
+    if(found==1){ //if there is a location big enough
+      memcpy((void *)go, (void *)(free + begin), sizeof(nid_type)*want); 
+                 //need to look at how to tell it where to start
+    }
+   
+    else{ //allocate randomly
+      memcpy((void *)go, (void *)free, sizeof(nid_type) * want);   
+    }
+
+  }
+
+  //BEST_FIT
+
+  if(allocType ==BEST_FIT_ALLOCATOR){
+    count=1;
+    begin=0;
+    beginReal=0;
+    //    binsize=0;  
+
+    
+    bestbinsize=len + 1;
+
+    for(where = 1; where<len; where++){
+      if(free[where-1]==(free[where]-1)){
+	count++;
+	//log_msg(" supposedly %d %d at %d", free[where-1], free[where], where);
+      }
+      else{
+	//	logmsg(
+	if((((count-want) >= 0) && ((count-want)< bestbinsize))){ 
+	   //|| ((bestbinsize == -1)&&((count-want)>=0))){
+	  log_msg("found a better bin size of %d from %d", (count-want), bestbinsize);
+	  beginReal=begin;
+	  bestbinsize = count-want;
+	}
+	
+	count=1;
+	begin = where;
+      }
+
+    }
+
+    if((((count-want) >= 0) && ((count-want)< bestbinsize))){ 
+      log_msg("found a better bin size of %d from %d", (count-want), bestbinsize);
+      beginReal=begin;
+      bestbinsize = count-want;
+    }
+	
+    log_msg("the best bin size is %d and it starts at %d", bestbinsize, beginReal);
+
+    
+
+    if(bestbinsize  == len+1) //allocate randomly-no bin found
+      memcpy((void *)go, (void *)free, sizeof(nid_type) * want);
+    else
+      memcpy((void *)go, (void *)(free + beginReal), sizeof(nid_type)*want);
+  }
+
+
+  /*SUM OF SQUARES*/
+
+  if(allocType==SUM_OF_SQUARES_ALLOCATOR){
+    
+    count=1;
+    begin=0;
+    beginReal = 0;
+    found = 0;
+    sum =0;
+    
+    log_msg("in sos");
+    
+    for(i = 0; i<len+1; i++){
+      numbinofsize[i]=0; 
+      wherelocated[i]=0;
+    }
+    
+
+    for(where = 1; where<len; where++){
+      if(free[where-1]==(free[where]-1)){
+	count++;
+	//log_msg(" supposedly %d %d at %d", free[where-1], free[where], where);
+      }
+
+      else{
+	
+	numbinofsize[count]++;
+	wherelocated[count]=begin;
+	
+	count=1;
+	begin = where;
+      }
+      
+    }
+    
+    numbinofsize[count]++;
+    wherelocated[count]=begin;
+    
+    log_msg("out of for loop");	
+    //    log_msg("the best bin size is %d and it starts at %d", bestbinsize, beginReal);
+    
+
+    /*calculate the sum of squares*/
+    for(i=1; i<len +1; i++)
+      sum = sum + numbinofsize[i]*numbinofsize[i];
+
+
+    /*FIND THE CORRECT BIN */
+
+    min=sum*sum;
+
+    log_msg("here1");
+    
+    for(i=want; i< len+1; i++){
+      if(numbinofsize[i] !=0){
+	temp = sum- numbinofsize[i]*numbinofsize[i] + (numbinofsize[i]-1)*(numbinofsize[i]-1);
+	if ((i-want) != 0)
+	  temp = temp + numbinofsize[i-want]*numbinofsize[i-want];
+	if (temp<min){
+	  min = temp;
+	  beginReal = wherelocated[i];
+	  found = 1;
+	}
+      }
+    }
+
+    log_msg("here?");
+    
+    if(found  == 0){ //allocate randomly-no bin found
+      log_msg("random allocation");
+     
+      memcpy((void *)go, (void *)free, sizeof(nid_type) * want);
+    }
+    else{   
+   
+      log_msg("allocating from node %d", beginReal); 
+      memcpy((void *)go, (void *)(free + beginReal), sizeof(nid_type)*want);
+    }
+  }
+
+
+
+  if (allocType == NOT_TOO_DUMB_ALLOCATOR){
+    if (want >= 64){
+      memcpy((void *) go, (void *)(free + len - want +1), sizeof(int)*want);
+    }
+    else {
+      memcpy((void *)go, (void *)free, sizeof(int) * want);
+    }
+  } 
+  return 0;
+}
+
+
+
+
+
+
+
+

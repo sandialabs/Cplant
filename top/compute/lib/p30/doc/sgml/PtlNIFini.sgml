@@ -1,0 +1,48 @@
+<!--
+    $Id: PtlNIFini.sgml,v 1.1 2001/01/10 21:42:54 rbbrigh Exp $
+-->
+
+<!doctype qwertz system>
+
+<manpage title="PtlNIFini" sectnum="3" date='"04 Jan 2001"'
+    footer='"Portals 3.0"' main='"Portals 3.0 Library"'>
+
+<sect1> NAME
+    <p>
+    <bf/PtlNIFini/ &mdash Close a network interface
+
+<sect1> SYNOPSIS
+    <p>
+     #include "p30.h"
+
+     int PtlNIFini( ptl_handle_ni_t interface );
+
+<sect1> PARAMETERS
+    <p>
+    <descrip>
+    <tag /interface/
+    A handle for the interface to shutdown.
+    </descrip>
+    
+<sect1> DESCRIPTION
+    <p>
+    <bf /PtlNIFini/ releases the resources allocated for a network interface.
+
+<sect1> RETURN VALUES
+    <p>
+    <descrip>
+    <tag /PTL_OK/
+    Indicates success
+    <tag /PTL_NOINIT/
+    Indicates that the Portals API has not been successfully initialized
+    <tag /PTL_INV_NI/
+    Indicates that <bf /interface/ is not a valid network interface handle
+    </descrip>
+
+<sect1> SEE ALSO
+    <p>
+    <bf /PtlNIBarrier(3)/, <bf /PtlNIDist(3)/, <bf /PtlNIHandle(3)/,
+    <bf /PtlNIInit(3)/, <bf /PtlNIStatus(3)/<newline>
+    <bf /Portals 3.0 Message Passing Interface document/
+
+</manpage>

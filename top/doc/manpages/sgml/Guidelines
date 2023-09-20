@@ -1,0 +1,102 @@
+
+$Id: Guidelines,v 1.1 1999/12/18 00:04:42 jsotto Exp $
+
+How to Write Cplant Man Pages
+=============================
+
+		It's easy! Just do it!
+
+We use SGML to write man pages for utilities, tools, and functions.  The
+Makefile converts the SGML to troff, Postscript, and HTML.
+
+There are two types of man pages: One for utilities and tools that get
+invoked from the command line. Examples include yod, pingd, mcpload,
+etc. The other type is for functions and libraries.
+The main difference is that
+the man page for the former mentions command line options and an exit
+status, while the man pages for functions show #include files, mention
+return values and list possible errors.
+
+So, here are the steps to successful man page making:
+
+    - Create and update your doc directory:
+	- cd $CPLANT_TOP
+	- cvs update top/doc
+
+    - Go into the man page directory and copy a template:
+	- cd top/doc/man/sgml
+	- cp yod.sgml foo.sgml	(If you're creating a utility man page)
+	- cp ???.sgml foo.sgml	(If you're creating a function or library page)
+	Those are the two suggested examples to be used as a template.
+	Another existing man page may fit your needs better.
+
+    - Edit foo.sgml using your favorite editor
+
+    - "Compile" it:
+	- "make" or "make ../mann/foo.n" or "make ../html/foo.html" or
+	    "make ../ps/foo.ps"
+	If you don't get any errors try (depening on which one you built)
+	- man -M $CPLANT_TOP/doc/man foo
+	- ghostview $CPLANT_TOP/doc/man/ps/foo.ps
+	- netscape $CPLANT_TOP/doc/man/html/foo.html
+
+	If you do get errors, the error messages tend to be cryptic and
+	useless. Grab the line number it reports and stare real hard at
+	the line in your foo.sgml file. The document in
+	/Net/pumatmp1/tools.solaris/sgml2latex-1.3/doc/manual.ps might
+	be of help too.
+
+    - Check it in:
+	When it compiles and says what it should say, check it in:
+	- cvs add foo.sgml
+
+
+See how easy it is? Doing this is mandatory for all utilities and tools,
+as well as functions that are intended for use by application level
+programmers.
+
+
+
+Here are some conventions your should follow:
+    - Use boldface <bf> for function names, type and structure names, constants.
+    - Use slanted <sl> for variable names.
+    - Use italics <it> for parameter names.
+    - Use typewriter type <tt> for program names, file names.
+
+    - Inside <verb> or <code> escape \ with \\ and & with &ero;
+    - Use &lt for < (use &lt; for < without a space after it).
+    - Use &amp for &
+    - Use &lsqb for [
+    - Use &rsqb for ]
+    - Use &mdash for a medium dash --
+
+    - The order of sections should follow man(5) and is:
+	    NAME
+	    SYNOPSIS
+	    DESCRIPTION
+	    OPTIONS		(for commands)
+	    RETURN VALUES	(for functions)
+	    EXIT STATUS		(for commands)
+	    PARAMETERS		(for functions)
+	    ERRORS		(for functions)
+	    FILES
+	    SEE ALSO
+	    DIAGNOSTICS
+	    BUGS
+
+Looking at the existing man page files should give you an idea on how
+easy it is to write man pages in SGML. One thing that is a little
+confusing is the various methods to change the appearance of text. If
+you want to put the text "make this boldface" appear in boldface, you
+have the following options:
+
+    <bf>make this boldface</bf>
+
+    <bf>make this boldface</>
+
+    <bf/make this boldface/
+
+The first form is the most verbose and most unambiguous. The second and third
+forms are shortcuts and can be used in most contexts. As long as you don't
+confuse the SGML translator, use which ever is most convenient.
+

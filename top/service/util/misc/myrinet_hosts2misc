@@ -1,0 +1,412 @@
+#!/usr/bin/perl -w
+# $Id: myrinet_hosts2misc,v 1.1.2.1 2002/10/02 18:25:14 jrstear Exp $
+
+# Parse command line options
+use Getopt::Long;
+
+GetOptions( 'snid=i' => \$snid,
+            'enid=i' => \$enid,
+            'myhost=s' => \$myhostpath,
+            'probe' => \$probe,
+            'cplantmac' => \$cplantmac,
+            'gmpiconf' => \$gmpiconf,
+            'machines' => \$machines,
+            'updatemac=s' => \$updatemac,
+            'hostname=s' => \$hostname,
+            'h|help' => \$help
+          );
+
+$myhostname = "my.hosts";
+
+if (defined($help)) {
+    &usage("Help requested");
+}
+
+# Probe for the correct MAC addresses on the Myrinet NICs
+if (defined($probe)) {
+
+    # parameter sanity check
+    if (!defined($snid) || !defined($enid) || !defined($myhostpath)) {
+        &usage("Missing SNID or ENID or MYHOST parameter");
+    }
+    
+    &probe_macs;
+    exit;
+}
+
+if (defined($cplantmac)) {
+    # parameter sanity check
+    if (!defined($myhostpath)) {
+        &usage("Missing MYHOST parameter");
+    }
+
+    &cplantmac_gen;
+    exit;
+}
+
+if (defined($gmpiconf)) {
+    # parameter sanity check
+    if (!defined($snid) || !defined($enid) || !defined($myhostpath)) {
+        &usage("Missing SNID or ENID or MYHOST parameter");
+    }
+
+    &gmpiconf_gen;
+    exit;
+}
+
+if (defined($machines)) {
+    # parameter sanity check
+    if (!defined($snid) || !defined($enid) || !defined($myhostpath)) {
+        &usage("Missing SNID or ENID or MYHOST parameter");
+    }
+
+    &machines_gen;
+    exit;
+}
+
+if (defined($updatemac)) {
+
+    # parameter check
+    if (!defined($hostname) || !defined($myhostpath)) {
+        &usage("Missing MYHOST or HOSTNAME parameter");
+    }
+    
+    # check the format of the updated MAC addressed specified in the -newmac arg
+    if (length($updatemac) != 12) {
+        print STDERR "Invalid MAC address length.\nMAC address is specified as aabbccddeeff \n";
+        exit 1;
+    }
+
+    if ($updatemac =~ /:/) {
+        print STDERR "Invalid character in MAC address.\nMAC address is specified as aabbccddeeff \n";
+        exit 1;        
+    }
+    
+    &find_and_update_mac;
+    print "Generating updated cplant_mac.new file.\n";
+    $myhostname = "my.hosts.new";
+    &cplantmac_gen;
+    exit;
+}
+
+# if we are here, the user didn't properly tell us what to do
+&usage("No action specified!");
+exit 1;
+
+
+sub usage {
+    print STDERR "$_[0]\n";
+    print STDERR "USAGE: $0\n";
+    print STDERR "   Actions:\n";
+    print STDERR "     Probe a range of nodes for their real Myrinet NIC MAC addresses:\n";
+    print STDERR "     -probe -snid <start nid> -enid <end nid> -myhost <path to my.hosts>\n\n";
+    print STDERR "     Update the MAC address for the specified hostname with the new MAC specified:\n";
+    print STDERR "     -updatemac <updated MAC> -hostname <hostname of MAC to update> myhost <path to my.hosts>\n\n";
+    print STDERR "     Generate a new cplant_mac file from the my.hosts file:\n";
+    print STDERR "     -cplantmac -myhost <path to my.hosts>\n\n";
+    print STDERR "     Generate a gmpiconf file (if you don't know what it is, don't worry\n";
+    print STDERR "     about it!) for the specified range of nodes:\n";
+    print STDERR "     -gmpiconf -snid <start nid> -enid <end nid> -myhost <path to my.hosts>\n\n";
+    print STDERR "     Generate a machines file (if you don't know what it is, don't worry\n";
+    print STDERR "     about it!) for the specified range of nodes:\n";
+    print STDERR "     -machines -snid <start nid> -enid <end nid> -myhost <path to my.hosts>\n\n";
+    exit 1;
+}
+
+
+# probe each node to see if we can find the real MAC address of the Myrinet NIC in it
+sub probe_macs {
+    # read in current gm hosts file, assume my.hosts is the name 
+    $my_hosts_file = "$myhostpath/my.hosts";
+    open(ORIG,$my_hosts_file)
+        or die "Could not open $my_hosts_file for read ($!)";
+    #@filebuf = readline(<ORIG>);
+    #@filebuf = readline(*ORIG);
+    @filebuf = <ORIG>;
+    $num_lines = @filebuf;
+    close(ORIG);
+
+    print("number of lines in my.hosts is $num_lines\n");
+
+    # read in current gm map file, assume my.map is the name 
+    $my_map_file = "$myhostpath/my.map";
+    open(ORIG,$my_map_file)
+        or die "Could not open $my_map_file for read ($!)";
+    @mapbuf = <ORIG>;
+    $num_map_lines = @mapbuf;
+    close(ORIG);
+
+    print("number of lines in my.map is $num_map_lines\n");
+
+    # loop through the nodes (identified by Cplant nid) we want to process
+    # NOTE that the Cplant nid = (GM nid - 1). NOTE also that Perl array
+    # indeces will correspond to CPlant nids the way the my.hosts file
+    # is setup.
+    for ($i = $snid; $i <= $enid; $i++) {
+        if (($num_lines) == $i) {
+            die "You seem to be reading past the end of the my.hosts file..."
+        }
+
+        @fields = split(" ",$filebuf[$i]);
+        #print("@fields\n");
+        #print("$fields[0] $fields[1] $fields[2] $fields[3]\n");
+
+        # get the hostname to rsh to without quotes
+        ($hostname = $fields[3]) =~ tr/\"//d;
+        print("Getting Myrinet NIC MAC data from $hostname...");
+
+        # rsh to host and get the ouput of eeprom
+        open(RSH,"rsh $hostname '/cplant/sbin/eeprom'|")
+            or die "\nTrouble rshing to $hostname ($!)";
+        @resultbuf = <RSH>;
+        close(RSH);
+
+        $num_result_lines = @resultbuf;
+        if ($num_result_lines < 5) {
+            # The eeprom command failed, but could have failed because a GM
+            # environment was the VM on the node. Try getting the MAC using
+            # the GM way, otherwise use old MAC info
+
+            # rsh to host and get the ouput of eeprom
+            open(RSH,"rsh $hostname '/cluster/rte/gm/bin/gm_board_info | grep lanai'|")
+                or die "\nTrouble rshing to $hostname ($!)";
+            @resultbuf = <RSH>;
+            close(RSH);
+            $num_result_lines = @resultbuf;
+
+            if ($num_result_lines >= 4 && $num_result_lines <= 5) {
+                # the GM way may have worked
+                @macfields = split("= ",$resultbuf[2]);
+                ($newmac = $macfields[1]) =~ tr/\://d;
+                print("OK using GM\n");
+            }
+            else {
+                # use the old MAC info
+                $newmac = $fields[2];
+                print("ERROR\n");
+            }
+        }
+        else {    
+            # parse out the MAC address and strip out the colons
+            #print("$resultbuf[4]\n");
+            @macfields = split("= ",$resultbuf[4]);
+            #print("@macfields\n");
+            ($newmac = $macfields[1]) =~ tr/\://d;
+            #print("$newmac\n");
+            print("OK\n");
+        }
+
+        # put the new MAC into the field var for the current line in my.hosts
+        # and then rewrite the current line in the buffer with the new info
+        ($fields[2] = $newmac) =~ tr/\n//d;
+        $filebuf[$i] = "$fields[0] $fields[1] $fields[2] $fields[3]\n";
+
+        # now we gotta fix the blasted my.map file which is more of a pain
+        $found_line = -1;
+        for ($j = 0; $j < $num_map_lines; $j++) {
+            if ($mapbuf[$j] =~ /h - \"$hostname"\n/) {
+                #print("$mapbuf[$j]");
+                $found_line = $j;
+                last;
+            }
+        }
+        #print("$mapbuf[$found_line+4]\n");
+
+        @mapfields = split(" ",$mapbuf[$found_line+4]);
+        ($mapfields[1] = $newmac) =~ tr/\n//d;
+        $mapbuf[$found_line+4] = "$mapfields[0] $mapfields[1]\n";
+        #print("$mapbuf[$found_line+4]\n");
+    }
+
+    # Now we are done getting the new MAC addresses. Write out a new my.hosts
+    # file but don't overwrite the old one.
+    open(NEWFILE,">$my_hosts_file.new")
+        or die "Could not open $my_hosts_file.new for write ($!)";
+    print {"NEWFILE"} @filebuf;
+    close(NEWFILE);
+
+    # Now we are done getting the new MAC addresses. Write out a new my.map
+    # file but don't overwrite the old one.
+    open(NEWFILE,">$my_map_file.new")
+        or die "Could not open $my_map_file.new for write ($!)";
+    print {"NEWFILE"} @mapbuf;
+    close(NEWFILE);
+}
+
+
+# update the MAC address in the config files (my.hosts and my.map) for a
+# single hostname as specified by the user on the command line
+sub find_and_update_mac {
+    # read in current gm hosts file, assume my.hosts is the name 
+    $my_hosts_file = "$myhostpath/my.hosts";
+    open(ORIG,$my_hosts_file)
+        or die "Could not open $my_hosts_file for read ($!)";
+    #@filebuf = readline(<ORIG>);
+    #@filebuf = readline(*ORIG);
+    @filebuf = <ORIG>;
+    $num_lines = @filebuf;
+    close(ORIG);
+
+    print("number of lines in my.hosts is $num_lines\n");
+
+    # read in current gm map file, assume my.map is the name 
+    $my_map_file = "$myhostpath/my.map";
+    open(ORIG,$my_map_file)
+        or die "Could not open $my_map_file for read ($!)";
+    @mapbuf = <ORIG>;
+    $num_map_lines = @mapbuf;
+    close(ORIG);
+
+    print("number of lines in my.map is $num_map_lines\n");
+
+    # fix the my.hosts file
+    $found_line = -1;
+    for ($j = 0; $j < $num_lines; $j++) {
+        if ($filebuf[$j] =~ /"$hostname"\n/) {
+            $found_line = $j;
+            last;
+        }
+    }
+
+    if ($found_line == -1) {
+        print STDERR "Couldn't find host $hostname in $my_hosts_file!\n";
+        exit 1;
+    }
+
+    print "Found $hostname as Cplant nid $found_line in $my_hosts_file\n";
+    @fields = split(" ",$filebuf[$found_line]);
+    if ($fields[2] =~ $updatemac) {
+        print STDERR "New MAC $updatemac identical to original MAC $fields[2] in my.hosts\n";
+        exit 1;
+    }
+    $fields[2] = $updatemac;
+    $filebuf[$found_line] = "$fields[0] $fields[1] $fields[2] $fields[3]\n";
+    
+    # fix the blasted my.map file
+    $found_line = -1;
+    for ($j = 0; $j < $num_map_lines; $j++) {
+        if ($mapbuf[$j] =~ /h - \"$hostname"\n/) {
+            #print("$mapbuf[$j]");
+            $found_line = $j;
+            last;
+        }
+    }
+
+    if ($found_line == -1) {
+        print STDERR "Couldn't find host $hostname in $my_map_file!\n";
+        exit 1;
+    }
+    #print("$mapbuf[$found_line+4]\n");
+
+    @mapfields = split(" ",$mapbuf[$found_line+4]);
+    $mapfields[1] = $updatemac;
+    $mapbuf[$found_line+4] = "$mapfields[0] $mapfields[1]\n";
+    #print("$mapbuf[$found_line+4]\n");
+
+    # Now we are done updating the MAC address. Write out a new my.hosts
+    # file but don't overwrite the old one.
+    open(NEWFILE,">$my_hosts_file.new")
+        or die "Could not open $my_hosts_file.new for write ($!)";
+    print {"NEWFILE"} @filebuf;
+    close(NEWFILE);
+    print "Wrote $my_hosts_file.new with updated MAC $updatemac for $hostname.\n";
+    
+    # Write out a new my.map file but don't overwrite the old one.
+    open(NEWFILE,">$my_map_file.new")
+        or die "Could not open $my_map_file.new for write ($!)";
+    print {"NEWFILE"} @mapbuf;
+    close(NEWFILE);
+    print "Wrote $my_map_file.new with updated MAC $updatemac for $hostname.\n";
+}
+
+
+# generate the cplant-mac file from the my.hosts file
+sub cplantmac_gen {
+    # read in current gm hosts file, assume my.hosts is the name 
+    $my_hosts_file = "$myhostpath/$myhostname";
+    open(ORIG,$my_hosts_file)
+        or die "Could not open $my_hosts_file for read ($!)";
+    #@filebuf = readline(<ORIG>);
+    #@filebuf = readline(*ORIG);
+    @filebuf = <ORIG>;
+    $num_lines = @filebuf;
+    close(ORIG);
+
+    # generate the cplant-mac file
+    $cplant_mac = "$myhostpath/cplant-mac";
+    for ($i = 0; $i < $num_lines; $i++) {
+        @fields = split(" ",$filebuf[$i]);
+        @mac = unpack("A2" x length($fields[2]),$fields[2]);
+        #print "$mac[0] $mac[1]\n";
+        $macbuf[$i] = "$mac[0]:$mac[1]:$mac[2]:$mac[3]:$mac[4]:$mac[5]\n";
+    }
+
+    # Now we are done getting the new MAC addresses. Write out a new cplant-mac
+    # file but don't overwrite the old one.
+    open(NEWFILE,">$cplant_mac.new")
+        or die "Could not open $cplant_mac.new for write ($!)";
+    print {"NEWFILE"} @macbuf;
+    close(NEWFILE);
+}
+
+# generate the gmpiconf file for use by MPICH over GM native
+sub gmpiconf_gen {
+    # read in current gm hosts file, assume my.hosts is the name 
+    $my_hosts_file = "$myhostpath/my.hosts";
+    open(ORIG,$my_hosts_file)
+        or die "Could not open $my_hosts_file for read ($!)";
+    #@filebuf = readline(<ORIG>);
+    #@filebuf = readline(*ORIG);
+    @filebuf = <ORIG>;
+    $num_lines = @filebuf;
+    close(ORIG);
+
+    $conf_file = "$myhostpath/gmpiconf.new";
+    $num_nodes = $enid - $snid + 1;
+    $conf_index = 0;
+    $confbuf[$conf_index++] = "$num_nodes\n";
+    for ($i = $snid; $i <= $enid; $i++) {
+        @fields = split(" ",$filebuf[$i]);
+        ($hostname = $fields[3]) =~ tr/\"//d;
+        $confbuf[$conf_index++] = "$hostname 2\n";
+    }
+    
+    # Now we are done generating the gmpiconf file. Write it out to disk, but
+    # don't overwrite an existing one.
+    open(NEWFILE,">$conf_file")
+        or die "Could not open $conf_file for write ($!)";
+    print {"NEWFILE"} @confbuf;
+    close(NEWFILE);
+    
+}
+
+# generate the machines file for use by MPICH over GM native
+sub machines_gen {
+    # read in current gm hosts file, assume my.hosts is the name 
+    $my_hosts_file = "$myhostpath/my.hosts";
+    open(ORIG,$my_hosts_file)
+        or die "Could not open $my_hosts_file for read ($!)";
+    #@filebuf = readline(<ORIG>);
+    #@filebuf = readline(*ORIG);
+    @filebuf = <ORIG>;
+    $num_lines = @filebuf;
+    close(ORIG);
+
+    $conf_file = "$myhostpath/machines.new";
+    #$num_nodes = $enid - $snid + 1;
+    $conf_index = 0;
+    #$confbuf[$conf_index++] = "$num_nodes\n";
+    for ($i = $snid; $i <= $enid; $i++) {
+        @fields = split(" ",$filebuf[$i]);
+        ($hostname = $fields[3]) =~ tr/\"//d;
+        $confbuf[$conf_index++] = "$hostname\n";
+    }
+    
+    # Now we are done generating the gmpiconf file. Write it out to disk, but
+    # don't overwrite an existing one.
+    open(NEWFILE,">$conf_file")
+        or die "Could not open $conf_file for write ($!)";
+    print {"NEWFILE"} @confbuf;
+    close(NEWFILE);
+    
+}

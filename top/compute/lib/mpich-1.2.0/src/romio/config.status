@@ -1,0 +1,170 @@
+#!/bin/sh
+# Generated automatically by configure.
+# Run this file to recreate the current configuration.
+# This directory was configured as follows,
+# on host gro.mp.sandia.gov:
+#
+# /home/u/rbbrigh/cplant/src/new/top/compute/lib/mpi/romio/configure -arch=alpha -file_system= -mpi=mpich -from_mpich -make=make -mpiincdir=/Net/pecos/puma/home/rbbrigh/cplant/src/dnsands/mpich-1.2.0/include -mpibindir=/Net/pecos/puma/home/rbbrigh/cplant/src/dnsands/mpich-1.2.0/bin -mpilib=/Net/pecos/puma/home/rbbrigh/cplant/src/dnsands/mpich-1.2.0/lib/libmpich.a -mpiolib=/Net/pecos/puma/home/rbbrigh/cplant/src/dnsands/mpich-1.2.0/lib/libmpich.a -cc=cc -cflags=  -fc= -fflags=  -f90=f95
+
+for arg
+do
+  case "$arg" in
+    -recheck | --recheck | --rechec | --reche | --rech | --rec | --re | --r)
+    echo running ${CONFIG_SHELL-/bin/sh} /home/u/rbbrigh/cplant/src/new/top/compute/lib/mpi/romio/configure -arch=alpha -file_system= -mpi=mpich -from_mpich -make=make -mpiincdir=/Net/pecos/puma/home/rbbrigh/cplant/src/dnsands/mpich-1.2.0/include -mpibindir=/Net/pecos/puma/home/rbbrigh/cplant/src/dnsands/mpich-1.2.0/bin -mpilib=/Net/pecos/puma/home/rbbrigh/cplant/src/dnsands/mpich-1.2.0/lib/libmpich.a -mpiolib=/Net/pecos/puma/home/rbbrigh/cplant/src/dnsands/mpich-1.2.0/lib/libmpich.a -cc=cc -cflags=  -fc= -fflags=  -f90=f95
+    exec ${CONFIG_SHELL-/bin/sh} /home/u/rbbrigh/cplant/src/new/top/compute/lib/mpi/romio/configure -arch=alpha -file_system= -mpi=mpich -from_mpich -make=make -mpiincdir=/Net/pecos/puma/home/rbbrigh/cplant/src/dnsands/mpich-1.2.0/include -mpibindir=/Net/pecos/puma/home/rbbrigh/cplant/src/dnsands/mpich-1.2.0/bin -mpilib=/Net/pecos/puma/home/rbbrigh/cplant/src/dnsands/mpich-1.2.0/lib/libmpich.a -mpiolib=/Net/pecos/puma/home/rbbrigh/cplant/src/dnsands/mpich-1.2.0/lib/libmpich.a -cc=cc -cflags=  -fc= -fflags=  -f90=f95 ;;
+    *) echo "Usage: config.status --recheck" 2>&1; exit 1 ;;
+  esac
+done
+
+trap 'rm -f Makefile mpi-io/Makefile mpi2-other/info/Makefile mpi2-other/array/Makefile adio/common/Makefile test/Makefile test/misc.c test/large_file.c test/runtests util/romioinstall include/mpio.h include/mpiof.h; exit 1' 1 3 15
+VPATH='VPATH=.:$(srcdir)'
+RANLIB='ranlib'
+CC='/Net/pecos/puma/home/rbbrigh/cplant/src/dnsands/mpich-1.2.0/bin/mpicc'
+F77='f77'
+HAS_WEAK_SYMBOLS='1'
+srcdir='/home/u/rbbrigh/cplant/src/new/top/compute/lib/mpi/romio'
+ARCH='alpha'
+FILE_SYSTEM='ufs nfs'
+CFLAGS='  -O -D__AIO_PRIORITY_DEFAULT -D__DEC -DFORTRANUNDERSCORE -D__NFS -D__UFS -D__NEEDS_MPI_TEST -D__MPICH  -D__INT_LT_POINTER=1 -D__HAVE_LONG_LONG_64=1 -D__HAVE_MPI_LONG_LONG_INT=1 -D__HAS_MPI_INFO=1 -D__HAS_MPI_DARRAY_SUBARRAY=1 -DHAVE_WEAK_SYMBOLS=1 -DHAVE_PRAGMA_WEAK=1'
+USER_CFLAGS=''
+USER_FFLAGS=''
+MIPS='0'
+BITS='0'
+MPI='mpich'
+AR='ar crl'
+MPI_INCLUDE_DIR='/Net/pecos/puma/home/rbbrigh/cplant/src/dnsands/mpich-1.2.0/include'
+MPI_LIB=''
+NOF77='0'
+NOPROFILE='0'
+MAKE='make'
+PREFIX=''
+arch_IRIX=''
+ROMIO_HOME='/home/u/rbbrigh/cplant/src/new/top/compute/lib/mpi/romio'
+LIBNAME='/Net/pecos/puma/home/rbbrigh/cplant/src/dnsands/mpich-1.2.0/lib/libmpich.a'
+TEST_LIBNAME=''
+LL='\%ld'
+F77GETARG='call getarg(i,str)'
+F77IARGC='iargc()'
+FTESTDEFINE=''
+FORTRAN_MPI_OFFSET='integer*8'
+FROM_MPICH='1'
+NEEDS_MPI_FINT=''
+HAS_MPI_INFO='#define __HAS_MPI_INFO'
+BUILD_MPI_INFO=''
+HAS_MPI_DARRAY_SUBARRAY='#define __HAS_MPI_DARRAY_SUBARRAY'
+BUILD_MPI_ARRAY=''
+DEFINE_MPI_OFFSET='typedef long long MPI_Offset;'
+MPI_FINFO1='!'
+MPI_FINFO2='!'
+MPI_FINFO3='!'
+MPI_FINFO4='!'
+MPI_FARRAY1='!'
+MPI_FARRAY2='!'
+MPI_FARRAY3='!'
+MPI_FARRAY4='!'
+MPI_FARRAY5='!'
+MPI_FARRAY6='!'
+MPI_FARRAY7='!'
+MPI_OFFSET_KIND1='      INTEGER MPI_OFFSET_KIND'
+MPI_OFFSET_KIND2='      PARAMETER (MPI_OFFSET_KIND=8)'
+TEST_CC='/Net/pecos/puma/home/rbbrigh/cplant/src/dnsands/mpich-1.2.0/bin/mpicc'
+TEST_F77='/Net/pecos/puma/home/rbbrigh/cplant/src/dnsands/mpich-1.2.0/bin/mpif77'
+ROMIO_INCLUDE=''
+ROMIO_LFLAGS=''
+ROMIO_LIBLIST='-laio'
+ROMIO_TCFLAGS=''
+ROMIO_TCPPFLAGS=''
+ROMIO_TFFLAGS=''
+MPIRUN='/Net/pecos/puma/home/rbbrigh/cplant/src/dnsands/mpich-1.2.0/bin/mpirun'
+FORTRAN_TEST='fperf fcoll_test fmisc pfcoll_test'
+LIBS=''
+DEFS=' -D__INT_LT_POINTER=1 -D__HAVE_LONG_LONG_64=1 -D__HAVE_MPI_LONG_LONG_INT=1 -D__HAS_MPI_INFO=1 -D__HAS_MPI_DARRAY_SUBARRAY=1 -DHAVE_WEAK_SYMBOLS=1 -DHAVE_PRAGMA_WEAK=1'
+prefix=''
+exec_prefix=''
+prsub=''
+extrasub=''
+
+top_srcdir=$srcdir
+
+CONFIG_FILES=${CONFIG_FILES-"Makefile mpi-io/Makefile mpi2-other/info/Makefile mpi2-other/array/Makefile adio/common/Makefile test/Makefile test/misc.c test/large_file.c test/runtests util/romioinstall include/mpio.h include/mpiof.h"}
+for file in .. ${CONFIG_FILES}; do if test "x$file" != x..; then
+  srcdir=$top_srcdir
+  # Remove last slash and all that follows it.  Not all systems have dirname.
+  dir=`echo $file|sed 's%/[^/][^/]*$%%'`
+  if test "$dir" != "$file"; then
+    test "$top_srcdir" != . && srcdir=$top_srcdir/$dir
+    test ! -d $dir && mkdir $dir
+  fi
+  echo creating $file
+  rm -f $file
+  echo "# Generated automatically from `echo $file|sed 's|.*/||'`.in by configure." > $file
+  sed -e "
+$prsub
+$extrasub
+s%@VPATH@%$VPATH%g
+s%@RANLIB@%$RANLIB%g
+s%@CC@%$CC%g
+s%@F77@%$F77%g
+s%@HAS_WEAK_SYMBOLS@%$HAS_WEAK_SYMBOLS%g
+s%@srcdir@%$srcdir%g
+s%@ARCH@%$ARCH%g
+s%@FILE_SYSTEM@%$FILE_SYSTEM%g
+s%@CFLAGS@%$CFLAGS%g
+s%@USER_CFLAGS@%$USER_CFLAGS%g
+s%@USER_FFLAGS@%$USER_FFLAGS%g
+s%@MIPS@%$MIPS%g
+s%@BITS@%$BITS%g
+s%@MPI@%$MPI%g
+s%@AR@%$AR%g
+s%@MPI_INCLUDE_DIR@%$MPI_INCLUDE_DIR%g
+s%@MPI_LIB@%$MPI_LIB%g
+s%@NOF77@%$NOF77%g
+s%@NOPROFILE@%$NOPROFILE%g
+s%@MAKE@%$MAKE%g
+s%@PREFIX@%$PREFIX%g
+s%@arch_IRIX@%$arch_IRIX%g
+s%@ROMIO_HOME@%$ROMIO_HOME%g
+s%@LIBNAME@%$LIBNAME%g
+s%@TEST_LIBNAME@%$TEST_LIBNAME%g
+s%@LL@%$LL%g
+s%@F77GETARG@%$F77GETARG%g
+s%@F77IARGC@%$F77IARGC%g
+s%@FTESTDEFINE@%$FTESTDEFINE%g
+s%@FORTRAN_MPI_OFFSET@%$FORTRAN_MPI_OFFSET%g
+s%@FROM_MPICH@%$FROM_MPICH%g
+s%@NEEDS_MPI_FINT@%$NEEDS_MPI_FINT%g
+s%@HAS_MPI_INFO@%$HAS_MPI_INFO%g
+s%@BUILD_MPI_INFO@%$BUILD_MPI_INFO%g
+s%@HAS_MPI_DARRAY_SUBARRAY@%$HAS_MPI_DARRAY_SUBARRAY%g
+s%@BUILD_MPI_ARRAY@%$BUILD_MPI_ARRAY%g
+s%@DEFINE_MPI_OFFSET@%$DEFINE_MPI_OFFSET%g
+s%@MPI_FINFO1@%$MPI_FINFO1%g
+s%@MPI_FINFO2@%$MPI_FINFO2%g
+s%@MPI_FINFO3@%$MPI_FINFO3%g
+s%@MPI_FINFO4@%$MPI_FINFO4%g
+s%@MPI_FARRAY1@%$MPI_FARRAY1%g
+s%@MPI_FARRAY2@%$MPI_FARRAY2%g
+s%@MPI_FARRAY3@%$MPI_FARRAY3%g
+s%@MPI_FARRAY4@%$MPI_FARRAY4%g
+s%@MPI_FARRAY5@%$MPI_FARRAY5%g
+s%@MPI_FARRAY6@%$MPI_FARRAY6%g
+s%@MPI_FARRAY7@%$MPI_FARRAY7%g
+s%@MPI_OFFSET_KIND1@%$MPI_OFFSET_KIND1%g
+s%@MPI_OFFSET_KIND2@%$MPI_OFFSET_KIND2%g
+s%@TEST_CC@%$TEST_CC%g
+s%@TEST_F77@%$TEST_F77%g
+s%@ROMIO_INCLUDE@%$ROMIO_INCLUDE%g
+s%@ROMIO_LFLAGS@%$ROMIO_LFLAGS%g
+s%@ROMIO_LIBLIST@%$ROMIO_LIBLIST%g
+s%@ROMIO_TCFLAGS@%$ROMIO_TCFLAGS%g
+s%@ROMIO_TCPPFLAGS@%$ROMIO_TCPPFLAGS%g
+s%@ROMIO_TFFLAGS@%$ROMIO_TFFLAGS%g
+s%@MPIRUN@%$MPIRUN%g
+s%@FORTRAN_TEST@%$FORTRAN_TEST%g
+s%@LIBS@%$LIBS%g
+s%@DEFS@%$DEFS%
+" $top_srcdir/${file}.in >> $file
+fi; done
+
+
+exit 0

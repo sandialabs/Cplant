@@ -1,0 +1,105 @@
+#!/usr/bin/perl -w
+use strict;
+use FindBin;
+use lib "$FindBin::Bin/../perl";
+use C::Scan;
+
+die <<END_OF_USAGE unless @ARGV;
+$0: Usage:
+	$0 api.h < foo.idl > foo.c
+
+No options are avaible right now.
+
+END_OF_USAGE
+
+
+my ($header,$code,$footer) = split /^%%$/m, do { local $/; <STDIN> };
+$code =~ s/^\n//m;
+$code =~ s/\s*\\\n//gm;
+$footer =~ s/^\n//m;
+
+print $header;
+
+
+use vars qw/@args $func_name $ret_type $index/;
+
+my %values = (
+	index	=> 0,
+);
+
+
+for( @ARGV ) {
+	my $c = C::Scan->new(
+		filename	=> $_,
+		add_cppflags	=> '-D PTL_NO_WRAP -I ./include',
+	) or warn "$_: $@\n"
+		and next;
+
+	my $fdec = $c->get( 'parsed_fdecls' );
+
+	for my $func (@$fdec) {
+		my $code = $code;
+
+		@values{qw/ret_type func_name args full_text/} = @$func;
+
+		# Any line that begins with a leading @ will be evaluated as
+		# Perl code.  The environment will provide a few variables
+		# specific for this specific function.
+		$code =~ s/@(.*)$/
+			local @args		= @{$values{args}};
+			local $func_name	= $values{func_name};
+			local $ret_type		= $values{ret_type};
+			local $index		= $values{index};
+
+			join '', eval $1;
+		/meg;
+		
+
+		# Any line containing ${foo} will be expanded to contain
+		# the value of attribute foo.  Optionally, a subscript
+		# may be appended to get the type name.
+		$code =~ s{
+			\${			# Leading ${ is required
+				(.*?)		# Variable name
+				(?:\[(\d+)\])?	# Optional subscript
+			}			# Closing } is required
+		}{
+			if( exists $values{$1} ) {
+				if( defined $2 ) {
+					$values{$1}[$2][1];
+				} else {
+					$values{$1}
+				}
+			} else {
+				warn "Unknown variable '$1'\n";
+				'';
+			}
+		}megx;
+
+		$values{index}++;
+		print $code;
+	}
+}
+
+
+$footer =~ s/\${index}/$values{index}/g;
+print $footer if $footer;
+
+__END__
+=head1 NAME
+
+idl - Interface Description Generator
+
+=head1 USAGE
+
+idl api.h < foo.idl
+
+=head1 AUTHOR
+
+Tramm Hudson <hudson@swcp.com>
+
+=cut
+
+
+
+

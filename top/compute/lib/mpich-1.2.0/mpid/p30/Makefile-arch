@@ -1,0 +1,57 @@
+#
+# $Id: Makefile-arch,v 1.1.4.1 2002/04/09 17:16:38 galagun Exp $
+#
+
+include ../../../../../../Makefile-common
+
+CFLAGS      +=  -DFORTRANUNDERSCORE -DHAVE_MPICHCONF_H -DMPID_DEVICE_CODE
+
+ifeq ($(PMPI),yes)
+  CFLAGS  +=  -DMPI_BUILD_PROFILING
+endif
+
+
+INCLUDEDIRS  = -I.. -I/usr/include -I../../../include \
+               -I../../../src/coll \
+               -I$(CPLANT_TOP)/compute/OS/linux/include \
+               -I$(CPLANT_TOP)/compute/lib/p30/include \
+               -I$(CPLANT_TOP)/compute/OS/Myrinet/rtscts
+
+CSOURCES     = adi2recv.c adi2send.c adi2init.c adi2probe.c adi2ssend.c \
+               adi2hsend.c adi2hrecv.c adi2hssend.c adi2pack.c adi2mpack.c \
+               adi2req.c adi2cancel.c adi2hrsend.c adi2rsend.c \
+               tr2.c sbcnst2.c cmnargs.c queue.c \
+               p30init.c p30priv.c p30short.c p30debug.c \
+               p30long.c p30ready.c p30sshort.c p30recv.c 
+
+COBJECTS     = $(CSOURCES:.c=.o)
+
+LIBDIR       = ../../../$(CPLANT_ARCH)-$(OS)
+LIB          = $(LIBDIR)/libmpi.a
+
+all: $(LIB)
+
+$(LIB): $(LIBDIR) $(LIB)($(COBJECTS))
+
+$(LIBDIR):
+	@-mkdir $(LIBDIR)
+
+$(COBJECTS): %.o : ../%.c ../mpiddev.h
+	$(CC) $(CFLAGS) $(INCLUDEDIRS) -c $<
+
+../mpiddev.h: ../p30_default_long_msg.$(CPLANT_ARCH).h
+	rm -rf $@
+	ln -s p30dev.$(CPLANT_ARCH).h $@
+
+../p30_default_long_msg.$(CPLANT_ARCH).h: mpi_lsize
+	./mpi_lsize > $@
+
+mpi_lsize: ../mpi_lsize.c ../../../../p30/include/lib-p30.h ../../../../../OS/Myrinet/rtscts/Pkt_module.h ../../../../../OS/Myrinet/rtscts/RTSCTS_protocol.h ../../../../../OS/linux/include/asm/page.h
+	$(CC) $(CFLAGS) -o mpi_lsize ../mpi_lsize.c $(INCLUDEDIRS)
+
+install uninstall:
+	@$(MAKE) -C ../../../ $@
+
+clean:
+	@rm -f $(COBJECTS) $(LIB) ../mpiddev.h ../p30_default_long_msg.$(CPLANT_ARCH).h mpi_lsize
+

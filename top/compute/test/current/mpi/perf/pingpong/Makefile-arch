@@ -1,0 +1,34 @@
+#
+# $Id: Makefile-arch,v 1.1 2001/10/29 22:52:36 pumatst Exp $
+#
+
+include ../../../../../../../Makefile-common
+
+CC             = $(CPCC)
+FC             = $(CPF77)
+
+PINGSOURCES    = $(shell ls ../*.c)
+PINGEXECS      = $(notdir $(PINGSOURCES:.c=))
+
+include $(INCLUDES) 
+
+vpath %.c ..
+vpath %.a $(CPLANT_TOP)/lib/comm/$(CPLANT_ARCH)-$(OS):$(CPLANT_TOP)/lib/puma/$(CPLANT_ARCH)-$(OS)\
+          $(CPLANT_TOP)/compute/lib/apps/$(CPLANT_ARCH)-$(OS)
+
+EXECS          = $(PINGEXECS)
+
+INSTALLDIR     = $(testdir)
+INSTALLTARGETS = $(EXECS)
+
+all: $(EXECS)
+
+$(PINGEXECS) : % : ../%.c
+	$(CC) -o $@ $< -lmpi -lm 
+
+install uninstall: $(INSTALLTARGETS)
+	@$($@)
+
+clean:
+	-rm -f $(PINGEXECS)
+

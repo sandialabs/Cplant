@@ -1,0 +1,28 @@
+This is the server library, containing the communication and group
+formation routines used by bebopd, yod, pct etc.  It uses the Portals
+2 interface to the network.
+
+In 11/2000 the API was changed so that functions names are more
+consistent and so that none of the Portals 2 objects are exposed 
+to the caller.  (The caller previously had to know what a 
+PORTAL_INDEX and a CHAMELEON were.  These don't exist in Portals 3.)
+These changes were made because it makes a better library, and
+also so that the API for the Portals 3 version of the server library 
+will be the same.
+
+The script fixLibsrvrAPI in this directory converts codes that used
+the original API so that they use the new one.  Some things that may
+need to be fixed by hand:
+
+o Matchbit fields are unsigned long, not CHAMELEON.  The script will
+  change "CHAMELEON" to "unsigned long".  But if you were referencing
+  CHAMELEON fields in your code you need to rewrite that by hand.
+
+o The control_msg_handle fields differ in the Portals 3 version of the
+  library.  Use the accessor functions in srvr_comm_ctl.h to access the
+  fields.
+
+o Before passing a control_msg_handle structure to 
+  srvr_get_next_control_msg, clear it with SRVR_CLEAR_HANDLE.  (The
+  fields now may be used to select the next message to get, so
+  you don't want garbage in there.)

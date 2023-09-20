@@ -1,0 +1,2796 @@
+diff -Naurw origsrc/configure patched/configure
+--- origsrc/configure	Fri Dec 17 03:08:05 1999
++++ patched/configure	Wed Sep 22 21:14:07 1999
+@@ -3170,6 +3170,7 @@
+ choke me
+ #else
+ setresuid();
++setresgid();
+ #endif
+ 
+ ; return 0; }
+diff -Naurw origsrc/src/cmds/qstat.c patched/src/cmds/qstat.c
+--- origsrc/src/cmds/qstat.c	Fri Dec 17 03:08:06 1999
++++ patched/src/cmds/qstat.c	Wed Dec 15 00:31:06 1999
+@@ -370,6 +370,10 @@
+ 	char *nodect;
+ 	char *rqtimecpu;
+ 	char *rqtimewal;
++#ifdef CPLANT_SERVICE_NODE
++	char *rqsize;
++    int  totsize=0;
++#endif
+ 	char *jstate;
+ 	char *eltimecpu;
+ 	char *eltimewal;
+@@ -386,11 +390,19 @@
+ 			printf("%s", pc);
+ 		if (alt_opt & ALT_DISPLAY_R) {
+ 		 	printf("\n                                          Req'd  Req'd   Elap \n");
++#ifdef CPLANT_SERVICE_NODE
++			printf("Job ID          Username Queue    NDS TSK Nodes  Time  S Time   BIG  FAST   PFS\n");
++#else
+ 			printf("Job ID          Username Queue    NDS TSK Memory Time  S Time   BIG  FAST   PFS\n");
++#endif
+ 			printf("--------------- -------- -------- --- --- ------ ----- - ----- ----- ----- -----\n"); 
+ 		} else {
+ 			printf("\n                                                            Req'd  Req'd   Elap\n");
++#ifdef CPLANT_SERVICE_NODE
++			printf("Job ID          Username Queue    Jobname    SessID NDS TSK Nodes  Time  S Time\n");
++#else
+ 			printf("Job ID          Username Queue    Jobname    SessID NDS TSK Memory Time  S Time\n");
++#endif
+ 			printf("--------------- -------- -------- ---------- ------ --- --- ------ ----- - -----\n");
+ 		}
+ 	}
+@@ -401,6 +413,9 @@
+ 		tasks  = blank;
+ 		rqtimecpu = blank;
+ 		rqtimewal = blank;
++#ifdef CPLANT_SERVICE_NODE
++		rqsize = blank;
++#endif
+ 		eltimecpu = blank;
+ 		eltimewal = blank;
+ 		jstate    = blank;
+@@ -444,6 +459,10 @@
+ 					cnv_size(pat->value, alt_opt), SIZEL);
+ 			} else if (strcmp(pat->resource, "walltime") == 0) {
+ 				rqtimewal = pat->value;
++#ifdef CPLANT_SERVICE_NODE
++			} else if (strcmp(pat->resource, "size") == 0) {
++				rqsize = pat->value;
++#endif
+ 			} else if (strcmp(pat->resource, "cput") == 0) {
+ 				rqtimecpu = pat->value;
+ 				usecput = 1;
+@@ -473,12 +492,26 @@
+ 		    pat = pat->next;
+ 		}
+ 
++#ifdef CPLANT_SERVICE_NODE
++        if (rqsize != blank){
++           /*
++           ** Running and Exiting jobs are using compute nodes.
++           */
++           if ( (jstate[0] == 'R') || (jstate[0] == 'E')){
++              totsize += atoi(rqsize);
++           }
++        }
++#endif
+ 
+ 		printf("%-15.15s %-8.8s %-8.8s ", 
+ 			pstat->name, usern, queuen);
+ 		if (alt_opt & ALT_DISPLAY_R) {
+ 			printf("%3.3s %3.3s %6.6s %5.5s %1.1s %5.5s %5.5s %5.5s %5.5s\n", 
++#ifdef CPLANT_SERVICE_NODE
++                nodect, tasks, rqsize,
++#else
+ 				nodect, tasks, rqmem, 
++#endif
+ 				usecput ? rqtimecpu : rqtimewal,
+ 				jstate, 
+ 				usecput ? eltimecpu : eltimewal,
+@@ -486,7 +519,11 @@
+ 		} else {
+ 			printf("%-10.10s %6.6s %3.3s %3.3s %6.6s %5.5s %1.1s %5.5s\n",
+ 				jobn, sess, nodect, tasks, 
++#ifdef CPLANT_SERVICE_NODE
++                rqsize,
++#else
+ 				rqmem,
++#endif
+ 				usecput ? rqtimecpu : rqtimewal,
+ 				jstate, 
+ 				usecput ? eltimecpu : eltimewal);
+@@ -504,6 +541,11 @@
+ 
+ 		pstat = pstat->next;
+ 	}
++#ifdef CPLANT_SERVICE_NODE
++    if (totsize > 0){
++        printf("\nTotal compute nodes allocated: %d\n",totsize);
++    }
++#endif
+ }
+ 
+ /*
+@@ -732,7 +774,11 @@
+                         }
+                         owner = a->value;
+                     } else if ( strcmp(a->name,ATTR_used) == 0 ) {
++#ifdef CPLANT_SERVICE_NODE
++                        if ( strcmp(a->resource, "walltime") == 0 ) {
++#else
+                         if ( strcmp(a->resource, "cput") == 0 ) {
++#endif
+                             l = strlen(a->value);
+                             if ( l > TIMEUL ) {
+                                 c = a->value + TIMEUL;
+diff -Naurw origsrc/src/cmds/qsub.c patched/src/cmds/qsub.c
+--- origsrc/src/cmds/qsub.c	Fri Dec 17 03:08:06 1999
++++ patched/src/cmds/qsub.c	Wed Sep 22 21:07:19 1999
+@@ -468,8 +468,13 @@
+         strcat(job_env, ",PBS_O_TZ=");
+         strcat(job_env, c);
+     }
++#ifdef CPLANT_SERVICE_NODE
++    if ((rc = gethostbypeer(host, PBS_MAXHOSTNAME+1, pbs_default())) == 0){
++        {
++#else
+     if ((rc = gethostname(host, PBS_MAXHOSTNAME+1)) == 0 ) {
+         if ( (rc = get_fullhostname(host, host, PBS_MAXHOSTNAME)) == 0 ) {
++#endif
+                 strcat(job_env, ",PBS_O_HOST=");
+                 strcat(job_env, host);
+         }
+diff -Naurw origsrc/src/include/net_connect.h patched/src/include/net_connect.h
+--- origsrc/src/include/net_connect.h	Fri Dec 17 03:08:06 1999
++++ patched/src/include/net_connect.h	Wed Sep 22 21:07:19 1999
+@@ -118,6 +118,11 @@
+ void net_add_close_func A_((int, void(*)()));
+ void net_set_type A_((enum conn_type, enum conn_type));
+ 
++#ifdef CPLANT_SERVICE_NODE
++int gethostbypeer A_((char *myhostname, int len, char *peername));
++#endif
++
++
+ 
+ struct connection {
+ 	pbs_net_t	cn_addr;	/* internet address of client */
+diff -Naurw origsrc/src/lib/Libcmds/prepare_path.c patched/src/lib/Libcmds/prepare_path.c
+--- origsrc/src/lib/Libcmds/prepare_path.c	Fri Dec 17 03:08:06 1999
++++ patched/src/lib/Libcmds/prepare_path.c	Wed Sep 22 21:07:19 1999
+@@ -126,7 +126,12 @@
+ 
+ /* get full host name */
+     if ( host_name[0] == '\0' ) {
++#ifdef CPLANT_SERVICE_NODE
++        if ( gethostbypeer(host_name, PBS_MAXSERVERNAME, pbs_default()) != 0 )
++              return 2;
++#else
+         if ( gethostname(host_name, PBS_MAXSERVERNAME) != 0 ) return 2;
++#endif
+     }
+     if ( get_fullhostname(host_name, host_name, PBS_MAXSERVERNAME) != 0 ) return 2;
+ 
+diff -Naurw origsrc/src/lib/Liblog/chk_file_sec.c patched/src/lib/Liblog/chk_file_sec.c
+--- origsrc/src/lib/Liblog/chk_file_sec.c	Fri Dec 17 03:08:07 1999
++++ patched/src/lib/Liblog/chk_file_sec.c	Fri Oct  8 17:28:19 1999
+@@ -97,6 +97,7 @@
+ 	char   shorter[_POSIX_PATH_MAX];
+ 	char   symlink[_POSIX_PATH_MAX];
+ 	
++#ifndef CPLANT_SERVICE_NODE
+ 	if ((*path == '/') && fullpath) {
+ 
+ 	    /* check full path starting at root */
+@@ -116,6 +117,7 @@
+ 		}
+ 	    }
+ 	}
++#endif
+ 
+ 	if (lstat(path, &sbuf) == -1) {
+ 		rc = errno;
+diff -Naurw origsrc/src/lib/Liblog/pbs_log.c patched/src/lib/Liblog/pbs_log.c
+--- origsrc/src/lib/Liblog/pbs_log.c	Fri Dec 17 03:08:07 1999
++++ patched/src/lib/Liblog/pbs_log.c	Wed Sep 22 21:07:19 1999
+@@ -264,7 +264,11 @@
+ 	}
+ 
+ 	rc = fprintf(logfile,
++#ifdef CPLANT_SERVICE_NODE
++		"%02d/%02d/%04d %02d:%02d:%02d;%04x;%15.15s;%s;%s;%s\n",
++#else
+ 		"%02d/%02d/%04d %02d:%02d:%02d;%04x;%10.10s;%s;%s;%s\n",
++#endif
+ 		ptm->tm_mon+1, ptm->tm_mday, ptm->tm_year+1900,
+ 		ptm->tm_hour, ptm->tm_min, ptm->tm_sec,
+ 		eventtype & ~PBSEVENT_FORCE,
+diff -Naurw origsrc/src/lib/Libnet/Makefile.in patched/src/lib/Libnet/Makefile.in
+--- origsrc/src/lib/Libnet/Makefile.in	Fri Dec 17 03:08:07 1999
++++ patched/src/lib/Libnet/Makefile.in	Wed Jan 26 22:11:00 2000
+@@ -73,6 +73,8 @@
+ OBJS = net_server.o net_client.o get_hostname.o get_hostaddr.o \
+        net_set_clse.o rm.o md5.o
+ 
++OBJS += gethostbypeer.o node_is_alive.o
++
+ @mk_lib@
+ @mk_cleanup@
+ @mk_tail@
+diff -Naurw origsrc/src/lib/Libnet/gethostbypeer.c patched/src/lib/Libnet/gethostbypeer.c
+--- origsrc/src/lib/Libnet/gethostbypeer.c	Thu Jan  1 00:00:00 1970
++++ patched/src/lib/Libnet/gethostbypeer.c	Thu Nov 11 20:10:08 1999
+@@ -0,0 +1,113 @@
++#include <string.h>
++#include <stdio.h>
++#include <ctype.h>
++#include <errno.h>
++#include <pbs_ifl.h>
++/*
++** Cplant service nodes are on more than one network.  Calls to
++** gethostname may likely not return the host name we need.  Given
++** the hostname of one of our peers on a network, We can use
++** "ping -R" to determine our own hostname on that network.
++**
++** In particular: PBS clients and daemons know the name of the
++** host on which the PBS server is running.  It's in a global
++** configuration file and is returned by pbs_default().  PBS
++** clients and daemons provide their host name in requests to
++** the server and this name is used for authentication and other
++** purposes.  It must be the host name of the client machine
++** on the network connecting all service nodes.  By pinging the node
++** on which the PBS server is running, we can determine our
++** hostname on this network and include it in our requests.
++**
++** This routine should replace all calls to gethostname() in the
++** PBS source code.  Sorry.
++**
++** Returns 0 if hostname is found, -1 otherwise.
++*/
++
++#define BUFSZ 256
++
++/*
++** we ping the host once and request routing information, this gives
++** us our host name on this network
++*/
++static char *cmdstr="ping -c 1 -R %s";
++static char cmd[BUFSZ];
++
++/*
++** If ping output is changed, we'll have to change how we
++** search for reference to our name/addr.  Now it displays:
++**    RR:   host-name   (ip addr)
++*/
++static char *routestart="RR:";
++
++int
++gethostbypeer(char *myhostname, int len, char *peername)
++{
++FILE *pcmd;
++char buf[BUFSZ], *p, *p2, *p3;
++int status;
++
++    status = 0;
++
++    if ( (len < 1) ||
++         ((strlen(cmdstr) + strlen(peername)) > BUFSZ) ){
++        errno = EINVAL;
++        return -1;
++    }
++    if (!myhostname){
++        errno = EFAULT;
++        return -1;
++    }
++    if (!peername){
++        return -1;
++    }
++
++    myhostname[0] = 0;
++
++    sprintf(cmd, cmdstr, peername);
++
++    pcmd = popen(cmd, "r");
++
++    if (pcmd == NULL){
++        return -1;
++    }
++    while (fgets(buf, BUFSZ, pcmd)){
++        if (p = strstr(buf, routestart)){
++           p += strlen(routestart);      /* skip the route label */
++
++           while(isblank((int)*p)) p++;  /* skip subsequent blanks */
++
++           if (!isalpha(*p)){
++	      break;                     /* no host name, too bad */
++           }
++           p2 = myhostname;
++           p3 = p2 + len;
++
++           while(*p && !(isspace(*p))){
++               if (p2 == p3){
++                   errno = EINVAL;
++                   status = -1;
++                   break;
++               } 
++               *p2++ = *p++;
++           }
++           *p2 = 0;
++
++           if (!strcmp(myhostname, "localhost")){  /* I ping'ed myself */
++               if (len > strlen(peername)){
++                   strcpy(myhostname, peername);
++               }
++               else{
++                   errno = EINVAL;
++                   status = -1;
++               }
++           }
++           break;
++        }
++    }
++
++    pclose(pcmd);
++
++    return status;
++}
+diff -Naurw origsrc/src/lib/Libnet/node_is_alive.c patched/src/lib/Libnet/node_is_alive.c
+--- origsrc/src/lib/Libnet/node_is_alive.c	Thu Jan  1 00:00:00 1970
++++ patched/src/lib/Libnet/node_is_alive.c	Thu Jan 27 02:34:36 2000
+@@ -0,0 +1,97 @@
++#include <string.h>
++#include <stdio.h>
++#include <unistd.h>
++#include <time.h>
++#include <signal.h>
++#include <sys/types.h>
++#include <sys/wait.h>
++#include <netinet/in.h>
++
++/*
++** The PBS daemons can hang indefinitely when trying to
++** contact a node which has crashed.  We need them to check
++** first to see if the node is alive.
++**
++** Return 1 if the node responds, 0 otherwise.
++*/
++
++static time_t timeout = 5;   /* wait this long for a ping */
++
++int
++addr_is_alive(long addr)
++{
++char *fields;
++char ipaddr[32];
++long naddr;
++
++    fields = (char *)naddr;
++
++    /*
++    ** this probably should be made independent of architecture
++    */
++
++    snprintf(ipaddr, 31, "%d.%d.%d.%d",fields[3],fields[2],fields[1],fields[0]);
++
++    return (node_is_alive(ipaddr));
++}
++int
++node_is_alive(char *hostname)
++{
++char pingcmd[128];
++int aok, rc, c;
++pid_t pid;
++time_t t1;
++FILE *fp;
++ 
++    aok = 1;
++
++    sprintf(&pingcmd[0],"rsh %s\n",hostname);
++ 
++    pid = fork();
++ 
++    if (pid == -1){
++        aok = 0;
++    }
++    else if (pid == 0){  /* try to reach node, but don't wait forever */
++
++        freopen("/dev/null", "w", stdout);
++        freopen("/dev/null", "w", stderr);
++        freopen("/dev/null", "w", stdin);
++ 
++        fp = popen(pingcmd, "r");
++ 
++        pclose(fp);   /* close will hang if node is unreachable */
++ 
++        exit(0);
++ 
++    }
++    else{
++ 
++        t1 = time(NULL);
++ 
++        while (1){
++            rc = waitpid(pid, NULL, WNOHANG);
++ 
++            if (rc == pid){  /* command is done */
++                break;
++            }
++ 
++            if (rc < 0){
++               aok = 0;
++               break;
++            }
++ 
++            if ((time(NULL) - t1) > timeout){
++ 
++               if (aok == 0) break; /* already killed it */
++ 
++               kill(pid, SIGKILL);  /* timed out waiting */
++               aok = 0;
++               t1 = time(NULL);   /* now wait for killed process */
++               timeout = 4;
++            }
++        }
++ 
++    }
++    return aok;
++}
+diff -Naurw origsrc/src/lib/Libnet/rm.c patched/src/lib/Libnet/rm.c
+--- origsrc/src/lib/Libnet/rm.c	Fri Dec 17 03:08:07 1999
++++ patched/src/lib/Libnet/rm.c	Wed Jan 26 00:05:05 2000
+@@ -83,6 +83,7 @@
+ 
+ static	int	full = 1;
+ 
++
+ /*
+ **	This is the structure used to keep track of the resource
+ **	monitor connections.  Each entry is linked into as list
+@@ -376,6 +377,7 @@
+ closerm(stream)
+      int	stream;
+ {
++
+ 	pbs_errno = 0;
+ 	(void)simplecom(stream, RM_CMD_CLOSE);
+ 	if (delrm(stream) == -1) {
+@@ -419,10 +421,18 @@
+ 		return -1;
+ 	op->len = -1;
+ 
++#ifdef CPLANT_SERVICE_NODE
++	if ( ((file[0] != '/') && (file[0] != '#')) || 
++         (len = strlen(file)) > (size_t)MAXPATHLEN) {
++		pbs_errno = EINVAL;
++		return -1;
++	}
++#else
+ 	if (file[0] != '/' || (len = strlen(file)) > (size_t)MAXPATHLEN) {
+ 		pbs_errno = EINVAL;
+ 		return -1;
+ 	}
++#endif
+ 
+ 	if (startcom(stream, RM_CMD_CONFIG) != DIS_SUCCESS)
+ 		return -1;
+@@ -556,6 +566,7 @@
+ 	struct	out	*op;
+ 	int	ret;
+ 
++
+ 	pbs_errno = 0;
+ 	if ((op = findout(stream)) == NULL)
+ 		return NULL;
+@@ -604,6 +615,7 @@
+ 			}
+ 		}
+ 	}
++
+ 	return startline;
+ }
+ 
+diff -Naurw origsrc/src/resmom/catch_child.c patched/src/resmom/catch_child.c
+--- origsrc/src/resmom/catch_child.c	Fri Dec 17 03:08:08 1999
++++ patched/src/resmom/catch_child.c	Sat Nov 27 21:39:31 1999
+@@ -79,6 +79,12 @@
+ #include "mom_func.h"
+ #include "pbs_error.h"
+ 
++#ifdef CPLANT_SERVICE_NODE
++#include <time.h>
++
++extern int kill_parallel_apps(job *pjob);
++#endif
++
+ static char ident[] = "@(#) $RCSfile: cplantPatch,v $ $Revision: 1.5 $";
+ 
+ /* External Functions */
+@@ -413,6 +419,28 @@
+ 			job_purge(pjob);
+ 			continue;
+ 		}
++#ifdef CPLANT_SERVICE_NODE
++        {
++            time_t now;
++            struct tm *ptm;
++
++            now = time((time_t *)0);
++            ptm = localtime(&now);
++
++            (void)sprintf(log_buffer, 
++               ">>> %02d/%02d/%04d %02d:%02d:%02d; Your job script has terminated. <<<",
++                ptm->tm_mon+1, ptm->tm_mday, ptm->tm_year+1900,
++                ptm->tm_hour, ptm->tm_min, ptm->tm_sec);
++
++            (void)message_job(pjob, StdErr, log_buffer);
++
++            (void)sprintf(log_buffer, 
++                ">>> PBS will now reset any compute nodes still in use by your PBS job. <<<");
++            (void)message_job(pjob, StdErr, log_buffer);
++
++            kill_parallel_apps(pjob);
++        }
++#endif
+ 
+ 		/*
+ 		** At this point, we know we are Mother Superior for this
+diff -Naurw origsrc/src/resmom/linux/mom_mach.c patched/src/resmom/linux/mom_mach.c
+--- origsrc/src/resmom/linux/mom_mach.c	Fri Dec 17 03:08:10 1999
++++ patched/src/resmom/linux/mom_mach.c	Sat Nov 27 00:47:33 1999
+@@ -819,6 +819,55 @@
+  *	Otherwise, return FALSE.
+  */
+ 
++#ifdef CPLANT_SERVICE_NODE
++
++extern long cplantGracePeriod;
++
++int mom_over_limit(pjob)
++    job			*pjob;
++{
++	char		*id = "mom_over_limit";
++	char		*pname;
++	int		retval;
++	unsigned long	value, num;
++	resource	*pres;
++
++    if (cplantGracePeriod < 0){
++        return(FALSE);   /* we never kill jobs over limit */
++    }
++
++	assert(pjob != NULL);
++	assert(pjob->ji_wattr[(int)JOB_ATR_resource].at_type == ATR_TYPE_RESC);
++	pres = (resource *)
++	    GET_NEXT(pjob->ji_wattr[(int)JOB_ATR_resource].at_val.at_list);
++
++	for ( ; pres != NULL; pres = (resource *)GET_NEXT(pres->rs_link)) {
++		assert(pres->rs_defin != NULL);
++		pname = pres->rs_defin->rs_name;
++		assert(pname != NULL);
++		assert(*pname != '\0');
++
++		if (strcmp(pname, "walltime") == 0) {
++			retval = gettime(pres, &value);
++			if (retval != PBSE_NONE)
++				continue;
++			num = (unsigned long)((double)(time_now - pjob->ji_qs.ji_stime) * wallfactor);
++
++			if (num > (value + cplantGracePeriod)) {
++                sprintf(log_buffer, 
++                    "walltime used (%02d:%02d:%02d) exceeds limit (%02d:%02d:%02d)",
++                    num/3600, (num%3600)/60, num%60,
++                    value/3600, (value%3600)/60, value%60);
++
++				return (TRUE);
++			}
++		}
++	}
++
++	return (FALSE);
++}
++
++#else
+ int mom_over_limit(pjob)
+     job			*pjob;
+ {
+@@ -894,6 +943,7 @@
+ 
+ 	return (FALSE);
+ }
++#endif
+ 
+ /*
+  * Update the job attribute for resources used.
+@@ -1665,6 +1715,7 @@
+ ncpus(attrib)
+ struct	rm_attribute	*attrib;
+ {
++
+ 	char		*id = "ncpus", label[128];
+ 	FILE		*fp;
+ 	int		procs;
+diff -Naurw origsrc/src/resmom/mom_main.c patched/src/resmom/mom_main.c
+--- origsrc/src/resmom/mom_main.c	Fri Dec 17 03:08:08 1999
++++ patched/src/resmom/mom_main.c	Wed Jan 26 21:34:04 2000
+@@ -109,6 +109,13 @@
+ 
+ /* Global Data Items */
+ 
++#ifdef CPLANT_SERVICE_NODE
++long          cplantGracePeriod = 0;
++char          killBadCplantJobs = 0;
++long          cplant_waiting_jobs = 1;
++static long   prev_waiting_jobs = 0;
++#endif
++
+ double		cputfactor = 1.00;
+ time_t		loopcnt;		/* used for MD5 calc */
+ unsigned int	default_server_port;
+@@ -523,6 +530,23 @@
+ 	}
+ 	return 1;
+ }
++#ifdef CPLANT_SERVICE_NODE
++static u_long
++cplant_grace(value)
++	char 	*value;
++{
++	static char	id[] = "cplant_grace";
++
++	log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, id, value);
++
++	if ((cplantGracePeriod = atoi(value)) < 0)
++		killBadCplantJobs = 0;
++    else{
++		killBadCplantJobs = 1;
++    }
++	return 1;
++}
++#endif
+ 
+ static u_long
+ cputmult(value)
+@@ -606,6 +630,9 @@
+ 		{ "cputmult",	cputmult },
+ 		{ "wallmult",	wallmult },
+ 		{ "usecp",	usecp },
++#ifdef CPLANT_SERVICE_NODE
++		{ "cplant_grace",	cplant_grace},
++#endif
+ 		{ NULL, NULL }
+ 	};
+ 
+@@ -1142,6 +1169,7 @@
+ 				}
+ 				alarm(0);
+ 			}
++
+ 			free(cp);
+ 			ret = diswst(iochan, output);
+ 			if (ret != DIS_SUCCESS) {
+@@ -1150,6 +1178,7 @@
+ 					dis_emsg[ret]);
+ 				goto bad;
+ 			}
++
+ 		}
+ 		break;
+ 
+@@ -1159,7 +1188,9 @@
+ 			goto bad;
+ 		}
+ 
++#ifndef CPLANT_SERVICE_NODE
+ 		log_record(PBSEVENT_SYSTEM, 0, id, "configure");
++#endif
+ 		body = disrst(iochan, &ret);
+ 		if (ret == DIS_EOD)
+ 			body = NULL;
+@@ -1169,7 +1200,30 @@
+ 				dis_emsg[ret]);
+ 			goto bad;
+ 		}
++
++#ifdef CPLANT_SERVICE_NODE
++        /* special cplant configuration messages from scheduler */
++
++        if (body && (body[0] == '#')){
++            if (!(strcmp(body+1, "WAITINGJOBS"))){
++                cplant_waiting_jobs = 1;
++                if (cplant_waiting_jobs != prev_waiting_jobs){
++		            log_record(PBSEVENT_SYSTEM, 0, id, "there are waiting jobs");
++                    prev_waiting_jobs = cplant_waiting_jobs;
++                }
++            }
++            else if (!(strcmp(body+1,"EMPTYQUEUES"))){
++                cplant_waiting_jobs = 0;
++                if (cplant_waiting_jobs != prev_waiting_jobs){
++		            log_record(PBSEVENT_SYSTEM, 0, id, "there are no waiting jobs");
++                    prev_waiting_jobs = cplant_waiting_jobs;
++                }
++            }
++        }
++		len = 0;
++#else
+ 		len = read_config(body);
++#endif
+ 
+ 		ret = diswsi(iochan, len ? RM_RSP_ERROR : RM_RSP_OK);
+ 		if (ret != DIS_SUCCESS) {
+@@ -1408,6 +1462,89 @@
+ 	DBPRT(("%s: processed %d\n", id, c))
+ 	return;
+ }
++#ifdef CPLANT_SERVICE_NODE
++/*
++ *  As far as PBS is concerned, the PBS job is the job script.  It is
++ *  not aware of parallel applications started by the job script.  The
++ *  PBS function kill_job() kills the job script, which does not kill
++ *  the parallel applications.
++ *
++ *  PCTs know the PBS job ID of the application process they are hosting.
++ *  We can send a general request to all PCTs to kill the processes that
++ *  are members of this PBS job.
++ *
++ *  Errors are ignored for now.  We always return 0.
++ */
++
++#include <sys/wait.h>
++
++int kill_parallel_apps(pjob)
++    job		*pjob;
++{
++    int pbsJobId;
++    int pid, rc;
++    int status;
++    time_t tnow; 
++    time_t tlimit=5;
++    extern char **environ;
++
++	log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB,
++		pjob->ji_qs.ji_jobid, "kill_parallel_apps");
++ 
++    pbsJobId = atoi(pjob->ji_qs.ji_jobid);
++
++    if ((pbsJobId < 0) || (pbsJobId > PBS_SEQNUMTOP)){
++         log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB,
++                pjob->ji_qs.ji_jobid, "kill_parallel_apps: invalid PBS job id");
++         return 0;
++    }
++    sprintf(log_buffer,
++       "/cplant/sbin/pingd -NoInquire -reset -pbs %d &> /dev/null",pbsJobId);
++
++    pid = fork();
++
++    if (pid == -1){
++         log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB,
++                pjob->ji_qs.ji_jobid, "kill_parallel_apps: fork failed");
++         return 0;
++    }
++    if (pid == 0){
++        char *argv[4];
++        argv[0] = "/bin/sh";
++        argv[1] = "-c";
++        argv[2] = log_buffer;
++        argv[3] = 0;
++        execve("/bin/sh", argv, environ);
++        exit(127);
++    }
++    else{
++        tnow = time(NULL);
++
++        while (1){
++            rc = waitpid(pid, NULL, WNOHANG);
++
++            if (rc == pid) break;
++
++            if (rc < 0){
++                 log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB,
++                        pjob->ji_qs.ji_jobid, "kill_parallel_apps: waitpid error");
++                 break; 
++            }
++
++            if ((time(NULL) - tnow) > tlimit){
++                 log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB,
++                        pjob->ji_qs.ji_jobid, "kill_parallel_apps: pingd time out");
++                 kill(pid, SIGKILL);
++                 continue;
++            }
++        }
++    }
++
++    log_buffer[0] = '\0';
++
++    return 0;
++}
++#endif
+ 
+ /*
+  *	Kill a job.
+@@ -1834,7 +1971,9 @@
+ 		(void)strcpy(log_buffer, "pbs_mom: Unable to open lock file\n");
+ 		return (1);
+ 	} 
++#ifndef CPLANT_REMOTE_WORKING_DIR
+ 	mom_lock(lockfds, F_WRLCK);	/* See if other MOMs are running */
++#endif
+ 
+ 	/* initialize the network interface */
+ 
+@@ -1869,7 +2008,9 @@
+ 
+ 
+ #ifndef DEBUG
++#ifndef CPLANT_REMOTE_WORKING_DIR
+ 	mom_lock(lockfds, F_UNLCK);	/* unlock so child can relock */
++#endif
+ 
+ 	 if (fork() > 0)
+ 		return (0);	/* parent goes away */
+@@ -1878,7 +2019,9 @@
+ 		log_err(errno, msg_daemonname, "setsid failed");
+ 		return (2);
+ 	}
++#ifndef CPLANT_REMOTE_WORKING_DIR
+ 	mom_lock(lockfds, F_WRLCK);	/* lock out other MOMs */
++#endif
+ 	
+ 	(void)fclose(stdin);
+ 	(void)fclose(stdout);
+@@ -1981,10 +2124,30 @@
+ 	CLEAR_HEAD(mom_polljobs);
+ 	CLEAR_HEAD(svr_requests);
+ 
++#ifdef CPLANT_SERVICE_NODE
++       if ((c = gethostbypeer(mom_host, PBS_MAXHOSTNAME, pbs_default())) == 0) {
++	   FILE *fp;
++	   int physnid, rc;
++
++           (void)strcpy(mom_short_name, mom_host);
++
++           fp = popen("/cplant/sbin/getNid", "r");
++
++	   rc = fscanf(fp, "%d", &physnid);
++	   if ((rc != 1) || (physnid<0) ||(physnid>999999)){
++	       sprintf(pbs_current_user,"pbs_mom");
++	   }
++	   else{
++	       sprintf(pbs_current_user,"pbs_mom_%d",physnid);
++	   }
++	   pclose(fp);
++        }
++#else
+ 	if ((c = gethostname(mom_host, PBS_MAXHOSTNAME)) == 0) {
+ 		(void)strcpy(mom_short_name, mom_host);
+ 		c = get_fullhostname(mom_host, mom_host, PBS_MAXHOSTNAME);
+ 	}
++#endif
+ 	if (c == -1) {
+ 		log_err(-1, msg_daemonname, "Unable to get my host name");
+ 		return (-1);
+@@ -2017,7 +2180,12 @@
+ 
+ 	localaddr = addclient("localhost");
+ 	(void)addclient(mom_host);
++
++#ifdef CPLANT_SERVICE_NODE
++        strncpy(ret_string, mom_host, ret_size);
++#else
+ 	if (gethostname(ret_string, ret_size) == 0)
++#endif
+ 		(void)addclient(ret_string);
+ 
+ 	if (read_config(NULL)) {
+@@ -2141,7 +2309,13 @@
+ 			}
+ 
+ 			log_buffer[0] = '\0';
+-			if (job_over_limit(pjob)) {
++
++#ifdef CPLANT_SERVICE_NODE
++			if (killBadCplantJobs && cplant_waiting_jobs && job_over_limit(pjob) )
++#else
++			if (job_over_limit(pjob)) 
++#endif
++             {
+ 				log_record(PBSEVENT_JOB | PBSEVENT_FORCE,
+ 					PBS_EVENTCLASS_JOB,
+ 		  			pjob->ji_qs.ji_jobid, log_buffer);
+@@ -2155,9 +2329,28 @@
+ 						"=>> PBS: job killed: %s\n",
+ 						log_buffer);
+ 					message_job(pjob, StdErr, kill_msg);
++
++#ifdef CPLANT_SERVICE_NODE
++                    /*
++                    ** PBS interactive jobs: The SIGTERM sent by the kill_job request
++                    ** below will not terminate the command shell, although it will be
++                    ** taken by any current yod process begun by the shell.  It may be
++                    ** a few minutes before the SIGKILL (above) gets sent and the command
++                    ** shell finally terminates.  Any parallel app started will be killed
++                    ** by kill_parallel_apps() at that point in time.
++                    */
++
++                    if ( (pjob->ji_wattr[(int)JOB_ATR_interactive].at_flags & ATR_VFLAG_SET)
++                      && (pjob->ji_wattr[(int)JOB_ATR_interactive].at_val.at_long != 0) ){
++
++                       message_job(pjob, StdErr, 
++                       ">>> Do do not start any Cplant applications with yod.  <<<");
++                       message_job(pjob, StdErr, 
++                       ">>> This command shell will terminate shortly.  <<<");
++                    }
++#endif
+ 					free(kill_msg);
+ 				}
+-
+ 				(void)kill_job(pjob, SIGTERM);
+ 				pjob->ji_qs.ji_svrflags |= JOB_SVFLG_OVERLMT1;
+ 			}
+diff -Naurw origsrc/src/resmom/requests.c patched/src/resmom/requests.c
+--- origsrc/src/resmom/requests.c	Fri Dec 17 03:08:08 1999
++++ patched/src/resmom/requests.c	Sat Nov 27 22:02:56 1999
+@@ -711,6 +711,19 @@
+ 		req_reject(PBSE_UNKSIG, 0, preq);
+ 		return;
+ 	}
++#ifdef CPLANT_SERVICE_NODE
++    /*
++    ** Let's kill the parallel applications first, before killing the
++    ** PBS job.  This is so application completion messages make it
++    ** into the job output and the user has some idea of what happened.
++    **
++    ** We'll kill apps again after the script terminates.  This will
++    ** kill any apps started in the window between now and script
++    ** termination.
++    */
++    kill_parallel_apps(pjob);
++    sleep(1);
++#endif
+ 			
+ 	if ((kill_job(pjob, sig) == 0) && (sig == 0)) {
+ 		/* SIGNUL and no procs found, force job to exiting */
+diff -Naurw origsrc/src/resmom/start_exec.c patched/src/resmom/start_exec.c
+--- origsrc/src/resmom/start_exec.c	Fri Dec 17 03:08:08 1999
++++ patched/src/resmom/start_exec.c	Fri Oct  8 23:00:14 1999
+@@ -468,6 +468,9 @@
+ 	struct	array_strings	*vstrs;
+ 	struct	stat		sb;
+ 	struct	sockaddr_in	saddr;
++#ifdef CPLANT_SERVICE_NODE
++    long    allocated_nodes;
++#endif
+ 
+ 	if ( pjob->ji_numnodes > 1 ) {
+ 		/*
+@@ -505,6 +508,26 @@
+ 	if (presc != NULL) 
+ 		pjob->ji_flags |= MOM_HAS_NODEFILE;
+ 
++#ifdef CPLANT_SERVICE_NODE
++    /*
++    ** Locate the "size" value for the job.  This is the number of compute 
++    ** nodes allocated to the job.
++    */
++	prd = find_resc_def(svr_resc_def, "size", svr_resc_size);
++	presc = find_resc_entry(pattr, prd);
++	if (presc == NULL) {
++        (void)sprintf(log_buffer, "size (compute nodes allocated) value not set");
++        exec_bail(pjob, JOB_EXEC_FAIL1);
++        return;
++    }
++    allocated_nodes = presc->rs_value.at_val.at_long;
++    
++    if ((allocated_nodes < 0) || (allocated_nodes > 10000)){
++        (void)sprintf(log_buffer, "size = %d ???",allocated_nodes);
++        exec_bail(pjob, JOB_EXEC_FAIL1);
++        return;
++    }
++#endif
+ 	/*
+ 	 * get the password entry for the user under which the job is to be run
+ 	 * we do this now to save a few things in the job structure
+@@ -932,7 +955,10 @@
+ 		}
+ 		fclose(nhow);
+ 	}
+-
++#ifdef CPLANT_SERVICE_NODE
++    sprintf(buf, "%d", allocated_nodes);
++    bld_env_variables(&vtable, "PBS_NNODES", buf);
++#endif
+ 
+ 	/* specific system related variables */
+ 
+diff -Naurw origsrc/src/scheduler.cc/pbs_sched.c patched/src/scheduler.cc/pbs_sched.c
+--- origsrc/src/scheduler.cc/pbs_sched.c	Fri Dec 17 03:08:12 1999
++++ patched/src/scheduler.cc/pbs_sched.c	Wed Jan 26 00:06:59 2000
+@@ -604,10 +604,34 @@
+ 		exit(1);
+ 	}
+ 
++#ifdef CPLANT_SERVICE_NODE
++       if (gethostbypeer(host, sizeof(host), pbs_default()) == -1) {
++               log_err(errno, id, "gethostbypeer");
++               die(0);
++       }
++       else{
++           FILE *fp;
++           int physnid, rc;
++ 
++           fp = popen("/cplant/sbin/getNid", "r");
++ 
++           rc = fscanf(fp, "%d", &physnid);
++
++           if ((rc != 1) || (physnid<0) ||(physnid>999999)){
++               sprintf(pbs_current_user,"scheduler");
++           }
++           else{
++               sprintf(pbs_current_user,"sched_%d",physnid);
++           }
++           pclose(fp);
++       }
++
++#else
+ 	if (gethostname(host, sizeof(host)) == -1) {
+ 		log_err(errno, id, "gethostname");
+ 		die(0);
+ 	}
++#endif
+ 	if ((hp =gethostbyname(host)) == NULL) {
+ 		log_err(errno, id, "gethostbyname");
+ 		die(0);
+@@ -646,7 +670,9 @@
+ 		log_err(errno, id, "open lock file");
+ 		exit(1);
+ 	}
++#ifndef CPLANT_REMOTE_WORKING_DIR
+ 	lock_out(lockfds, F_WRLCK);
++#endif
+ 
+ 	fullresp(0);
+ 	if (sigemptyset(&allsigs) == -1) {
+@@ -684,7 +710,9 @@
+ 	}
+ 
+ #ifndef	DEBUG
++#ifndef CPLANT_REMOTE_WORKING_DIR
+ 	lock_out(lockfds, F_UNLCK);
++#endif
+ 	if ((pid = fork()) == -1) {     /* error on fork */
+ 		perror("fork");
+ 		exit(1);
+@@ -695,7 +723,9 @@
+ 		perror("setsid");
+ 		exit(1);
+ 	}
++#ifndef CPLANT_REMOTE_WORKING_DIR
+ 	lock_out(lockfds, F_WRLCK);
++#endif
+ 	freopen(dbfile, "a", stdout);
+ 	setvbuf(stdout, NULL, _IOLBF, 0);
+ 	dup2(fileno(stdout), fileno(stderr));
+diff -Naurw origsrc/src/scheduler.cc/samples/fifo/check.c patched/src/scheduler.cc/samples/fifo/check.c
+--- origsrc/src/scheduler.cc/samples/fifo/check.c	Fri Dec 17 03:08:12 1999
++++ patched/src/scheduler.cc/samples/fifo/check.c	Wed Dec 15 21:43:22 1999
+@@ -149,9 +149,31 @@
+   else
+     rc = NOT_QUEUED;
+ 
+-  return rc;
++#ifdef CPLANT_SERVICE_NODE
++  /*
++  ** During prime time, users total running requests can sum to
++  ** no more that N/2 node-hours, where N is the number of available
++  ** nodes in the system.
++  */
++  if ((cstat.is_prime) && (rc==SUCCESS) && (primeLimit != UNSPECIFIED)){
++      rc = check_node_hour_limits(sinfo, jinfo);
++  }
++
++  /*
++  ** Check that the wall time requested does not place the job past
++  ** the end of the current prime or non-prime time period.
++  **
++  ** Exception: Jobs from the prime queue started during non-prime
++  ** time (because there are no jobs in the non-prime queue) may 
++  ** run into prime time.
++  */ 
++  if (rc == SUCCESS){
++    rc = check_prime_non_prime_boundary( sinfo, jinfo);
+ }
++#endif
+ 
++  return rc;
++}
+ /* 
+  *
+  *	check_server_max_user_run - check if the user is within server 
+@@ -274,17 +296,43 @@
+ 
+   for( i = 0; (i < num_res) && !done; i++ )
+   {
++
+     res = find_resource(sinfo -> res, res_to_check[i].name);
++
+     resreq = find_resource_req(jinfo -> resreq, res_to_check[i].name);
+ 
+     /* if either of these are NULL then the system admin did not set a maximum
+      * default or avail for the resource.  Skip it and move on
+      */
++
+     if( (res == NULL || resreq == NULL) )
+       continue;
+     else
+     {
+       avail = dynamic_avail( res );
++
++#ifdef CPLANT_SERVICE_NODE
++       {
++           /*
++           ** We take the most restrictive of the queue or server
++           ** availability.
++           */
++           resource *qres;
++           int qavail;
++
++           qres = find_resource(qinfo -> res, res_to_check[i].name);
++
++           if (qres){
++               qavail = dynamic_avail(qres);
++
++               if (qavail != INFINITY){
++                   if ((avail == INFINITY) || (qavail < avail)){
++                       avail = qavail;
++                   }
++               }
++           }
++       }
++#endif
+       if ( avail != INFINITY && avail < resreq -> ammount )
+       {
+ 	/* An insuffient amount of a resource has been found. */
+@@ -344,6 +392,132 @@
+ 
+   return count;
+ }
++#ifdef CPLANT_SERVICE_NODE
++/*
++** Return non-negative product of walltime and nodes requested,
++**    or 0 on error.
++*/
++sch_resource_t job_req_node_seconds(job_info *jinfo)
++{
++resource_req *req;
++sch_resource_t nnodes, walltime;
++
++    walltime = nnodes = INFINITY;
++
++    req = find_resource_req(jinfo -> resreq, "walltime");
++
++    if (req != NULL){
++        walltime = req->ammount;
++    }
++
++    req = find_resource_req(jinfo -> resreq, "size");
++
++    if (req != NULL){
++        nnodes = req->ammount;
++    }
++
++    if ( (walltime!=INFINITY) && (nnodes!=INFINITY)){
++        return (walltime * nnodes);
++    }
++    return 0;  /* this is an error, what do you want to do? */
++
++}
++sch_resource_t count_node_seconds_by_user( job_info **jobs, char *user )
++{
++  int i;
++  sch_resource_t rc;
++  sch_resource_t seconds=0;   /* total of walltime*numnodes requested */
++
++  if( jobs != NULL )
++  {
++    for( i = 0; jobs[i] != NULL; i++ )
++      if( !strcmp( user, jobs[i] -> account) ){
++          rc = job_req_node_seconds(jobs[i]);
++          if (rc > 0){
++             seconds += rc;
++          }
++          else{
++              /* error */
++          }
++      }
++  }
++
++  return seconds;
++} 
++int check_node_hour_limits( server_info *sinfo, job_info *jinfo)
++{
++sch_resource_t seconds, newseconds;
++int rc;
++
++    rc = SUCCESS;
++ 
++    newseconds = job_req_node_seconds(jinfo);
++ 
++    if (newseconds > primeLimit){
++        jinfo->can_never_run = 1;  /* this job alone exceeds limit */
++        rc = USER_NODE_HOUR_LIMIT_EXCEEDED;
++    }
++    else{
++        seconds =
++          count_node_seconds_by_user(sinfo->running_jobs, jinfo->account);
++ 
++        if (seconds + newseconds > primeLimit){
++            /* the sum of running jobs and this one exceeds limit */
++            rc = USER_NODE_HOUR_LIMIT_EXCEEDED;
++        }
++    }
++    return rc;
++}
++int check_prime_non_prime_boundary( server_info *sinfo, job_info *jinfo)
++{
++  resource_req *res;                /* used to get jobs walltime request */
++  int rc, errc;
++
++  rc = SUCCESS;
++
++  if (cstat.period_termination == (time_t)(-1)){
++
++      /* there is no end boundary, we don't do the prime/non-prime thing */
++
++      return rc;
++  }
++
++   /*
++   ** During non-prime time, we run jobs from both the non-prime and
++   ** the prime queues.  So for jobs from the prime queue, there is
++   ** no need to verify that they will complete before prime time
++   ** starts.
++   */
++   if (!cstat.is_prime){
++       if (!strcmp(jinfo->queue->name,"prime")){
++           return rc;
++       }
++   }
++
++   if (cstat.is_prime){
++       errc = INSUFFICIENT_TIME_IN_PRIME;
++   }
++   else{
++       errc = INSUFFICIENT_TIME_IN_NONPRIME;
++   }
++  
++  res = find_resource_req(jinfo -> resreq, "walltime");
++ 
++  if( res != NULL ){
++      if ( (cstat.current_time + res->ammount) > cstat.period_termination){
++          rc = errc;
++      }
++      else{
++          rc = SUCCESS;
++      }
++  }
++  else{                    /* shouldn't ever happen */
++      rc = errc;
++  }
++
++  return rc;
++}
++#endif
+ 
+ /*
+  *
+@@ -482,6 +656,30 @@
+  *	  NO_AVAILABLE_NODE: if there is no node available to run the job
+  *
+  */
++#ifdef CPLANT_SERVICE_NODE
++
++   /*
++   ** all we need is a live service node
++   */
++
++int check_node_availability( job_info *jinfo, node_info **ninfo_arr )
++{
++  int rc = NO_AVAILABLE_NODE;        /* return code */
++  int i;
++
++    if( jinfo != NULL && ninfo_arr != NULL )
++    {
++      for(i = 0; ninfo_arr[i] != NULL && rc != 0; i++)
++      {
++        if( ninfo_arr[i] -> is_free ) {
++            rc = 0;
++        }
++      }
++    }
++    
++    return rc;
++}
++#else
+ int check_node_availability( job_info *jinfo, node_info **ninfo_arr )
+ {
+   int rc = NO_AVAILABLE_NODE;	/* return code */
+@@ -535,6 +733,7 @@
+     rc = 0;		/* we are not load balancing */
+   return rc;
+ }
++#endif
+ 
+ /*
+  *
+diff -Naurw origsrc/src/scheduler.cc/samples/fifo/config.h patched/src/scheduler.cc/samples/fifo/config.h
+--- origsrc/src/scheduler.cc/samples/fifo/config.h	Fri Dec 17 03:08:12 1999
++++ patched/src/scheduler.cc/samples/fifo/config.h	Wed Dec 15 22:00:08 1999
+@@ -119,6 +119,12 @@
+ #define INFO_NOT_ENOUGH_NODES_AVAIL "Not enough of the right type of nodes available"
+ #define INFO_JOB_STARVING "Draining system to allow %s to run"
+ 
++#ifdef CPLANT_SERVICE_NODE
++#define INFO_NODE_HOURS_EXCEEDED "Prime time node hours limit exceeded."
++#define INFO_NOT_ENOUGH_PRIME_TIME "Insufficient time remaining in prime time."
++#define INFO_NOT_ENOUGH_NONPRIME_TIME "Insufficient time remaining in non-prime time."
++#endif
++
+ #define COMMENT_QUEUE_NOT_STARTED "Not Running: Queue not started."
+ #define COMMENT_QUEUE_NOT_EXEC    "Not Running: Queue not an execution queue."
+ #define COMMENT_QUEUE_JOB_LIMIT "Not Running: Queue job limit has been reached."
+@@ -134,5 +140,11 @@
+ #define COMMENT_NOT_QUEUED "Not Running: Job not in queued state"
+ #define COMMENT_NOT_ENOUGH_NODES_AVAIL "Not Running: Not enough of the right type of nodes are available"
+ #define COMMENT_JOB_STARVING "Not Running: Draining system to allow starving job to run"
++
++#ifdef CPLANT_SERVICE_NODE
++#define COMMENT_NODE_HOURS_EXCEEDED "Prime time node hour limit of %4.2f exceeded."
++#define COMMENT_NOT_ENOUGH_PRIME_TIME "Insufficient time remaining in prime time, job will remain queued for next period."
++#define COMMENT_NOT_ENOUGH_NONPRIME_TIME "Insufficient time remaining in non-prime time, job will remain queued for next period."
++#endif
+ 
+ #endif
+diff -Naurw origsrc/src/scheduler.cc/samples/fifo/constant.h patched/src/scheduler.cc/samples/fifo/constant.h
+--- origsrc/src/scheduler.cc/samples/fifo/constant.h	Fri Dec 17 03:08:12 1999
++++ patched/src/scheduler.cc/samples/fifo/constant.h	Wed Dec 15 22:00:55 1999
+@@ -87,6 +87,12 @@
+ #define NOT_ENOUGH_NODES_AVAIL (RET_BASE + 15)
+ #define JOB_STARVING (RET_BASE + 16)
+ 
++#ifdef CPLANT_SERVICE_NODE
++#define USER_NODE_HOUR_LIMIT_EXCEEDED (RET_BASE + 17)
++#define INSUFFICIENT_TIME_IN_PRIME (RET_BASE + 18)
++#define INSUFFICIENT_TIME_IN_NONPRIME (RET_BASE + 19)
++#endif
++
+ /* for SORT_BY */
+ enum sort_type
+ { 
+diff -Naurw origsrc/src/scheduler.cc/samples/fifo/data_types.h patched/src/scheduler.cc/samples/fifo/data_types.h
+--- origsrc/src/scheduler.cc/samples/fifo/data_types.h	Fri Dec 17 03:08:12 1999
++++ patched/src/scheduler.cc/samples/fifo/data_types.h	Tue Jan 11 21:56:17 2000
+@@ -127,6 +127,9 @@
+   int priority;			/* priority of queue */
+   job_info **jobs;		/* array of jobs that reside in queue */
+   job_info **running_jobs;	/* array of jobs in the running state */
++#ifdef CPLANT_SERVICE_NODE
++  struct resource * res;
++#endif
+ };
+ 
+ struct job_info
+@@ -147,6 +150,9 @@
+   char *comment;		/* comment field of job */
+   char *account;		/* username of the owner of the job */
+   char *group;			/* groupname of the owner of the job */
++#ifdef CPLANT_RUN_ON_SUBMITTING_HOST
++  char *owner;          /* login name and submitting host of user */
++#endif
+   struct queue_info *queue;	/* queue where job resides */
+   int priority;			/* PBS priority of job */
+   int sch_priority;		/* internal scheduler priority */
+@@ -323,6 +329,10 @@
+   struct sort_info *sort_by;
+ 
+   time_t current_time;
++
++#ifdef CPLANT_SERVICE_NODE
++  time_t period_termination;   /* -1 if we don't do prime/non-prime periods */
++#endif
+ 
+   job_info *starving_job;	/* the most starving job */
+ 
+diff -Naurw origsrc/src/scheduler.cc/samples/fifo/fairshare.c patched/src/scheduler.cc/samples/fifo/fairshare.c
+--- origsrc/src/scheduler.cc/samples/fifo/fairshare.c	Fri Dec 17 03:08:12 1999
++++ patched/src/scheduler.cc/samples/fifo/fairshare.c	Fri Dec 10 19:21:34 1999
+@@ -246,7 +246,12 @@
+ 	  if( *endp == '\0' )
+ 	  {
+ 	    if( ( new_ginfo = new_group_info() ) == NULL )
++          {
++#ifdef CPLANT_SERVICE_NODE
++            fclose(fp);
++#endif
+ 	      return 0;
++          }
+ 	    new_ginfo -> name = string_dup( nametok );
+ 	    new_ginfo -> resgroup = ginfo -> cresgroup;
+ 	    new_ginfo -> cresgroup = cgroup;
+@@ -269,6 +274,9 @@
+       error = 0;
+     }
+   }
++#ifdef CPLANT_SERVICE_NODE
++  fclose(fp);
++#endif
+   return 1;
+ }
+ 
+@@ -443,6 +451,26 @@
+ usage_t calculate_usage_value( resource_req *resreq )
+ {
+   resource_req *tmp;
++#ifdef CPLANT_SERVICE_NODE
++
++  usage_t wtime=1;              //Initialize wall time to 1
++  usage_t cnodes=1;             //Initialize # of compute nodes to 1
++
++  if ( resreq != NULL )
++  {
++        tmp=find_resource_req(resreq, "walltime");
++        if ( tmp != NULL ) {
++                wtime=tmp -> ammount;
++        }
++        tmp=find_resource_req(resreq, "size"); 
++        if ( tmp != NULL ) {
++                cnodes=tmp -> ammount;
++        }
++  }
++
++  return wtime*cnodes;
++
++#else
+ 
+   if( resreq != NULL )
+   {
+@@ -452,6 +480,8 @@
+   }
+ 
+   return 0L;
++
++#endif
+ }
+ 
+ /*
+@@ -480,7 +510,7 @@
+ /*
+  *
+  *	extract_fairshare - extract the first job from the user with the 
+- *			    least percentage / usage ratio
++ *			    highest percentage / usage ratio
+  *
+  *	  jobs - array of jobs to search through
+  *
+@@ -499,6 +529,15 @@
+     max_value = -1;
+     for( i = 0; jobs[i] != NULL; i++)
+     {
++#ifdef CPLANT_SERVICE_NODE
++     /*
++     ** maybe we cplanters broke something, because occasionally we come
++     ** here and temp_usage is zero.
++     */
++      if (jobs[i] -> ginfo -> temp_usage == 0){
++           jobs[i] -> ginfo -> temp_usage = 1;
++      }
++#endif
+       cur_value=jobs[i] -> ginfo -> percentage / jobs[i] -> ginfo -> temp_usage;
+       if( max_value < cur_value && !jobs[i] -> is_running && 
+ 	  !jobs[i] -> can_not_run )
+@@ -554,6 +593,9 @@
+   }
+ 
+   rec_write_usage(conf.group_root, fp);
++#ifdef CPLANT_SERVICE_NODE
++  fclose(fp);
++#endif
+   return 1;
+ }
+ 
+@@ -614,5 +656,8 @@
+     if( ginfo != NULL )
+       ginfo -> usage = grp.usage;
+   }
++#ifdef CPLANT_SERVICE_NODE
++  fclose(fp);
++#endif
+   return 1;
+ }
+diff -Naurw origsrc/src/scheduler.cc/samples/fifo/fifo.c patched/src/scheduler.cc/samples/fifo/fifo.c
+--- origsrc/src/scheduler.cc/samples/fifo/fifo.c	Fri Dec 17 03:08:12 1999
++++ patched/src/scheduler.cc/samples/fifo/fifo.c	Thu Jan 20 18:53:38 2000
+@@ -313,6 +313,18 @@
+     case SCH_SCHEDULE_FIRST:
+     case SCH_SCHEDULE_CMD:
+     case SCH_SCHEDULE_TIME:
++
++#if 0
++#ifdef CPLANT_SERVICE_NODE
++      {
++      char log_msg[50];
++      sprintf(log_msg,"%d",cmd);
++      log(PBSEVENT_SCHED, PBS_EVENTCLASS_JOB, "request type", log_msg);
++      log_msg[0] = 0;
++      }
++#endif
++#endif
++
+       return scheduling_cycle(sd);
+     case SCH_CONFIGURE:
+       if( conf.prime_fs || conf.non_prime_fs )
+@@ -355,6 +367,10 @@
+   char log_msg[MAX_LOG_SIZE];	/* used to log an message about job */
+   char comment[MAX_COMMENT_SIZE]; /* used to update comment of job */
+ 
++#ifdef CPLANT_SERVICE_NODE
++  char cplant_waiting_jobs;
++#endif
++
+ 
+   log(PBSEVENT_DEBUG2, PBS_EVENTCLASS_REQUEST, "", "Entering Schedule");
+ 
+@@ -374,6 +390,10 @@
+     return 0;
+   }
+ 
++#ifdef CPLANT_SERVICE_NODE
++  cplant_waiting_jobs = 0;
++#endif
++
+   /* main scheduling loop */
+   while( ( jinfo = next_job(sinfo, 0) ) )
+   {
+@@ -389,6 +409,11 @@
+ 	      "Job Deleted because it would never run");
+ 	pbs_deljob(sd, jinfo -> name, "Job could never run");
+       }
++#ifdef CPLANT_SERVICE_NODE
++      else{
++          cplant_waiting_jobs = 1;
++      }
++#endif
+       jinfo -> can_not_run = 1;
+       if( translate_job_fail_code( ret, comment, log_msg ) )
+       {
+@@ -405,6 +430,20 @@
+     }
+   }
+ 
++#ifdef CPLANT_SERVICE_NODE
++  /*
++  ** MOMs need to know if there are jobs waiting to run, since MOM
++  ** doesn't want to kill over limit jobs if no one else is waiting
++  ** for the machine.
++  */
++  if (cplant_waiting_jobs){
++      cplant_config_moms("#WAITINGJOBS", sinfo);
++  }
++  else{
++      cplant_config_moms("#EMPTYQUEUES", sinfo);
++  }
++#endif
++
+   if( cstat.fair_share )
+     update_last_running(sinfo);
+   free_server(sinfo, 1);	/* free server and queues and jobs */
+diff -Naurw origsrc/src/scheduler.cc/samples/fifo/globals.c patched/src/scheduler.cc/samples/fifo/globals.c
+--- origsrc/src/scheduler.cc/samples/fifo/globals.c	Fri Dec 17 03:08:12 1999
++++ patched/src/scheduler.cc/samples/fifo/globals.c	Wed Jan 26 22:36:08 2000
+@@ -55,6 +55,9 @@
+ 
+ static char *ident = "$Id: cplantPatch,v 1.5 2000/02/02 21:09:51 lafisk Exp $";
+ 
++#ifdef CPLANT_SERVICE_NODE
++sch_resource_t primeLimit;
++#endif
+ /*
+  *	res_to_check[] - a list of resources which controls what resources
+  *			 are checked by the scheduler.
+@@ -71,8 +74,13 @@
+ 
+ const struct rescheck res_to_check[] = 
+ { 
++#ifdef CPLANT_SERVICE_NODE
++  {"size", "Insufficient compute nodes available for job", "insufficient compute nodes"},
++  { "walltime", "Walltime request exceeds availability", "not enough walltime"}
++#else
+   {"mem", "Not Running: Not enough memory available", "Not enough memory available"},
+   { "ncpus", "Not Running: Not enough cpus available", "Not enough cpus available"}
++#endif
+ };
+ 
+ /*
+@@ -110,12 +118,16 @@
+  */
+ const char *res_to_get[] = 
+ {
++#ifdef CPLANT_SERVICE_NODE
++  "loadave"		/* the current load average */
++#else
+   "ncpus",		/* number of CPUS */
+   "arch",		/* the architecture of the machine */
+   "physmem",		/* the ammount of physical memory */
+   "loadave",		/* the current load average */
+   "max_load",		/* static max_load value */
+   "ideal_load"		/* static ideal_load value */	
++#endif
+ };
+ 
+ /* number of indicies in the res_to_check array */
+diff -Naurw origsrc/src/scheduler.cc/samples/fifo/globals.h patched/src/scheduler.cc/samples/fifo/globals.h
+--- origsrc/src/scheduler.cc/samples/fifo/globals.h	Fri Dec 17 03:08:12 1999
++++ patched/src/scheduler.cc/samples/fifo/globals.h	Fri Nov  5 19:12:04 1999
+@@ -53,6 +53,10 @@
+ 
+ #include "data_types.h"
+ 
++#ifdef CPLANT_SERVICE_NODE
++extern sch_resource_t primeLimit;
++#endif
++
+ /* resources to check */
+ extern const struct rescheck res_to_check[];
+ 
+diff -Naurw origsrc/src/scheduler.cc/samples/fifo/job_info.c patched/src/scheduler.cc/samples/fifo/job_info.c
+--- origsrc/src/scheduler.cc/samples/fifo/job_info.c	Fri Dec 17 03:08:12 1999
++++ patched/src/scheduler.cc/samples/fifo/job_info.c	Tue Jan 11 21:55:20 2000
+@@ -203,6 +203,10 @@
+       jinfo -> account = string_dup( attrp -> value );
+     else if( !strcmp( attrp -> name, ATTR_egroup ) )	/* group name */
+       jinfo -> group = string_dup( attrp -> value );
++#ifdef CPLANT_RUN_ON_SUBMITTING_HOST
++    else if( !strcmp( attrp -> name, ATTR_owner) )	/* login name & host */
++      jinfo -> owner = string_dup( attrp -> value );
++#endif
+     else if( !strcmp( attrp -> name, ATTR_exechost ) ) /* where job is running*/
+       jinfo -> job_node = find_node_info( attrp -> value, 
+ 					queue -> server -> nodes );
+@@ -753,6 +757,22 @@
+         strcpy(comment_msg, COMMENT_NO_AVAILABLE_NODE);
+ 	strcpy(log_msg, INFO_NO_AVAILABLE_NODE);
+       break;
++
++#ifdef CPLANT_SERVICE_NODE
++      case USER_NODE_HOUR_LIMIT_EXCEEDED:
++        sprintf(comment_msg, COMMENT_NODE_HOURS_EXCEEDED, 
++                   ((float)primeLimit/3600.0));
++	    strcpy(log_msg, INFO_NODE_HOURS_EXCEEDED);
++        break;
++      case INSUFFICIENT_TIME_IN_PRIME:
++        strcpy(comment_msg, COMMENT_NOT_ENOUGH_PRIME_TIME);
++	    strcpy(log_msg, INFO_NOT_ENOUGH_PRIME_TIME);
++        break;
++      case INSUFFICIENT_TIME_IN_NONPRIME:
++        strcpy(comment_msg, COMMENT_NOT_ENOUGH_NONPRIME_TIME);
++	    strcpy(log_msg, INFO_NOT_ENOUGH_NONPRIME_TIME);
++        break;
++#endif
+ 
+       case NOT_QUEUED:
+ 	/* do we really care if the job is not in a queued state?  there is 
+diff -Naurw origsrc/src/scheduler.cc/samples/fifo/node_info.c patched/src/scheduler.cc/samples/fifo/node_info.c
+--- origsrc/src/scheduler.cc/samples/fifo/node_info.c	Fri Dec 17 03:08:12 1999
++++ patched/src/scheduler.cc/samples/fifo/node_info.c	Thu Jan 27 01:41:18 2000
+@@ -62,6 +62,52 @@
+ 
+ static char *ident = "$Id: cplantPatch,v 1.5 2000/02/02 21:09:51 lafisk Exp $";
+ 
++#ifdef CPLANT_SERVICE_NODE
++/*
++** Send a RM_CMD_CONFIG message to the MOMs.  If it starts with
++** a "#", the MOMs know it's a special cplant scheduler message
++** and they deal with it in rm_request() in mom_main.c.
++*/
++void cplant_config_moms( char *msg, server_info *sinfo )
++{
++  int i, rc;
++  int mom_sd;
++  node_info *ninfo;
++
++  for( i = 0; i < sinfo->num_nodes; i++)
++  {
++
++    ninfo = sinfo->nodes[i];
++
++    if ((ninfo != NULL) && (!ninfo -> is_down) ){
++
++        if (!node_is_alive(ninfo->name)){
++           log(PBSEVENT_SYSTEM, PBS_EVENTCLASS_REQUEST, ninfo -> name, "Can't ping node (2)");
++           ninfo->is_down = 1;
++           continue;
++        }
++
++        if( ( mom_sd = openrm(ninfo -> name, pbs_rm_port) ) < 0 )
++        {
++          log(PBSEVENT_SYSTEM, PBS_EVENTCLASS_REQUEST, ninfo -> name, 
++              "Can not open connection to a mom");
++          continue;
++        }
++
++        rc = configrm(mom_sd, msg);
++
++        if (rc){
++          log(PBSEVENT_SYSTEM, PBS_EVENTCLASS_REQUEST, ninfo -> name, 
++              "Can not send to mom");
++        }
++
++        closerm(mom_sd);
++    }
++  }
++  return;
++}
++#endif
++
+ 
+ /*
+  *      query_nodes - query all the nodes associated with a server
+@@ -90,14 +136,12 @@
+     log(PBSEVENT_SCHED, PBS_EVENTCLASS_NODE, "", errbuf);
+     return NULL;
+   }
+-
+   cur_node = nodes;
+   while( cur_node != NULL )
+   {
+     num_nodes++;
+     cur_node = cur_node -> next;
+   }
+-
+   if( ( ninfo_arr = (node_info **) malloc( (num_nodes + 1) * sizeof(node_info *) ) ) == NULL )
+   {
+     perror("Error Allocating Memory");
+@@ -116,8 +160,19 @@
+     }
+ 
+     /* query mom on the node for resources */
++
++#ifdef CPLANT_SERVICE_NODE
++    if (talk_with_mom( ninfo )){   /* skip this node, can't ping it */
++        num_nodes--;
++    }
++    else{
++        ninfo_arr[i] = ninfo;
++    }
++#else
+     talk_with_mom( ninfo );
++
+     ninfo_arr[i] = ninfo;
++#endif
+ 
+     cur_node = cur_node -> next;
+   }
+@@ -368,6 +423,14 @@
+ 
+   if( ninfo != NULL && !ninfo -> is_down )
+   {
++
++#ifdef CPLANT_SERVICE_NODE
++    if (!node_is_alive(ninfo->name)){
++        log(PBSEVENT_SYSTEM, PBS_EVENTCLASS_REQUEST, ninfo -> name, "Can't ping node (1)");
++        ninfo->is_down = 1;
++        return 1;
++    }
++#endif
+     if( ( mom_sd = openrm(ninfo -> name, pbs_rm_port) ) < 0 )
+     {
+       log(PBSEVENT_SYSTEM, PBS_EVENTCLASS_REQUEST, ninfo -> name, "Can not open connection to mom");
+@@ -522,6 +585,81 @@
+  *	returns the node to run the job on
+  *
+  */
++
++#ifdef CPLANT_SERVICE_NODE
++
++#ifdef CPLANT_RUN_ON_SUBMITTING_HOST
++/*
++**  We need to run the job on the host the user submitted
++**  it from, due to fact that users are using the local disk on
++**  the service node in absence of decent parallel file IO.
++*/
++node_info *find_best_node( job_info *jinfo, node_info **ninfo_arr )
++{
++  node_info *good_node = NULL;		/* submitting host */
++  int i;
++  float good_node_la = 1.0e10;		/* big value */
++  char *submittinghost;
++
++  if( ninfo_arr != NULL && jinfo != NULL )
++  {
++    submittinghost = strchr(jinfo->owner, (int)'@');
++
++    if (submittinghost && *(submittinghost++)){
++
++      for(i = 0; ninfo_arr[i] != NULL; i++)
++      {
++        if (( ninfo_arr[i] -> is_free) && 
++             !strcmp(submittinghost, ninfo_arr[i]->name) ) {
++
++	        good_node = ninfo_arr[i];
++            break;
++	    } 
++      }
++    }
++    /*
++    ** If we can't run it on the submitting host, run
++    ** on the host with the lowest load average.
++    */
++    if (good_node == NULL){
++      for(i = 0; ninfo_arr[i] != NULL; i++)
++      {
++        if (( ninfo_arr[i] -> is_free) && (ninfo_arr[i] -> loadave < good_node_la)) {
++	        good_node = ninfo_arr[i];
++	        good_node_la = ninfo_arr[i] -> loadave;
++	    } 
++      }
++    }
++       
++  }
++  return good_node;
++}
++#else
++/*
++** The best node on which to run the job is simply the node 
++** with the lowest load average.
++*/
++node_info *find_best_node( job_info *jinfo, node_info **ninfo_arr )
++{
++  node_info *good_node = NULL;		/* node with lowest load average */
++  int i;
++  float good_node_la = 1.0e10;		/* big value */
++
++  if( ninfo_arr != NULL && jinfo != NULL )
++  {
++    for(i = 0; ninfo_arr[i] != NULL; i++)
++    {
++      if (( ninfo_arr[i] -> is_free) && (ninfo_arr[i] -> loadave < good_node_la)) {
++	      good_node = ninfo_arr[i];
++	      good_node_la = ninfo_arr[i] -> loadave;
++	  } 
++    }
++  }
++  return good_node;
++}
++#endif
++#else
++
+ node_info *find_best_node( job_info *jinfo, node_info **ninfo_arr )
+ {
+   node_info *possible_node = NULL;	/* node which under max node not ideal*/
+@@ -588,6 +726,7 @@
+   }
+   return NULL;
+ }
++#endif
+ 
+ /*
+  *
+diff -Naurw origsrc/src/scheduler.cc/samples/fifo/node_info.h patched/src/scheduler.cc/samples/fifo/node_info.h
+--- origsrc/src/scheduler.cc/samples/fifo/node_info.h	Fri Dec 17 03:08:12 1999
++++ patched/src/scheduler.cc/samples/fifo/node_info.h	Fri Dec 17 17:57:54 1999
+@@ -54,6 +54,15 @@
+ #include "data_types.h"
+ #include <pbs_ifl.h>
+ 
++#ifdef CPLANT_SERVICE_NODE
++/*
++** GIVE node info: tell the moms whether or not there are
++** jobs in the queue waiting to run.  MOM doesn't want to
++** kill over-limit jobs if there are no jobs waiting to run.
++*/
++void cplant_config_moms( char *msg, server_info *sinfo );
++#endif
++
+ /*
+  *      query_nodes - query all the nodes associated with a server
+  */
+diff -Naurw origsrc/src/scheduler.cc/samples/fifo/prime.c patched/src/scheduler.cc/samples/fifo/prime.c
+--- origsrc/src/scheduler.cc/samples/fifo/prime.c	Fri Dec 17 03:08:12 1999
++++ patched/src/scheduler.cc/samples/fifo/prime.c	Wed Dec 15 21:43:35 1999
+@@ -62,6 +62,236 @@
+ 
+ static char *ident = "$Id: cplantPatch,v 1.5 2000/02/02 21:09:51 lafisk Exp $";
+ 
++#ifdef CPLANT_SERVICE_NODE
++/*
++** We need to know when the current prime or non-prime period ends, so 
++** we don't schedule jobs whose walltime will cause them to run past the 
++** end of the period.
++**
++** On error, returns (time_t)(-1), meaning probably that we don't have
++** prime and non-prime periods.  
++*/
++static time_t
++compute_period_termination(enum prime_time period)
++{
++  time_t primestart, nonprimestart;
++  time_t wholeday, termination, duration;
++  time_t notime = (time_t)(-1);
++  struct tm  *tmptr;			/* current time in a struct tm */
++  enum days day, nextwday;
++  int wday, yday, nextyday, sanitycheck; 
++  struct tm starttime;
++
++  if (conf.holiday_year == 0) {   
++      return notime;  /* no holiday file - we don't do prime/non-prime time */
++  }
++
++  wholeday = 60*60*24;
++
++  tmptr = localtime( &(cstat.current_time) );
++
++  starttime.tm_sec    = 0; /* Start counting at beginning of current day */
++  starttime.tm_min    = 0;
++  starttime.tm_hour   = 0;
++  starttime.tm_mday   = tmptr->tm_mday;
++  starttime.tm_mon    = tmptr->tm_mon;
++  starttime.tm_year   = tmptr->tm_year;
++  starttime.tm_yday   = tmptr->tm_yday;
++  starttime.tm_isdst  = tmptr->tm_isdst;
++
++  termination = mktime(&starttime);
++
++  wday = tmptr->tm_wday;
++  yday = tmptr->tm_yday + 1;    /* struct tm is 0-based, is_holiday is 1-based */
++
++  if( wday == 0 ){
++    day = SUNDAY;
++  }
++  else if( wday == 6 ){
++    day = SATURDAY;
++  }
++  else{
++    day = WEEKDAY;
++  }
++
++  if (is_holiday(yday)){
++      if (period == PRIME) return notime;   /* error - holidays are non-prime time */
++
++      primestart = notime;
++      nonprimestart = 0;    /* started at 12 AM */
++  }
++  else if (conf.prime[day][PRIME].none || conf.prime[day][NON_PRIME].all){
++  
++      if (period == PRIME) return notime;
++
++      nonprimestart = 0;
++      primestart = notime;
++  }
++  else if (conf.prime[day][PRIME].all || conf.prime[day][NON_PRIME].none){
++
++      if (period == NON_PRIME) return notime;
++
++      primestart = 0;
++      nonprimestart = notime;
++  }
++  else{
++      primestart = ((conf.prime[day][PRIME].hour * 3600) +
++                    (conf.prime[day][PRIME].min  * 60)     );
++      
++     
++      nonprimestart = ((conf.prime[day][NON_PRIME].hour * 3600) +
++                       (conf.prime[day][NON_PRIME].min  * 60)     );
++  }
++
++  if (period == PRIME){
++      /*
++      ** Compute the time the next non-prime period starts
++      */
++      if ((nonprimestart == notime) || (nonprimestart < primestart)){
++          /*
++          ** This prime time period extends into tomorrow
++          */
++          duration = wholeday;
++          wday = tmptr -> tm_wday;
++          nextyday = yday;
++
++          sanitycheck=30;
++
++          while (1){
++
++             sanitycheck--;
++
++             if (sanitycheck == 0){
++                 return notime;
++             }
++
++             wday += 1;
++             if (wday == 7) wday = 0;
++             if( wday == 0 ){
++                 nextwday = SUNDAY;
++             }
++             else if( wday == 6 ){
++                 nextwday = SATURDAY;
++             }
++             else{
++                 nextwday = WEEKDAY;
++             }
++             nextyday++;
++
++             if (nextyday > 365){ 
++                 /*
++                 ** I really don't want to deal with the roll over to the
++                 ** next year, and leap year, etc.  It's got to be safe to
++                 ** say this is a non-prime holiday.
++                 */
++                 break;
++             }
++             else if (is_holiday(nextyday) ||
++                      (conf.prime[nextwday][PRIME].none) ||
++                      (conf.prime[nextwday][NON_PRIME].all)) {
++
++                 break;
++             }
++             else if ( (conf.prime[nextwday][PRIME].all) ||
++                       (conf.prime[nextwday][NON_PRIME].none) ){
++
++                 duration += wholeday;
++
++             } else{
++                 duration += ((conf.prime[nextwday][NON_PRIME].hour * 3600) +
++                              (conf.prime[nextwday][NON_PRIME].min  * 60)      );
++                 break;
++             }
++          }
++      }
++      else{
++          /*
++          ** This prime time period begins and ends today.
++          */
++          duration = nonprimestart;
++      }
++  }
++  else if (period == NON_PRIME){
++      /*
++      ** Compute the length of the current non-prime time period
++      */
++      if ((primestart == notime) || (primestart < nonprimestart)){
++          /*
++          ** This nonprime time period extends into tomorrow
++          */
++          duration = wholeday;
++          wday = tmptr -> tm_wday;
++          nextyday = yday;
++
++          sanitycheck=30;
++
++          while (1){
++
++             sanitycheck--;
++
++             if (sanitycheck == 0){
++                 return notime;
++             }
++
++             wday += 1;
++             if (wday == 7) wday = 0;
++             if( wday == 0 ){
++                 nextwday = SUNDAY;
++             }
++             else if( wday == 6 ){
++                 nextwday = SATURDAY;
++             }
++             else{
++                 nextwday = WEEKDAY;
++             }
++             nextyday++;
++
++             if (nextyday > 365){ 
++                 /*
++                 ** I really don't want to deal with the roll over to the
++                 ** next year, and leap year, etc.  I'm going to add a week
++                 ** to the duration of the non-prime time period.  This
++                 ** means some non-prime jobs may run too long.
++                 **
++                 ** The PBS operator should probably restart the scheduler
++                 ** on January 1, so it will re-read the holidays file.
++                 */
++                 duration = duration + ( wholeday * 7) ;
++                 break;
++             }
++             else if (is_holiday(nextyday) ||
++                      (conf.prime[nextwday][NON_PRIME].all) ||
++                      (conf.prime[nextwday][PRIME].none) )     {
++
++                 duration += wholeday;
++             }
++             else if ((conf.prime[nextwday][NON_PRIME].none) ||
++                      (conf.prime[nextwday][PRIME].all) ) {
++
++                 break;
++             }
++             else{
++                 duration += ((conf.prime[nextwday][PRIME].hour * 3600) +
++                              (conf.prime[nextwday][PRIME].min  * 60)      );
++                 break;
++             }
++          }
++      }
++      else{
++          /*
++          ** This non-prime time period begins and ends today.
++          */
++          duration = primestart;
++      }
++  }
++
++  termination += duration;
++
++  return termination;
++}
++#endif
++
++
+ /*
+  *
+  *	is_prime_time - will return the status of primetime
+@@ -123,6 +353,10 @@
+ {
+   enum prime_time prime;		/* return code */
+ 
++#ifdef CPLANT_SERVICE_NODE
++  prime = HIGH_PRIME;
++#endif
++
+   /* Case 1: all primetime today */
+   if( conf.prime[d][PRIME].all )
+     prime = PRIME;
+@@ -139,6 +373,10 @@
+   else if( conf.prime[d][NON_PRIME].none )
+     prime = PRIME;
+   
++#ifdef CPLANT_SERVICE_NODE
++  if ( (prime == PRIME) || (prime == NON_PRIME)) return prime;
++#endif
++  
+   /* primetime does not cross the day boundry
+    * i.e. 4:00AM - 6:00 PM
+    */
+@@ -454,6 +692,10 @@
+   cstat.load_balancing = conf.prime_lb;
+   cstat.help_starving_jobs = conf.prime_hsv;
+   cstat.sort_queues = conf.prime_sq;
++
++#ifdef CPLANT_SERVICE_NODE
++  cstat.period_termination = compute_period_termination(PRIME);
++#endif
+ }
+ 
+ /*
+@@ -475,4 +717,8 @@
+   cstat.load_balancing = conf.non_prime_lb;
+   cstat.help_starving_jobs = conf.non_prime_hsv;
+   cstat.sort_queues = conf.non_prime_sq;
++
++#ifdef CPLANT_SERVICE_NODE
++  cstat.period_termination = compute_period_termination(NON_PRIME);
++#endif
+ }
+diff -Naurw origsrc/src/scheduler.cc/samples/fifo/queue_info.c patched/src/scheduler.cc/samples/fifo/queue_info.c
+--- origsrc/src/scheduler.cc/samples/fifo/queue_info.c	Fri Dec 17 03:08:12 1999
++++ patched/src/scheduler.cc/samples/fifo/queue_info.c	Mon Jan 17 22:12:45 2000
+@@ -101,11 +101,46 @@
+   int num_queues = 0;
+ 
+   /* get queue info from PBS server */
++
++
++#ifdef CPLANT_SERVICE_NODE
++
++  log(PBSEVENT_DEBUG2, PBS_EVENTCLASS_QUEUE, "all queues", "in query_queues");
++
++  if (cstat.is_prime){
++    /*
++    ** During prime time, we only review jobs in the "prime" queue.
++    */
++  log(PBSEVENT_DEBUG2, PBS_EVENTCLASS_QUEUE, "all queues", "query prime queue");
++    if( ( queues = pbs_statque(pbs_sd, "prime", NULL, NULL) ) == NULL )
++    {
++      fprintf(stderr, "Statque failed: %d\n", pbs_errno);
++      return NULL;
++    }
++  log(PBSEVENT_DEBUG2, PBS_EVENTCLASS_QUEUE, "all queues", "done");
++  }
++  else{
++    /*
++    ** During non-prime time, we request both the high-priority non-prime
++    ** queue and the low-priority prime queue.  We'll run prime-time jobs
++    ** if there are no non-prime jobs left.
++    */
++  log(PBSEVENT_DEBUG2, PBS_EVENTCLASS_QUEUE, "all queues", "query all queues");
+   if( ( queues = pbs_statque(pbs_sd, NULL, NULL, NULL) ) == NULL )
+   {
+     fprintf(stderr, "Statque failed: %d\n", pbs_errno);
+     return NULL;
+   }
++  log(PBSEVENT_DEBUG2, PBS_EVENTCLASS_QUEUE, "all queues", "done");
++  }
++
++#else
++  if( ( queues = pbs_statque(pbs_sd, NULL, NULL, NULL) ) == NULL )
++  {
++    fprintf(stderr, "Statque failed: %d\n", pbs_errno);
++    return NULL;
++  }
++#endif
+ 
+   cur_queue = queues;
+ 
+@@ -114,6 +149,9 @@
+     num_queues++;
+     cur_queue = cur_queue -> next;
+   }
++#ifdef CPLANT_SERVICE_NODE
++  log(PBSEVENT_DEBUG2, PBS_EVENTCLASS_QUEUE, "all queues", "query_queues 2");
++#endif
+ 
+   if( ( qinfo_arr = (queue_info **) malloc( sizeof( queue_info * ) * (num_queues + 1 ) ) ) == NULL )
+   {
+@@ -121,6 +159,9 @@
+     pbs_statfree( queues );
+     return NULL;
+   }
++#ifdef CPLANT_SERVICE_NODE
++  log(PBSEVENT_DEBUG2, PBS_EVENTCLASS_QUEUE, "all queues", "query_queues 3");
++#endif
+ 
+   cur_queue = queues;
+ 
+@@ -161,6 +202,9 @@
+ 
+     cur_queue = cur_queue -> next;
+   }
++#ifdef CPLANT_SERVICE_NODE
++  log(PBSEVENT_DEBUG2, PBS_EVENTCLASS_QUEUE, "all queues", "query_queues 4");
++#endif
+   qinfo_arr[i] = NULL;
+ 
+   pbs_statfree( queues );
+@@ -187,6 +231,10 @@
+   char *endp;			/* used with strtol() */
+   int count;			/* used to convert string -> integer */
+ 
++#ifdef CPLANT_SERVICE_NODE
++  resource *resp;
++#endif
++
+   if( ( qinfo = new_queue_info() ) == NULL )
+     return NULL;
+ 
+@@ -241,6 +289,36 @@
+         qinfo -> is_exec = 0;
+       }
+     }
++
++#ifdef CPLANT_SERVICE_NODE
++
++    else if( !strcmp (attrp -> name, ATTR_rescavail ) ) /* resources_available*/    {
++      count = res_to_num( attrp -> value );
++      resp = find_alloc_resource(qinfo -> res, attrp -> resource);
++      if( qinfo -> res == NULL )
++        qinfo -> res = resp;
++      if( resp != NULL )
++        resp -> avail = count;
++    }
++    else if( !strcmp( attrp -> name, ATTR_rescmax) )    /* resources_max */
++    {
++      count = res_to_num( attrp -> value );
++      resp = find_alloc_resource(qinfo -> res, attrp -> resource);
++      if( qinfo -> res == NULL )
++        qinfo -> res = resp;
++      if( resp != NULL )
++        resp -> max = count;
++    }
++    else if( !strcmp( attrp -> name, ATTR_rescassn) )   /* resources_assigned */    {
++      count = res_to_num( attrp -> value );
++      resp = find_alloc_resource(qinfo -> res, attrp -> resource);
++      if( qinfo -> res == NULL )
++        qinfo -> res = resp;
++      if( resp != NULL )
++        resp -> assigned = count;
++    }
++#endif
++
+     attrp = attrp -> next;
+   }
+ 
+@@ -277,6 +355,10 @@
+   qinfo -> running_jobs	 = NULL;
+   qinfo -> server	 = NULL;
+ 
++#ifdef CPLANT_SERVICE_NODE
++  qinfo -> res      = NULL;
++#endif
++
+   return qinfo;
+ }
+ 
+@@ -295,6 +377,10 @@
+ {
+   job_info *jinfo;
+ 
++#ifdef CPLANT_SERVICE_NODE
++  resource *resp;
++#endif
++
+   if( qinfo == NULL )
+     return;
+   if( qinfo -> name != NULL )
+@@ -311,7 +397,21 @@
+     printf("max_group_run: %d\n", qinfo -> max_group_run);
+     printf("priority: %d\n", qinfo -> priority);
+     print_state_count(&(qinfo -> sc));
++
++#ifdef CPLANT_SERVICE_NODE
++
++    resp = qinfo -> res;
++    while ( resp != NULL) {
++        printf("res %s max: %-10ld avail: %-10ld assigned: %-10ld\n",
++          resp -> name, resp -> max, resp -> avail, resp-> assigned);
++
++      resp = resp -> next;
++    }
++
++#endif
++
+   }
++
+   if( deep )
+   {
+     jinfo = qinfo -> jobs[0];
+@@ -365,6 +465,25 @@
+  */
+ void update_queue_on_run(queue_info *qinfo, job_info *jinfo)
+ {
++
++#ifdef CPLANT_SERVICE_NODE
++  resource_req *resreq;
++  resource *res;
++
++  resreq = jinfo -> resreq;
++
++  while( resreq != NULL )
++  {
++   res = find_resource( qinfo -> res, resreq -> name);
++
++   if( res )
++     res -> assigned += resreq -> ammount;
++
++   resreq = resreq -> next;
++  }
++
++#endif
++
+   qinfo -> sc.running++;
+   qinfo -> sc.queued--;
+ }
+@@ -380,6 +499,25 @@
+  */
+ void free_queue_info( queue_info *qinfo )
+ {
++
++#ifdef CPLANT_SERVICE_NODE
++
++  resource *resp;
++  resource *tmp;
++
++
++  resp = qinfo -> res;
++
++  while( resp != NULL)
++  {
++    tmp = resp;
++    resp = resp -> next;
++    free(tmp -> name);
++    free(tmp);
++  }
++
++#endif
++
+   if( qinfo -> name != NULL )
+     free(qinfo -> name);
+   if( qinfo -> running_jobs != NULL )
+diff -Naurw origsrc/src/scheduler.cc/samples/fifo/server_info.c patched/src/scheduler.cc/samples/fifo/server_info.c
+--- origsrc/src/scheduler.cc/samples/fifo/server_info.c	Fri Dec 17 03:08:12 1999
++++ patched/src/scheduler.cc/samples/fifo/server_info.c	Fri Nov  5 19:13:27 1999
+@@ -61,6 +61,10 @@
+ #include "config.h"
+ #include "node_info.h"
+ 
++#ifdef CPLANT_SERVICE_NODE
++#include "globals.h"
++#endif
++
+ static char *ident = "$Id: cplantPatch,v 1.5 2000/02/02 21:09:51 lafisk Exp $";
+ 
+ /*
+@@ -218,6 +222,17 @@
+ 
+     attrp = attrp -> next;
+   }
++
++#ifdef CPLANT_SERVICE_NODE
++  primeLimit = UNSPECIFIED;
++
++  if (cstat.is_prime){
++     resp = find_resource(sinfo -> res, "size");
++
++     if (resp != NULL)
++         primeLimit = ((resp->avail) / 2) * 3600; 
++  }
++#endif
+ 
+   return sinfo;
+ }
+diff -Naurw origsrc/src/server/dis_read.c patched/src/server/dis_read.c
+--- origsrc/src/server/dis_read.c	Fri Dec 17 03:08:15 1999
++++ patched/src/server/dis_read.c	Wed Feb  2 20:46:23 2000
+@@ -103,7 +103,9 @@
+ 	if (rc = decode_DIS_ReqHdr(sfds, request, &proto_type, &proto_ver)) {
+ 		if (rc == DIS_EOF)
+ 			return EOF;
++
+ 		(void)sprintf(log_buffer, "Req Header bad, dis error %d", rc);
++
+ 		LOG_EVENT(PBSEVENT_DEBUG, PBS_EVENTCLASS_REQUEST, "?",
+ 			  log_buffer);
+ 		return PBSE_DISPROTO;
+diff -Naurw origsrc/src/server/geteusernam.c patched/src/server/geteusernam.c
+--- origsrc/src/server/geteusernam.c	Fri Dec 17 03:08:15 1999
++++ patched/src/server/geteusernam.c	Mon Jan 17 00:52:36 2000
+@@ -236,8 +236,17 @@
+ 	    }
+ 	}
+ 
++#ifndef CPLANT_SERVICE_NODE
++    /*
++    ** this calls ruserok(), which on Linux/alpha doesn't work as advertised.
++    ** We set up /etc/hosts.equiv with all the right host names, but ruserok()
++    ** goes and checks user's .rhosts file anyway.  If this exists and doesn't 
++    ** include all the right host names, user gets kicked out.  It this doesn't 
++    ** exist, user is OK.
++    */
+ 	if (site_check_user_map(pjob, puser) == -1)
+ 		return (PBSE_BADUSER);
++#endif
+ 
+ 	pattr = attrry + (int)JOB_ATR_euser;
+ 	job_attr_def[(int)JOB_ATR_euser].at_free(pattr);
+diff -Naurw origsrc/src/server/node_manager.c patched/src/server/node_manager.c
+--- origsrc/src/server/node_manager.c	Fri Dec 17 03:08:15 1999
++++ patched/src/server/node_manager.c	Wed Oct  6 16:32:49 1999
+@@ -650,7 +650,11 @@
+ 	for (i=0; i<svr_totnodes; i++) {
+ 		np = pbsnlist[i];
+ 
++#ifdef CPLANT_SERVICE_NODE
++		if (np->ntype != NTYPE_TIMESHARED)	/* Cplant nodes are all timeshared */
++#else
+ 		if (np->ntype != NTYPE_CLUSTER)	/* ignore time share nodes */
++#endif
+ 			continue;
+ 		if (np->flag != okay)
+ 			continue;
+@@ -676,7 +680,11 @@
+ 	for (i=0; i<svr_totnodes; i++) {
+ 		np = pbsnlist[i];
+ 
++#ifdef CPLANT_SERVICE_NODE
++		if (np->ntype != NTYPE_TIMESHARED)	/* Cplant nodes are all timeshared */
++#else
+ 		if (np->ntype != NTYPE_CLUSTER)	/* ignore time share nodes */
++#endif
+ 			continue;
+ 		if (np->flag != thinking)
+ 			continue;
+@@ -981,7 +989,12 @@
+ 	str = spec;
+ 		
+ 	num = ctnodes(str);
++
++#ifdef CPLANT_SERVICE_NODE
++	if (num > svr_tsnodes) {
++#else
+ 	if (num > svr_clnodes) {
++#endif
+ 		free(spec);
+ 		return -1;
+ 	}
+@@ -1005,7 +1018,11 @@
+ 				 INUSE_JOB|
+ 				 INUSE_UNKNOWN))
+ 			continue;
++#ifdef CPLANT_SERVICE_NODE
++		if (np->ntype == NTYPE_TIMESHARED)
++#else
+ 		if (np->ntype == NTYPE_CLUSTER)
++#endif
+ 			svr_numnodes++;
+ 	}
+ 
+@@ -1033,7 +1050,11 @@
+ 	for (i=0; i<svr_totnodes; i++) {
+ 		np = pbsnlist[i];
+ 
++#ifdef CPLANT_SERVICE_NODE
++		if (np->ntype != NTYPE_TIMESHARED)
++#else
+ 		if (np->ntype != NTYPE_CLUSTER)
++#endif
+ 			continue;	
+ 		if (np->flag != thinking)
+ 			continue;
+@@ -1419,6 +1440,12 @@
+  * node_avail - report if nodes requested is available
+  *	Does NOT even consider Time Shared Nodes 
+  *
++CPLANT_SERVICE_NODE
++    Cplant uses the nodes resource to keep track of service nodes on which
++    parallel applications are launched.  These are all time shared.  So
++    we DO count time shared nodes.  (That's all we've got, in fact.)
++CPLANT_SERVICE_NODE
++ *
+  *	Return 0 when no error in request and
+  *		*navail is set to number available
+  *		*nalloc is set to number allocated
+@@ -1485,6 +1512,15 @@
+ 				     (INUSE_OFFLINE|INUSE_DOWN|INUSE_UNKNOWN))
+ 				++xdown;
+ 		    }
++#ifdef CPLANT_SERVICE_NODE
++            if ((np->ntype == NTYPE_TIMESHARED) && hasprop(np, prop)) {
++                if (np->inuse &
++                     (INUSE_OFFLINE|INUSE_DOWN|INUSE_UNKNOWN))
++                    ++xdown;
++                else
++                    ++xavail;
++            }
++#endif
+ 		}
+ 		free_prop(prop);
+ 
+diff -Naurw origsrc/src/server/pbsd_main.c patched/src/server/pbsd_main.c
+--- origsrc/src/server/pbsd_main.c	Fri Dec 17 03:08:15 1999
++++ patched/src/server/pbsd_main.c	Wed Nov 24 20:14:09 1999
+@@ -285,11 +285,43 @@
+ 
+ 	/* find out who we are (hostname) */
+ 
++#ifdef CPLANT_SERVICE_NODE
++        /*
++        ** Cplant service nodes have multiple network interfaces.  The system
++        ** hostname (returned by gethostname) may be the name on the
++        ** diagnostic network, and not the name on the network connecting
++        ** service nodes and the router to user home file systems.  This
++        ** second network is the
++        ** network on which service nodes talk to each other, and the
++        ** network on which PBS commands reach the PBS server.  The PBS
++        ** server's node name in this network is returned by pbs_default().
++        */
++        strncpy(server_host, pbs_default(), PBS_MAXHOSTNAME);
++
++        {
++           FILE *fp;
++           int physnid, rc;
++ 
++           fp = popen("/cplant/sbin/getNid", "r");
++ 
++           rc = fscanf(fp, "%d", &physnid);
++
++           if ((rc != 1) || (physnid<0) ||(physnid>999999)){
++               sprintf(pbs_current_user,"pbs_server");
++           }
++           else{
++               sprintf(pbs_current_user,"pbs_srv_%d",physnid);
++           }
++           pclose(fp);
++        }
++
++#else
+ 	if ((gethostname(server_host, PBS_MAXHOSTNAME) == -1) ||
+ 	    (get_fullhostname(server_host,server_host,PBS_MAXHOSTNAME) == -1)) {
+ 		log_err(-1, "pbsd_main", "Unable to get my host name");
+ 		return (-1);
+ 	}
++#endif
+ 
+ 	/* initialize service port numbers for self, Scheduler, and MOM */
+ 
+@@ -402,7 +434,9 @@
+ 		log_err(errno, msg_daemonname, log_buffer);
+ 		return (2);
+ 	}
++#ifndef CPLANT_REMOTE_WORKING_DIR
+ 	lock_out(lockfds, F_WRLCK);
++#endif
+ 	
+ 	server.sv_started = time(&time_now);	/* time server started */
+ 
+@@ -445,7 +479,9 @@
+ 
+ #ifndef DEBUG
+ 	
++#ifndef CPLANT_REMOTE_WORKING_DIR
+ 	lock_out(lockfds, F_UNLCK);
++#endif
+ 	if (fork() > 0)
+ 		exit(0);	/* parent goes away */
+ 
+@@ -453,7 +489,9 @@
+ 		log_err(errno, msg_daemonname, "setsid failed");
+ 		return (2);
+ 	}
++#ifndef CPLANT_REMOTE_WORKING_DIR
+ 	lock_out(lockfds, F_WRLCK);
++#endif
+ 	(void)fclose(stdin);
+ 	(void)fclose(stdout);
+ 	(void)fclose(stderr);
+diff -Naurw origsrc/src/server/process_request.c patched/src/server/process_request.c
+--- origsrc/src/server/process_request.c	Fri Dec 17 03:08:15 1999
++++ patched/src/server/process_request.c	Wed Feb  2 20:29:39 2000
+@@ -241,10 +241,24 @@
+ 			req_connect(request);
+ 			return;
+ 		}
++#ifdef CPLANT_SERVICE_NODE
++		if (svr_conn[sfds].cn_authen != PBS_NET_CONN_AUTHENTICATED){
++            sprintf(log_buffer,"%d != %d (PBS_NET_CONN_AUTHENTICATED)",
++                        svr_conn[sfds].cn_authen ,PBS_NET_CONN_AUTHENTICATED);
++	        LOG_EVENT(PBSEVENT_SYSTEM, PBS_EVENTCLASS_REQUEST, "process_request", log_buffer);
++
++			rc = PBSE_BADCRED;
++
++        }
++		else
++			rc = authenticate_user(request, &conn_credent[sfds]);
++#else
+ 		if (svr_conn[sfds].cn_authen != PBS_NET_CONN_AUTHENTICATED)
+ 			rc = PBSE_BADCRED;
+ 		else
+ 			rc = authenticate_user(request, &conn_credent[sfds]);
++#endif
++
+ 		if (rc != 0) {
+ 			req_reject(rc, 0, request);
+ 			close_client(sfds);
+@@ -300,6 +314,7 @@
+ 	 */
+ 
+ 	dispatch_request(sfds, request);
++
+ 	return;
+ }
+ 
+diff -Naurw origsrc/src/server/req_getcred.c patched/src/server/req_getcred.c
+--- origsrc/src/server/req_getcred.c	Fri Dec 17 03:08:15 1999
++++ patched/src/server/req_getcred.c	Mon Jan 17 18:21:09 2000
+@@ -66,6 +66,10 @@
+ #include "net_connect.h"
+ #include "batch_request.h"
+ 
++#ifdef CPLANT_SERVICE_NODE
++#include "log.h"
++#endif
++
+ static char ident[] = "@(#) $RCSfile: cplantPatch,v $ $Revision: 1.5 $";
+ 
+ /* External Global Data Items Referenced */
+@@ -88,10 +92,22 @@
+ {
+ 	int  sock = preq->rq_conn;
+ 
++#ifdef CPLANT_SERVICE_NODE
++	if (svr_conn[sock].cn_authen == 0) {
++		reply_ack(preq);
++	} else{
++        sprintf(log_buffer,"sock %d, cn_authen = %d",sock,svr_conn[sock].cn_authen);
++        LOG_EVENT(PBSEVENT_DEBUG2, PBS_EVENTCLASS_REQUEST, "req_connect", log_buffer);
++
++      
++		req_reject(PBSE_BADCRED, 0, preq);
++    }
++#else
+ 	if (svr_conn[sock].cn_authen == 0) {
+ 		reply_ack(preq);
+ 	} else
+ 		req_reject(PBSE_BADCRED, 0, preq);
++#endif
+ }
+ 
+ /*
+diff -Naurw origsrc/src/server/resc_def_all.c patched/src/server/resc_def_all.c
+--- origsrc/src/server/resc_def_all.c	Fri Dec 17 03:08:15 1999
++++ patched/src/server/resc_def_all.c	Tue Oct  5 18:21:55 1999
+@@ -490,6 +490,29 @@
+     },
+ #endif	/* SRFS */
+ 
++#ifdef CPLANT_SERVICE_NODE
++    {	"size",         /* size of compute partition requested (number of nodes) */
++	decode_l,
++	encode_l,
++	set_l,
++	comp_l,
++	free_null,
++	NULL_FUNC,
++	READ_WRITE | ATR_DFLAG_MOM | ATR_DFLAG_RMOMIG | ATR_DFLAG_RASSN,
++	ATR_TYPE_LONG
++    },
++    {	"list",			/* list of types of nodes requested (not yet supported) */
++	decode_nodes,
++	encode_str,
++	set_str,
++	comp_str,
++	free_str,
++	set_node_ct,
++	READ_WRITE | ATR_DFLAG_RMOMIG,
++	ATR_TYPE_STR
++    },
++#endif
++
+ 
+ 	/* the definition for the "unknown" resource MUST be last */
+ 
+diff -Naurw origsrc/src/server/svr_chk_owner.c patched/src/server/svr_chk_owner.c
+--- origsrc/src/server/svr_chk_owner.c	Fri Dec 17 03:08:16 1999
++++ patched/src/server/svr_chk_owner.c	Mon Jan 17 22:17:02 2000
+@@ -210,10 +210,27 @@
+ {
+ 	char uath[PBS_MAXUSER + PBS_MAXHOSTNAME + 1];
+ 
++#ifdef CPLANT_SERVICE_NODE
++	if (strncmp(preq->rq_user, pcred->username, PBS_MAXUSER)){
++
++        sprintf(log_buffer,"%s != %s",preq->rq_user, pcred->username);
++        LOG_EVENT(PBSEVENT_SYSTEM, PBS_EVENTCLASS_REQUEST, "authenticate_user", log_buffer);
++
++		return (PBSE_BADCRED);
++    }
++	if (strncmp(preq->rq_host, pcred->hostname, PBS_MAXHOSTNAME)){
++
++        sprintf(log_buffer,"%s != %s",preq->rq_host, pcred->hostname);
++        LOG_EVENT(PBSEVENT_SYSTEM, PBS_EVENTCLASS_REQUEST, "authenticate_user", log_buffer);
++
++		return (PBSE_BADCRED);
++    }
++#else
+ 	if (strncmp(preq->rq_user, pcred->username, PBS_MAXUSER))
+ 		return (PBSE_BADCRED);
+ 	if (strncmp(preq->rq_host, pcred->hostname, PBS_MAXHOSTNAME))
+ 		return (PBSE_BADCRED);
++#endif
+ 	if ( pcred->timestamp) {
+ 		if ((pcred->timestamp - CREDENTIAL_TIME_DELTA > time_now) ||
+             	    (pcred->timestamp + CREDENTIAL_LIFETIME < time_now))
+diff -Naurw origsrc/src/server/svr_connect.c patched/src/server/svr_connect.c
+--- origsrc/src/server/svr_connect.c	Fri Dec 17 03:08:16 1999
++++ patched/src/server/svr_connect.c	Thu Jan 27 02:55:24 2000
+@@ -107,6 +107,15 @@
+ 
+ 	/* obtain the connection to the other server */
+ 
++#if 0
++#ifdef CPLANT_SERVICE_NODE
++    if (hostaddr != pbs_server_addr){   /* check host is up */
++
++        if (!addr_is_alive(hostaddr)) return PBS_NET_RC_FATAL;
++    }
++#endif
++#endif
++
+ 	sock = client_to_svr(hostaddr, port, 1);
+ 	if (sock < 0) {
+ 		pbs_errno = errno;

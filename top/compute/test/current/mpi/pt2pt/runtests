@@ -1,0 +1,489 @@
+#!/bin/sh
+#
+# Run some of the tests.  If any arguments are provided, pass them to the
+# test programs.
+#
+# -mvhome is needed for the ANL SP, and is ignored by others
+#args="-pg -mvhome"
+#
+# If the programs are not available, run make.
+runtests=1
+makeeach=0
+MAKE="make"
+#YODBASE="-base 20"
+YODSIZE="-sz 2"
+for arg in "$@" ; do
+    case $arg in 
+	-checkonly)
+	runtests=0
+	;;
+        -margs=*)
+	margs=`echo $arg | sed 's/-margs=//'`
+	args="$args $margs"
+	;;
+	-echo)
+	set -x
+	;;
+	-small)
+	makeeach=1
+	;;
+	-help|-u)
+	echo "runtests [-checkonly] [-margs='...']"
+	echo "run tests in this directory.  If -checkonly set, just run"
+	echo "the differences check (do NO rerun the test programs)."
+	echo "If -margs is used, these options are passed to mpirun."
+	echo "If -small is used, the examples are built, run, and deleted."
+	exit 1
+	;;
+	*)
+	if test -n "$arg" ; then
+	    echo "Passing remaining arguments to programs ($*)"
+	    break
+        fi
+	;;
+    esac
+done
+
+# MakeExe program-name
+MakeExe() {
+    if [ ! -x $1 ] ; then
+	$MAKE $1
+    fi
+}
+# CleanExe program-name
+CleanExe() {
+    if [ $makeeach = 1 ] ; then
+	/bin/rm -f $1 $1.o
+    fi
+}
+## RunTest program-name marker-text outputfile programargs
+#RunTest() {
+#    testfiles="$testfiles $3"
+#    /bin/rm -f $3
+#    MakeExe $1
+#    echo "$2"
+#    echo "$2" >> $3
+#    mpirun $args -np 2 $1 "$4" >> $3 2>&1
+#    echo "$2" >> $3
+#    CleanExe $1
+#}   
+
+# If the programs are not available, run make.
+if [ ! -x sendrecv -a $makeeach = 0 ] ; then
+    $MAKE default
+fi
+
+testfiles=""
+if [ $runtests = 1 ] ; then
+echo '**** Testing MPI Point-to-point routines ****'
+fi
+
+if [ -x sendrecv ]; then 
+  testfiles="$testfiles sendrecv.out"
+  /bin/rm -f sendrecv.out
+  MakeExe sendrecv
+  echo '**** Testing MPI_Send and MPI_Recv ****' >> sendrecv.out
+  echo '**** Testing MPI_Send and MPI_Recv ****' 
+  /bin/rm -f sendrecv-[012].out
+  yod $YODBASE $YODSIZE sendrecv "$@" >> sendrecv-2.out 2>&1
+  cat sendrecv-[012].out >> sendrecv.out
+  /bin/rm -f sendrecv-[012].out
+  echo '**** Testing MPI_Send and MPI_Recv ****' >> sendrecv.out
+  CleanExe sendrecv
+else
+  echo 'Executable sendrecv does not exist - skipping'
+fi
+#
+if [ -x sendrecv2 ]; then 
+  testfiles="$testfiles sendrecv2.out"
+  /bin/rm -f sendrecv2.out
+  MakeExe sendrecv2
+  echo '**** Testing MPI_Send and MPI_Recv (2) ****' >> sendrecv2.out
+  echo '**** Testing MPI_Send and MPI_Recv (2) ****' 
+  yod $YODBASE $YODSIZE sendrecv2 "$@" >> sendrecv2.out 2>&1
+  echo '**** Testing MPI_Send and MPI_Recv (2) ****' >> sendrecv2.out
+  CleanExe sendrecv2
+else
+  echo 'Executable sendrecv2 does not exist - skipping'
+fi
+#
+if [ -x sendrecv3 ]; then
+testfiles="$testfiles sendrecv3.out"
+/bin/rm -f sendrecv3.out
+MakeExe sendrecv3
+echo '**** Testing MPI_Send and MPI_Recv (3) ****' >> sendrecv3.out
+echo '**** Testing MPI_Send and MPI_Recv (3) ****' 
+yod $YODBASE $YODSIZE sendrecv3 "$@" >> sendrecv3.out 2>&1
+echo '**** Testing MPI_Send and MPI_Recv (3) ****' >> sendrecv3.out
+CleanExe sendrecv3
+else
+  echo 'Executable sendrecv3 does not exist - skipping'
+fi
+#
+if [ -x sendrecv4 ]; then
+testfiles="$testfiles sendrecv4.out"
+/bin/rm -f sendrecv4.out
+MakeExe sendrecv4
+echo '**** Testing MPI_Send and MPI_Recv (4) ****' >> sendrecv4.out
+echo '**** Testing MPI_Send and MPI_Recv (4) ****' 
+yod $YODBASE $YODSIZE sendrecv4 "$@" >> sendrecv4.out 2>&1
+echo '**** Testing MPI_Send and MPI_Recv (4) ****' >> sendrecv4.out
+CleanExe sendrecv4
+else
+  echo 'Executable sendrecv4 does not exist - skipping'
+fi
+#
+if [ -x bsendtest ]; then
+testfiles="$testfiles bsendtest.out"
+/bin/rm -f bsendtest.out
+MakeExe bsendtest
+echo '**** Testing MPI_Bsend and MPI_Recv (4) ****' >> bsendtest.out
+echo '**** Testing MPI_Bsend and MPI_Recv (4) ****' 
+yod $YODBASE $YODSIZE bsendtest "$@" >> bsendtest.out 2>&1
+echo '**** Testing MPI_Bsend and MPI_Recv (4) ****' >> bsendtest.out
+CleanExe bsendtest
+else
+  echo 'Executable bsendtest does not exist - skipping'
+fi
+#
+if [ -x isndrcv ]; then
+testfiles="$testfiles isndrcv.out"
+/bin/rm -f isndrcv.out
+MakeExe isndrcv
+echo '**** Testing MPI_Isend and MPI_Irecv ****'
+echo '**** Testing MPI_Isend and MPI_Irecv ****' >> isndrcv.out
+/bin/rm -f isndrcv-[012].out
+yod $YODBASE $YODSIZE isndrcv "$@" > isndrcv-2.out 2>&1 
+cat isndrcv-[012].out >> isndrcv.out
+/bin/rm -f isndrcv-[012].out
+echo '**** Testing MPI_Isend and MPI_Irecv ****' >> isndrcv.out
+CleanExe isndrcv
+else
+  echo 'Executable isndrcv does not exist - skipping'
+fi
+#
+if [ -x irsend ]; then
+testfiles="$testfiles irsend.out"
+/bin/rm -f irsend.out
+MakeExe irsend
+echo '**** Testing MPI_Irsend ****' >> irsend.out
+echo '**** Testing MPI_Irsend ****' 
+yod $YODBASE $YODSIZE irsend "$@" >> irsend.out 2>&1
+echo '**** Testing MPI_Irsend ****' >> irsend.out
+CleanExe irsend
+else
+  echo 'Executable irsend does not exist - skipping'
+fi
+#
+if [ -x testsome ]; then
+testfiles="$testfiles testsome.out"
+/bin/rm -f testsome.out
+MakeExe testsome
+echo '**** Testing MPI_Testsome/Testany/Waitsome ****' >> testsome.out
+echo '**** Testing MPI_Testsome/Testany/Waitsome ****' 
+yod $YODBASE $YODSIZE testsome "$@" >> testsome.out 2>&1
+echo '**** Testing MPI_Testsome/Testany/Waitsome ****' >> testsome.out
+CleanExe testsome
+else
+  echo 'Executable testsome does not exist - skipping'
+fi
+#
+if [ -x testall ]; then
+testfiles="$testfiles testall.out"
+/bin/rm -f testall.out
+MakeExe testall
+echo '**** Testing MPI_Testall ****' >> testall.out
+echo '**** Testing MPI_Testall ****' 
+yod $YODBASE $YODSIZE testall "$@" >> testall.out 2>&1
+echo '**** Testing MPI_Testall ****' >> testall.out
+CleanExe testall
+else
+  echo 'Executable testall does not exist - skipping'
+fi
+#
+if [ -x getelm ]; then
+testfiles="$testfiles getelm.out"
+/bin/rm -f getelm.out
+MakeExe getelm
+echo '**** Testing MPI_Get_elements ****' >> getelm.out
+echo '**** Testing MPI_Get_elements ****' 
+yod $YODBASE $YODSIZE getelm "$@" >> getelm.out 2>&1
+echo '**** Testing MPI_Get_elements ****' >> getelm.out
+CleanExe getelm
+else
+  echo 'Executable getelm does not exist - skipping'
+fi
+#
+if [ -x overtake ]; then
+testfiles="$testfiles overtake.out"
+/bin/rm -f overtake.out
+MakeExe overtake
+echo '**** Verifying that messages are non-overtaking ****'
+echo '**** Verifying that messages are non-overtaking ****' >> overtake.out
+/bin/rm -f overtake-[01].out
+yod $YODBASE $YODSIZE overtake "$@" >> overtake.out 2>&1
+cat overtake-[01].out >> overtake.out
+/bin/rm -f overtake-[01].out
+echo '**** Verifying that messages are non-overtaking ****' >> overtake.out
+CleanExe overtake
+else
+  echo 'Executable overtake does not exist - skipping'
+fi
+#
+if [ -x ssendtest ]; then
+testfiles="$testfiles ssendtest.out"
+/bin/rm -f ssendtest.out
+MakeExe ssendtest
+echo '**** Verifying ssend ****'
+echo '**** Verifying ssend ****' >> ssendtest.out
+yod $YODBASE $YODSIZE ssendtest "$@" >> ssendtest.out 2>&1
+echo '**** Verifying ssend ****' >> ssendtest.out
+CleanExe ssendtest
+else
+  echo 'Executable ssendtest does not exist - skipping'
+fi
+#
+if [ -x typebase ]; then
+testfiles="$testfiles typebase.out"
+/bin/rm -f typebase.out
+MakeExe typebase
+echo '**** Checking the type (sizes) routines ****'
+echo '**** Checking the type (sizes) routines ****' >> typebase.out
+yod $YODBASE $YODSIZE typebase "$@" >> typebase.out 2>&1
+echo '**** Checking the type (sizes) routines ****' >> typebase.out
+CleanExe typebase
+else
+  echo 'Executable typebase does not exist - skipping'
+fi
+#
+if [ -x typetest ]; then
+testfiles="$testfiles typetest.out"
+/bin/rm -f typetest.out
+MakeExe typetest
+echo '**** Checking the type routines ****'
+echo '**** Checking the type routines ****' >> typetest.out
+/bin/rm -f typetest-[01].out
+yod $YODBASE $YODSIZE typetest "$@" >> typetest.out 2>&1
+if [ -s typetest-0.out ] ; then
+    cat typetest-0.out >> typetest.out
+fi
+/bin/rm -f typetest-[01].out
+echo '**** Checking the type routines ****' >> typetest.out
+CleanExe typetest
+else
+  echo 'Executable typetest does not exist - skipping'
+fi
+#
+if [ -x typeub ]; then
+testfiles="$testfiles typeub.out"
+/bin/rm -f typeub.out
+MakeExe typeub
+echo '**** Checking the type routines: MPI_UB ****'
+echo '**** Checking the type routines: MPI_UB ****' >> typeub.out
+yod $YODBASE $YODSIZE typeub "$@" >> typeub.out 2>&1
+echo '**** Checking the type routines: MPI_UB ****' >> typeub.out
+CleanExe typeub
+else
+  echo 'Executable typeub does not exist - skipping'
+fi
+#
+if [ -x third ]; then
+testfiles="$testfiles third.out"
+/bin/rm -f third.out
+MakeExe third
+echo '*** Testing Unexpected messages ***'
+echo '*** Testing Unexpected messages ***' >> third.out
+yod $YODBASE $YODSIZE third "$@" >> pt2pt.out >> third.out 2>&1
+echo '*** Testing Unexpected messages ***' >> third.out
+CleanExe third
+else
+  echo 'Executable third does not exist - skipping'
+fi
+#
+if [ -x fourth ]; then
+testfiles="$testfiles fourth.out"
+/bin/rm -f fourth.out
+MakeExe fourth
+echo '*** Testing Irecv/Isend/Wait ***'
+echo '*** Testing Irecv/Isend/Wait ***' >> fourth.out
+yod $YODBASE -sz 1x4 fourth "$@" >> fourth.out 2>&1
+echo '*** Testing Irecv/Isend/Wait ***' >> fourth.out
+CleanExe fourth
+else
+  echo 'Executable fourth does not exist - skipping'
+fi
+#
+if [ -x fifth ]; then
+testfiles="$testfiles fifth.out"
+/bin/rm -f fifth.out
+MakeExe fifth
+echo '*** Testing Irecv/Isend/Waitall ***'
+echo '*** Testing Irecv/Isend/Waitall ***' >> fifth.out
+yod $YODBASE -sz 1x4 fifth "$@" >> fifth.out 2>&1
+echo '*** Testing Irecv/Isend/Waitall ***' >> fifth.out
+CleanExe fifth
+else
+  echo 'Executable fifth does not exist - skipping'
+fi
+#
+if [ -x sixth ]; then
+testfiles="$testfiles sixth.out"
+/bin/rm -f sixth.out
+MakeExe sixth
+echo '*** Testing attribute manipulation ***'
+echo '*** Testing attribute manipulation ***' >> sixth.out
+yod $YODBASE $YODSIZE sixth "$@" >> sixth.out 2>&1
+echo '*** Testing attribute manipulation ***' >> sixth.out
+CleanExe sixth
+else
+  echo 'Executable sixth does not exist - skipping'
+fi
+#
+if [ -x hvectest ]; then
+testfiles="$testfiles hvectest.out"
+/bin/rm -f hvectest.out
+MakeExe hvectest
+echo '*** Testing Vector type ***'
+echo '*** Testing Vector type ***' >> hvectest.out
+yod $YODBASE $YODSIZE hvectest "$@" >> hvectest.out 2>&1
+echo '*** Testing Vector type ***' >> hvectest.out
+CleanExe hvectest
+else
+  echo 'Executable hvectest does not exist - skipping'
+fi
+#
+if [ -x hvectest2 ]; then
+testfiles="$testfiles hvectest2.out"
+/bin/rm -f hvectest2.out
+MakeExe hvectest2
+echo '*** Testing struct type for vectors (MPI_UB) ***'
+echo '*** Testing struct type for vectors (MPI_UB) ***' >> hvectest2.out
+yod $YODBASE $YODSIZE hvectest2 "$@" >> hvectest2.out 2>&1
+echo '*** Testing struct type for vectors (MPI_UB) ***' >> hvectest2.out
+CleanExe hvectest2
+else
+  echo 'Executable hvectest2 does not exist - skipping'
+fi
+#
+if [ -x probe ]; then
+testfiles="$testfiles probe.out"
+/bin/rm -f probe.out
+MakeExe probe
+echo '*** Testing Probe and Get_count ***'
+echo '*** Testing Probe and Get_count ***' >> probe.out
+yod $YODBASE $YODSIZE probe "$@" >> probe.out 2>&1
+echo '*** Testing Probe and Get_count ***' >> probe.out
+CleanExe probe
+else
+  echo 'Executable probe does not exist - skipping'
+fi
+#
+if [ -x probe1 ]; then
+testfiles="$testfiles probe1.out"
+/bin/rm -f probe1.out
+MakeExe probe1
+echo '*** Testing Iprobe and Get_count ***'
+echo '*** Testing Iprobe and Get_count ***' >> probe1.out
+yod $YODBASE $YODSIZE probe1 "$@" >> probe1.out 2>&1
+echo '*** Testing Iprobe and Get_count ***' >> probe1.out
+CleanExe probe1
+else
+  echo 'Executable probe1 does not exist - skipping'
+fi
+#
+if [ -x self ]; then
+testfiles="$testfiles self.out"
+/bin/rm -f self.out
+MakeExe self
+echo '*** Testing send to self ***' 
+echo '*** Testing send to self ***' >> self.out
+yod $YODBASE -sz 1 self "$@" >> self.out 2>&1
+echo '*** Testing send to self  ***' >> self.out
+CleanExe self
+else
+  echo 'Executable self does not exist - skipping'
+fi
+#
+#
+if [ -x testtest1 ]; then
+testfiles="$testfiles testtest1.out"
+/bin/rm -f testtest1.out
+MakeExe testtest1
+echo '*** Testing MPI_Test ***' 
+echo '*** Testing MPI_Test ***' >> testtest1.out
+yod $YODBASE $YODSIZE testtest1 "$@" >> testtest1.out 2>&1
+echo '*** Testing MPI_Test ***' >> testtest1.out
+CleanExe testtest1
+else
+  echo 'Executable testtest1 does not exist - skipping'
+fi
+#
+if [ -x persistent ]; then
+testfiles="$testfiles persistent.out"
+/bin/rm -f persistent.out
+MakeExe persistent
+echo '*** Testing MPI_Recv_init ***' 
+echo '*** Testing MPI_Recv_init ***' >> persistent.out
+yod $YODBASE -sz 1x4 persistent "$@" >> persistent.out 2>&1
+echo '*** Testing MPI_Recv_init ***' >> persistent.out
+CleanExe persistent
+else
+  echo 'Executable persistent does not exist - skipping'
+fi
+#
+if [ -x waitall ]; then
+testfiles="$testfiles waitall.out"
+/bin/rm -f waitall.out
+MakeExe waitall
+echo '*** Testing MPI_Waitall ***' 
+echo '*** Testing MPI_Waitall ***' >> waitall.out
+yod $YODBASE $YODSIZE waitall "$@" >> waitall.out 2>&1
+echo '*** Testing MPI_Waitall ***' >> waitall.out
+CleanExe waitall
+else
+  echo 'Executable waitall does not exist - skipping'
+fi
+#
+if [ -x pack ]; then
+testfiles="$testfiles pack.out"
+/bin/rm -f pack.out
+MakeExe pack
+echo '*** Testing MPI_Pack ***' 
+echo '*** Testing MPI_Pack ***' >> pack.out
+yod $YODBASE $YODSIZE pack "$@" >> pack.out 2>&1
+echo '*** Testing MPI_Pack ***' >> pack.out
+CleanExe pack
+else
+  echo 'Executable pack does not exist - skipping'
+fi
+#
+echo '*** Differences from expected output ***'
+/bin/rm -f pt2pt.diff
+for file in $testfiles ; do
+    stdfile=`basename $file .out`.std
+    # if basename is sendrecv or isndrcv, then we may want to test 
+    # with .std2 as well.  We should really separate out the long double
+    # tests ...
+    if [ -s $stdfile ] ; then
+	stdfile2=${stdfile}2
+        if diff -b $file $stdfile > /dev/null ; then
+	    true
+	elif [ -s $stdfile2 ] ; then 
+	    # check for alternate in case configuration has fewer datatypes
+	    if diff -b $file $stdfile2 > /dev/null ; then
+	        true
+            else
+	        echo "Differences in `basename $file .out`" >> pt2pt.diff
+	        diff -b $file $stdfile >> pt2pt.diff
+	    fi
+        else
+	    echo "Differences in `basename $file .out`" >> pt2pt.diff
+	    diff -b $file $stdfile >> pt2pt.diff
+	fi
+    else
+        echo "Can not find file $stdfile to compare against for test `basename $file .out`"
+    fi
+done
+if [ -s pt2pt.diff ] ; then
+   cat pt2pt.diff
+fi

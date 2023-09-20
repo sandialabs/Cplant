@@ -1,0 +1,10 @@
+include ../Makefile-common
+ 
+ifeq ($(OS),linux)
+SUBDIRS = ../compute/OS/linux-patches/linux-$(KERNEL_VER)
+endif
+
+all:
+
+%:
+	$(do-subdirs)

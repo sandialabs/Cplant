@@ -1,0 +1,150 @@
+.if n .ds Q \&"
+.if t .ds Q ``
+.if n .ds U \&"
+.if t .ds U ''
+.TH SPAWNJOB 3 "20 November 2001" "CPLANT MANPAGE" "Cplant Runtime Libraries"
+.tr \&
+.nr bi 0
+.nr ll 0
+.nr el 0
+.de Pp
+.ie \\n(ll>0 \{\
+.ie \\n(bi=1 \{\
+.nr bi 0
+.if \\n(t\\n(ll=0 \{.IP \\(bu\}
+.if \\n(t\\n(ll=1 \{.IP \\n+(e\\n(el.\}
+.\}
+.el .sp 
+.\}
+.el \{\
+.ie \\nh=1 \{\
+.LP
+.nr h 0
+.\}
+.el .PP 
+.\}
+..
+.SH NAME
+    
+
+.Pp
+CplantSpawnJob, CplantSpawnJobGrp
+.SH SYNOPSIS
+    
+
+.Pp
+\fB#include <cplant.h>\fP
+.Pp
+\fBjobFamilyInfo *CplantSpawnJob(int \fP\fInlines\fP\fB, char **\fP\fIpnames\fP\fB, char ***\fP\fIargvs\fP\fB, int *\fP\fInnodes\fP\fB, int *\fP\fInprocs\fP\fB)\fP
+.Pp
+\fBjobFamilyInfo *CplantSpawnJobGrp(int \fP\fInlines\fP\fB, char **\fP\fIpnames\fP\fB, char ***\fP\fIargvs\fP\fB, int *\fP\fInnodes\fP\fB, int *\fP\fInprocs\fP\fB, int \fP\fInMembers\fP\fB, int *\fP\fIrankList\fP\fB, int \fP\fItmout\fP\fB)\fP
+.SH DESCRIPTION
+    
+
+.Pp
+The function \fBCplantSpawnJob\fP sends a request to \fByod2\fP to start
+another Cplant application.  \fByod2\fP requests nodes for the new application
+and contacts the \fBPCT\fPs on the allocated nodes.  If the \fBPCT\fPs are
+ready to load the new job, \fByod2\fP loads the job.  The structure returned
+by \fByod2\fP contains
+a status indicating whether it succeeded in loading the job, or whether
+it is still waiting for the \fBPCT\fPs to load the job.  (A \fBPCT\fP may
+have to kill off a cycle-stealing job before it can load the new
+application.  This can take as long as 5 minutes.  Repeat calls to
+\fBCplantFamilyStatus\fP to determine when the load has completed.)
+.Pp
+The arguments specify \fInlines\fP distinct command lines for the new job.
+The executable path names are specified in the \fIpnames\fP array.  If
+\fIpnames\fP is NULL, \fByod2\fP will use the executable path name of the
+spawning application for each command line.  If there is more than one
+distinct command line, and \fIpnames[0]\fP is defined, and \fIpnames[1]\fP
+is NULL, the executable names in \fIpnames[0]\fP will be used for each
+command line.
+.Pp
+The program arguments for each command line may be specified in
+the \fIargv\fP array.  Each list of arguments should be followed by a NULL
+pointer, in traditional \fBargv\fP fashion.  If \fIargv\fP is NULL, \fByod2\fP
+will issue each command line with no arguments.  If \fIargv\fP is defined,
+and any of the \fIargv[i]\fP arrays is a NULL array, \fByod2\fP will assume
+there are no program arguments for that command line.
+.Pp
+The \fInnodes\fP array lists the number of nodes desired for each command
+line.  If \fInnodes\fP is NULL, \fByod2\fP will start each command line on
+one node.  If there is more than one command line, and \fInnodes[1]\fP has
+the value \fB-1\fP, \fByod2\fP will start each command line on the number
+of nodes specified in \fInnodes[0]\fP.
+.Pp
+The \fInprocs\fP array lists the number of processes per node desired 
+for each command line.  If \fInprocs\fP is NULL, \fByod2\fP will 
+specify one process per node for each command line.
+If there is more than one command line, and \fInprocs[1]\fP has
+the value \fB-1\fP, \fByod2\fP will use the value specified by \fInprocs[0]\fP
+for each command line.
+.Pp
+The function \fBCplantSpawnJobGrp\fP is a collective job spawning call.
+Every process in the spawning application that participates in the
+spawning operation must make the call with the same list of participants.
+\fInMembers\fP is the number of processes participating in the call,
+\fIrankList\fP is the list of participating process ranks, and \fItmout\fP
+is the number of seconds to wait before judging a collective operation
+among the pariticpants to be a failure.  In our implementation of this
+call, the first process in the \fIrankList\fP makes the request to \fByod2\fP
+and broadcasts the results to the others.
+.Pp
+If \fInMembers\fP is zero, or \fIrankList\fP is NULL, then this is taken
+to mean that all processes in the spawning application are participating.
+.SH RETURN VALUE
+    
+
+.Pp
+Both functions return a NULL pointer on error.  On success, a pointer
+to a \fBjobFamilyInfo\fP structure is returned.  This pointer must be
+saved for future calls that relate to the newly created application.
+The pointer may be freed when the caller is done with it.
+.Pp
+\f(CRtypedef struct _jobFamilyInfo{    
+.br
+int job_id;      /* Cplant job id */    
+.br
+int yodHandle;   /* yod2 needs this */  
+.br
+int status;      /* bit map of JOB_* values */    
+.br
+int nprocs ;     /* number of processes*/
+.br
+int error;       /* normally 0, -1 if an error occurred */
+.br
+void *callerHandle;  /* caller can use this, we don't */    
+.br
+}\fBjobFamilyInfo\fP;    
+.br\fR
+.Pp
+\f(CR#define JOB_NODE_REQUEST_BUILT  ( 1 << 0) 
+.br
+#define JOB_PCT_LIST_ALLOCATED  ( 1 << 1) 
+.br
+#define JOB_REQUESTED_TO_LOAD   ( 1 << 2) 
+.br
+#define JOB_GOT_OK_TO_LOAD      ( 1 << 3) 
+.br
+#define JOB_APP_STARTED         ( 1 << 4) 
+.br
+#define JOB_APP_FINISHED        ( 1 << 5) 
+.br
+#define JOB_APP_MASS_MURDER     ( 1 << 30) 
+.br\fR
+.SH BUGS
+    
+
+.Pp
+At the time this library was written, SMP mode for Cplant was
+still under development.  Hence the \fInprocs\fP request is sent
+along to \fByod2\fP, but nothing is done with it at this point.
+All applications are loaded with one process per node.
+.SH SEE ALSO
+    
+
+.Pp
+\fByod2\fP
+\fBPCT\fP
+\fBCplantFamilyStatus\fP

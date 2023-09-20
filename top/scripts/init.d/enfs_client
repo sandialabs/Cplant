@@ -1,0 +1,32 @@
+#!/bin/bash
+# $Id: enfs_client,v 1.1.2.5 2002/09/30 21:36:14 jrstear Exp $
+
+partition="/cnx"
+mountpoint="/global"
+NodeId=`getNid`
+
+case "$1" in
+    start) 
+    	# determine our server
+        n=`(IFS=, ; x=$2; echo $x)|wc -w`
+        n=`expr $NodeID % $n + 1`
+        server=`echo $2 | cut -d, -f${n}`
+
+	# mount it up, passing in these MOUNTOPTIONS
+	export MOUNTOPTIONS='-o rsize=8192,wsize=8192,intr,nolock'
+	echo "$0 running: mount_nfs start $server:$partition,$mountpoint"
+	./mount_nfs start $server:$partition,$mountpoint
+	;;
+
+    stop)
+        umount $mountpoint
+	;;
+
+    restart)
+        $0 stop $2
+        $0 start $2
+	;;
+
+    *)
+	echo "Usage:  {start|stop|restart} list:of:enfs:servers" 
+esac

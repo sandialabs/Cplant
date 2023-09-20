@@ -1,0 +1,20 @@
+#!/bin/bash
+
+#
+# script to start the load balancing client daemon that
+# talks to the load balancing name daemon.
+#
+case "$1" in
+    start)
+	if [ -f /bin/lbcd ]
+	then
+		/bin/lbcd
+	fi
+        ;;
+
+    stop)
+        killall /bin/lbcd
+        ;;
+    *)
+        echo "Usage: $0  {start|stop}"
+esac

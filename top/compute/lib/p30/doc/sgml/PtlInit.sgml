@@ -1,0 +1,46 @@
+<!--
+    $Id: PtlInit.sgml,v 1.1 2001/01/10 21:42:53 rbbrigh Exp $
+-->
+
+<!doctype qwertz system>
+
+<manpage title="PtlInit" sectnum="3" date='"04 Jan 2001"'
+    footer='"Portals 3.0"' main='"Portals 3.0 Library"'>
+
+<sect1> NAME
+    <p>
+    <bf/PtlInit/ &mdash Initialize the Portals 3.0 Library 
+    </p>
+
+<sect1> SYNOPSIS
+    <p>
+     #include "p30.h"
+
+     int PtlInit(void)
+    </p>
+
+<sect1> DESCRIPTION
+    <p>
+    <bf /PtlInit/ should be called by all processes in an application before
+    calling any of the functions defined by the Portal API.  This function
+    should be called once and only once during initialization by each process
+    in a parallel job.
+    </p>
+
+<sect1> RETURN VALUES
+    <p>
+    <descrip>
+     <tag /PTL_OK/
+     on success
+     <tag /PTL_FAIL/
+     indicates an error during initialization
+    </descrip>
+    </p>
+
+<sect1> SEE ALSO
+    <p>
+    <bf /PtlFini(3)/<newline>
+    <bf /Portals 3.0 Message Passing Interface document/
+    </p>
+
+</manpage>

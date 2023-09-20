@@ -1,0 +1,269 @@
+.TH VROUTE 1 "Cplant Myrinet Utilities" "Cplant" \" -*- nroff -*-
+.SH NAME
+.B vroute 
+\- vroute client (for verifying myrinet routes on Cplant)
+.SH SYNOPSIS
+.B vroute
+[\-z no_sleep_secs] [\-b] [\-v] [\-s sendnid] [-r recvnid] [-p portnum] \-from sendhost \-to recvhost
+
+.SH DESCRIPTION
+.B vroute
+is the client side of the myrinet route 
+verification utility on Cplant. It works in conjunction with the
+.B vrouted 
+server via sockets and TCP/IP to provide detection of one-way 
+or two-way pings between myrinet nodes. 
+.B vroute 
+relies on the Cplant rtscts myrinet driver/module running on the
+server side.
+.P
+.B vroute 
+normally identifies the service port on the vrouted server by doing a 
+lookup in /etc/services on the local node.
+.P
+An invocation of 
+.B vroute 
+runs on three nodes: the vroute
+client runs on a controller node (SSS-0 or SSS-1) and coordinates 
+myrinet pings
+between a pair of sender and receiver targets both connected
+by myrinet and running 
+the
+.B vrouted
+service.
+.P
+Unless the -p option is used, all three nodes need to have a line like
+.P
+vroute        8011/tcp
+.P
+in their /etc/services file. Here, "8011" binds a specific
+port to vrouted service requests. The actual port number
+should be chosen as appropriate for a given site. In addition,
+the 
+.B vroute
+client should have entries for the "sendhost" and the "recvhost"
+in its /etc/hosts file unless they are registered with a DNS service.
+.P
+As an alternative to looking up the port number in /etc/services
+.B vroute 
+can be given an alternate port number using
+the -p option. This option can be used if one knows the port number
+of the registered service or if one wishes to contact user-invocations
+of 
+.B vrouted 
+on the sender and receiver. In the latter case, the
+.B vrouted
+servers should be run by hand on the sender and receiver
+using the same option (and port number).
+.P
+.B vroute
+attempts to open a socket connection to the sender and
+receiver at the 
+.B vrouted
+service port. If successful, it tells these nodes which
+one is to act as sender and which one is to act as receiver
+for a one-way myrinet ping (a reverse direction ping may
+follow). Optionally, it attempts to verify the user's notion
+of the sender's and receiver's Cplant node id (nid) by querying
+the sender or receiver for their nids and comparing these with
+"sendnid" and "recvnid".
+.P
+In any case, 
+.B vroute 
+obtains the sender's nid, giving it to the receiver and
+visa versa. (These are the servers' nids obtained from
+their portals device, not the input nids to vroute).
+.P
+.B vroute
+then tells the sender to initiate
+a myrinet ping and subsequently asks the receiver to check
+on receipt of the ping. The sender will try to send a short
+myrinet packet using the route in the slot in its MCP's
+route table indexed by the receiver nid it just received.
+The myrinet message also has the sender's node id and a 
+"ping" message type. The receipt of such a message is
+handled by the rtscts module -- its arrival is noted by
+marking a slot, indexed by the send id, in the receiver's ping_info table.
+When the receiver is notified by the client to look for receipt
+of a message from the sender it checks this slot in the ping_info table,
+and reports success or failure to the vroute client.
+.P
+When contacted by 
+.B vroute 
+the servers attempt to open
+a pair of devices, /dev/portals and /dev/rtscts, on the sender
+and receiver nodes. Opening these devices requires that they exist as files
+with the appropriate permissions (normally read and write by
+world) and that the corresponding Linux kernel modules be loaded
+on the servers.
+It is
+also assumed that the rtscts MCP (Myrinet Control Program) is 
+running on the local lanai card of each one of the servers.
+.P
+The 
+.B vroute 
+client does not need to be running portals or rtscts/myrinet.
+It just needs to be able to make a TCP/IP connection to the
+sender and receiver.
+
+.SS OPTIONS
+.TP
+.I "\-b"
+Both. Attempt a ping in "both" directions; from sendhost to
+recvhost and then from recvhost to sendhost. Ignored if sendhost = recvhost.
+.TP
+.I "\-v"
+Verbosity. Print out progress reports for the vroute protocol.
+.TP
+.I "\-p portnum"
+Specify a port number for connecting to the servers. For avoiding
+reference to /etc/services if the vrouted service port number is
+known or if one wishes to specify an alternative port number in
+conjunction with use of the same option in a manual invocation of 
+the servers.
+When this option is NOT used, 
+.B vroute 
+will try to
+look up the port number for vroute service in its local copy of /etc/services.
+.TP
+.I "\-s sendnid"
+Ask the sender for verification of the proposed sendnid (send node id).
+.TP
+.I "\-r recvnid"
+Ask the receiver for verification of the proposed recvnid (receive node id).
+Ignored if sendhost = recvhost.
+.TP
+.I "\-from sendhost"
+Required. Open a socket connection to the sendhost and ask it to send a
+myrinet ping to a recvhost. Can be a hostname or an IP address.
+If sendhost = recvhost then only one server connection is made and -r and
+-b options are ignored.
+.TP
+.I "\-to recvhost"
+Required. Open a socket connection to the recvhost and ask it to check for
+receipt of a myrinet ping from the sendhost. Can be a hostname or an IP address.
+If sendhost = recvhost then only one server connection is made and -r and
+-b options are ignored.
+.TP
+.I "\-z no_sleep_secs"
+Number of seconds to sleep between time that we ask sender to ping and
+receiver to look for its arrival. The default is 1 (should be enough).
+
+.SH SUGGESTED USAGE
+Call 
+.B vroute
+from a perl script that does your site's nid-to-hostname mapping,
+checking vroute's exit code for success or failure.
+.P
+A good sanity check in case a ping from node A to node B fails is
+to try pings from A to A and from B to B to make sure
+the Lanai cards are working, the MCP is running, and the host
+is connected to a Myrinet switch. It's pretty hard to screw up
+the route from and to the same host (the route is 0x80 followed by all
+zeros...).
+.P
+Using a shell script also makes it easy to run the vroute client and
+servers "by hand" in conjunction with use of the -p option (for 
+specifying a service port). 
+.P
+Use of the verbosity option (-v) is sometimes useful in diagnosing the 
+case that the vroute protocol fails.
+.P
+A sample Perl script follows.
+.br
+.nf
+#! /usr/bin/perl
+
+  # su.pl -- for each node in the given su, verify the
+  #          routes to all the nodes in the range of
+  #          sus specified below
+
+
+  #-----------------------------------------------------
+
+  # set these site specific parameters
+
+  $MINSU = 13;
+  $MAXSU = 21;
+  $SUSIZE = 16;
+
+  #-----------------------------------------------------
+
+  $MIN_NODE = $MINSU * $SUSIZE;
+  $MAX_NODE = $MAXSU * $SUSIZE + $SUSIZE - 1;
+ 
+  $su_in = $ARGV[0];
+
+  $MIN_SUNODE = $su_in * $SUSIZE;
+  $MAX_SUNODE = $MIN_SUNODE + $SUSIZE - 1;
+
+  # verify routes from each node in given su to
+  # nodes in SUs hardcoded above
+
+for ($k=$MIN_SUNODE; $k<=$MAX_SUNODE; $k++) {
+
+  $vnode = nmap($k);
+
+  $j = 0;
+  $su = $MINSU;
+
+  system("echo '-------------------------------------------------' >> ./bad_nodes_su$su_in");
+  system("echo 'testing routes of $vnode...' >> ./bad_nodes_su$su_in");
+
+  for ( $i=$MIN_NODE; $i<=$MAX_NODE; $i++ ) {
+
+    if ( $su >= $MINSU && $su <= $MAXSU ) {
+      $name = nmap($i);
+      print("vroute -from $vnode -to $name\n");
+      $ec = system("/usr/local1/jsotto/vroute -from $vnode -to $name");
+
+      if ( $ec ne 0 ) {
+        $msg = "test FAILED: $vnode to $name ($i)";
+        print("$msg\n");
+        system("echo '$msg' >> ./bad_nodes");
+      }
+    }
+
+    $j++;
+    if ($j == $SUSIZE ) {
+      $j = 0;
+      $su++;
+    }
+
+  }
+}
+
+# map physical node id to lexico node name
+sub nmap
+{
+  $id = $_[0];
+  $sunum = int($id/$SUSIZE);
+  $nid   =  $id % $SUSIZE;
+  return "c-$nid.SU-$sunum";
+}
+.fi
+
+.SH EXIT CODE
+Zero if all the proposed tests succeed.
+Nonzero otherwise.
+So if we do
+.P
+% vroute -s 11 -from c-5.SU-1 -to c-9.SU-2 -b 
+.P
+and both the pings succeed, but the sendnid verification fails
+then 
+.B vroute
+will return a nonzero value. On the other hand, vroute's textual
+output will report success of the other tests.
+
+.SH VERBOSITY
+.B vroute
+is always fairly verbose; it reports on success or failure of various
+stages of the proposed tests. Verbosity can be bumped up a little with
+the -v command line option.
+
+.SH FILES
+/etc/services, /etc/hosts
+
+.SH SEE ALSO
+vrouted(8), inetd(8)

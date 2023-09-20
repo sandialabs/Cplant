@@ -1,0 +1,59 @@
+
+Cplant Software Release 1.0 - April 17, 2001
+----------------------------------------------
+This first public release of Cplant software adds several new features
+and enhancements over the previous version.  The Cplant parallel runtime
+environment software now uses the Portals 3.0 API for all message passing.
+Previous versions used the Portals 2.0 API, which has been completely removed
+from the source code.  This release of Cplant software provides greater
+message passing reliablility through enhanced error detection and correction
+protocols.  Previously, the Myrinet message passing software was unable to
+recover from severe network errors, such as misrouted or truncated packets.
+Enhancements to the RTS/CTS module now recover from a wider variety of Myrinet
+network errors.  Because this is the first public release of Cplant software,
+the version has been named 1.0 for ease of reference.
+
+Highlights
+----------
+- Enhanced Myrinet error correctin/detection protocol
+- Server library uses Portals 3.0
+- RTS/CTS does more complete error correction
+- PCT performs a node health check
+
+Bug Fixes
+---------
+- Fixed a bug where PCT would terminate with a SIGSEGV occasionally, right
+  after an application process had terminated.
+- Bug fix to the nodekill() library call.
+
+Enhnancements
+-------------
+- yod computes a quick check sum on the executable file and sends that to
+  the PCT.  If the PCT computes a different sum, we abort the load.
+  The purpose is to detect network errors early and give up.
+- Debugging points added where application process will be held after fork
+  and before user code begins.
+- Added Cplant job ID to the user log file.
+- Improved yod's reporting of load failures caused by PCT group communication
+  failures.
+- If a load fails due to PCT group communication errors, yod will retry the
+  load up to three times.
+
+Known Bugs
+----------
+- There is a known bug in the RTS/CTS module that exhibits itself
+  when a node is sending large messages (> ~256 kB) to many nodes (> ~400)
+  simultaneously. The sending node will run out of internal send buffers
+  and not be able to complete any of the messages for a long time (minutes
+  to hours or never) We have a fix for this, but it is not tested enough to
+  be part of this Release.
+- There is a feature in the message passing system that has not been
+  implemented fully yet. The service utilities (bebopd and pct) once in
+  a while determine that a node is not alive and give up on messages that
+  have not completed yet. The notification that a message should be canceled
+  is not passed all the way to the RTS/CTS module, and it keeps trying to
+  send the message.  We are investigating what the effects of this could be,
+  but during normal operation this should not be a problem.  Programs that
+  exit, such as yod and user applications, should not be affected, since
+  the message queues are cleaned out when a process exits.
+

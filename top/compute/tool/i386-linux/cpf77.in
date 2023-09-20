@@ -1,0 +1,78 @@
+#! /bin/sh
+#
+# $Id: cpf77.in,v 1.9 2001/09/20 22:03:35 pumatst Exp $
+#
+
+DoLink=1
+DoCompile=0
+Debugging=0
+
+#
+# CPLANT_PATH - Base directory for startup files, include files, and libraries
+#
+CPLANT_PATH=${CPLANT_PATH-DEFAULT_PATH}
+
+# Tell compiler where to look for include files
+incl="
+    -I$CPLANT_PATH/include
+    -I$CPLANT_PATH/include/load
+    -I$CPLANT_PATH/include/sys
+    -I$CPLANT_PATH/include/portals
+    -I$CPLANT_PATH/compute/lib/MPIDIR/include
+"
+
+# Tell compiler where to look for libraries
+libdirs="
+    -L$CPLANT_PATH/lib/comm/i386-linux
+    -L$CPLANT_PATH/lib/puma/i386-linux
+    -L$CPLANT_PATH/compute/lib/apps/i386-linux
+    -L$CPLANT_PATH/compute/lib/p30/lib/i386-linux
+    -L$CPLANT_PATH/compute/lib/mpich-1.2.0/i386-linux
+    -L$CPLANT_PATH/compute/lib/IO/i386-linux
+"
+libs="LIBLIST FLIST"
+
+# Figure out whether or not to link
+for arg in "$@" ; do
+    case "$arg" in 
+	-g)
+	Debugging=1
+	;;
+	-c)
+	DoCompile=1
+	DoLink=0
+	break
+	;;
+	-o)
+	DoCompile=0
+	DoLink=1
+	break
+	;;
+    esac
+done
+
+# Attempt a compile
+status=0
+if [ $DoCompile = 1 ] ; then 
+    eval FCOMPILER -DLINUX_PORTALS $incl "$@"
+    status=$?
+    if [ $status != 0 ] ; then 
+	exit $status
+    fi
+fi
+
+if [ $Debugging = 1 ] ; then
+  STRIP_EXECUTABLE=
+else
+  STRIP_EXECUTABLE=F_STRIP
+fi
+
+if [ $DoLink = 1 ] ; then
+        cmd="FCOMPILER $STRIP_EXECUTABLE F_STATIC -DLINUX_PORTALS $incl \
+            "$CPLANT_PATH"/lib/start/i386-linux/startup.o $libdirs "$@" \
+             $libs"
+        eval $cmd
+    status=$?
+fi
+
+exit $status

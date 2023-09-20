@@ -1,0 +1,20 @@
+
+This directory contains the version 0.1b release of the CPlant compile
+environment.  It includes the C, C++, FORTRAN 77, and FORTRAN 90 compile
+scripts, as well as the include files and libraries needed for building
+a CPlant application.
+
+In addition, this directory contains man pages for the compilers as well
+as man pages for some of the CPlant utilities.
+
+The compile environment should work on any Digital UNIX machine which
+has the corresponding Digital UNIX compilers installed.  Each compile
+script contains an environment variable, CPLANT_PATH, which needs to be
+set to the location where the compile envrionment is installed.  For
+example, if the compile environment is installed in /usr/local/cplant,
+the compile scripts in the bin subdirectory should be modified so that
+line 9 is 'CPLANT_PATH=${CPLANT_PATH-/usr/local/cplant}'.
+
+If you encounter any problems with this compile environment, send mail to
+cplant-help@cs.sandia.gov.
+

@@ -1,0 +1,48 @@
+.TH AROUTE 1 "Cplant Myrinet Utilities" "Cplant" \" -*- nroff -*-
+.SH NAME
+.B aroute 
+\- utility (for testing a specified myrinet route on Cplant)
+.SH SYNOPSIS
+.B aroute 
+\ sequence-of-route-bytes
+
+.SH DESCRIPTION
+.B aroute 
+must be run as the superuser.
+
+.B aroute
+is a 2-way ping utility for myrinet on Cplant. It is run 
+on a service or compute node to test myrinet connectivity via
+a specified route. It takes as argument a space-separated list 
+of route bytes in the form 0xST where S and T are hex digits.
+This list is intended to form a valid myrinet path to some
+destination node in the myrinet netowrk.
+
+.B aroute 
+is a C program that makes ioctl() calls to the portals and
+rtscts devices.
+
+.B aroute 
+is similar to the
+.B vping 
+utility except that, on the command line, it takes a 
+route rather than a node id. It sends an APING message to the node 
+in question,
+waits for an ack (for a hardcoded time interval), 
+and reports on the result.
+
+.B aroute 
+is also similar to 
+.B rroute 
+which sends an RPING message. The difference is in the
+action of the receiving node. When a destination node receives
+an APING messages it parses out the sender's node id and the
+return route is the one indexed by that id in it's in-memory routing table.
+For an RPING message, the return route is parsed out of the
+message itself.
+
+.B aroute 
+must be run as the superuser.
+
+.SH SEE ALSO
+vping(1), mping(1), crawl(1), do-ping(1), get-ping(1), rroute(1)

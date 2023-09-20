@@ -1,0 +1,129 @@
+#!/usr/bin/perl -w
+#
+# $Id$
+#
+# mrepper  -  12/05/01
+
+# secorwe - 12/01
+# Modified it to check elapsed time with required time
+
+use strict;
+
+my $PINGD = "/cplant/sbin/pingd";
+my $QSTAT = "/bin/qstat";
+my @req_time;
+my @elap_time;
+my @pingd;
+my @qstat;
+my %bebop = ();
+my %pbs = ();
+my $pbstotal = 0;
+my $beboptotal = 0;
+# used for combining hash keys
+my %seen;
+# keys (job IDs) that are in %pbs but not in %bebop
+my @pbsonly;
+my $tmp;
+my $pbs_key;
+my $bebop_key;
+
+die "No such file: $PINGD\n" unless -e $PINGD;
+die "No such file: $QSTAT\n" unless -e $QSTAT;
+
+print "Getting data from qstat...\n";
+open(QSTAT, "$QSTAT -a |") or die "Couldn't execute \"$QSTAT -a\"!\n";
+#open(QSTAT, "cat /home/secorwe/qstat.out |") or die "Couldn't execute \"$QSTAT -a\"!\n";
+@qstat = <QSTAT>;
+close(QSTAT);
+
+print "Getting data from pingd...\n";
+open(PINGD, "$PINGD |") or die "Couldn't execute \"$PINGD\"!\n";
+#open(PINGD, "cat pingd.out |") or die "Couldn't execute \"$PINGD\"!\n";
+@pingd = <PINGD>;
+close(PINGD);
+
+foreach (@pingd) {
+	#my @fields = split(/\s+/, $_);
+	chomp;
+	#    NID                                      User                 PBS job
+	#     $1                                       $2                    $3
+	if (/(\d+)\s+\([^\)]+\)\s+\d+\s+\d+\/\s+\d+\s+(\w+)\s+\d+:\d+:\d+\s+(\d+)/ ){
+	#if (scalar @fields == 11) {
+		push @{ $bebop{$3} }, $1;
+		#push @{ $bebop{$fields[11]} }, $fields[1];
+	}
+}
+
+foreach (@qstat) {
+	chomp;
+	my @fields = split ' ', $_;
+	if (scalar @fields == 10){
+		if ($fields[8] eq "R") {
+                        #
+                        # Also getting the required and elapsed time for a job
+                        # If the elapsed time is greater than the required time
+                        # there is a problems with the job.  I am putting "**"
+                        # next to the job id number as a flag
+                        #
+                        @req_time = split(/:/,$fields[7]);
+                        @elap_time = split(/:/,$fields[9]); 
+                        if ($req_time[0] < $elap_time[0]) { 
+                           $fields[0] = $fields[0] . " \*\*";
+			   $pbs{$fields[0]} = $fields[6];
+                        } elsif ( ($req_time[0] == $elap_time[0]) && ($req_time[1] < $elap_time[1]) ) {
+                           $fields[0] = $fields[0] . " \*\*";
+                           $pbs{$fields[0]} = $fields[6];
+                        } else {   
+			   $pbs{$fields[0]} = $fields[6];
+                        }
+
+		}
+	}
+}
+
+@seen{keys %bebop} = ();
+foreach $pbs_key (keys %pbs) {
+        $tmp = $pbs_key;
+        $tmp =~ s/ \*\*//;
+        if (exists $bebop{$tmp} && $pbs_key =~ /\*/) {
+           $bebop{$pbs_key} = $bebop{$tmp};
+           delete $bebop{$tmp};
+        } 
+	push(@pbsonly, $pbs_key) unless exists $seen{$tmp};
+}
+
+print "\n";
+print "PBS Job ID        Nodes in use according to\n";
+print "                        PBS      Bebopd\n";
+print "-------------------------------------------\n";
+foreach (sort (@pbsonly, keys %bebop)) {
+	printf("  %5s               ", $_);
+	if (defined $pbs{$_}) {
+		printf("%5d       ", $pbs{$_});
+		$pbstotal+=$pbs{$_};
+	} else {
+		printf("  ---       ");
+	}
+	if (defined $bebop{$_}) {
+		printf("%5d\n", scalar @{$bebop{$_}});
+		$beboptotal+=scalar @{$bebop{$_}};
+	} else {
+		printf("  ---\n");
+	}
+}
+print "-------------------------------------------\n";
+printf("Total:                %5d       %5d\n", $pbstotal, $beboptotal);
+print "\n If you see \*\* next to a job id it means that the \n";
+print "elapsed time exceeds required running time. \n";
+print "Check with user to make sure job is not hung.\n\n";
+
+exit 0;
+
+#foreach (keys %bebop) {
+#	print "Job ID $_: ";
+#	print join(',', @{$bebop{$_}}), "\n\n";
+#}
+
+#foreach (keys %pbs) {
+#	print "Job ID $_: ", $pbs{$_}, " nodes Req'd\n";
+#}

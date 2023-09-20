@@ -1,0 +1,61 @@
+.if n .ds Q \&"
+.if t .ds Q ``
+.if n .ds U \&"
+.if t .ds U ''
+.TH cplant 1M "28 August 2002" "Cplant" "Cplant System Manager's Manual"
+.tr \&
+.nr bi 0
+.nr ll 0
+.nr el 0
+.de Pp
+.ie \\n(ll>0 \{\
+.ie \\n(bi=1 \{\
+.nr bi 0
+.if \\n(t\\n(ll=0 \{.IP \\(bu\}
+.if \\n(t\\n(ll=1 \{.IP \\n+(e\\n(el.\}
+.\}
+.el .sp 
+.\}
+.el \{\
+.ie \\nh=1 \{\
+.LP
+.nr h 0
+.\}
+.el .PP 
+.\}
+..
+.SH NAME
+    
+
+.Pp
+\fBcplant\fP -- Cplant startup script
+.SH SYNOPSIS
+    
+
+.Pp
+\fBcplant\fP start|stop|restart
+.SH DESCRIPTION
+
+.Pp
+\fBcplant\fP is the script in the init.d/ directory which is used
+to start or stop cplant on a node.  It determines the line from
+the etc/cfg file (see cfg man page for its format) which is
+appropriate for the host \fBcplant\fP is being run on, then runs
+the scripts listed on that line with the arguments given on that
+line.  If \fBstart\fP is given, the scripts are run in the order
+listed in the cfg file (start is given as the first argument to
+each script).  If \fBstop\fP is given, the scripts are run in the
+reverse order they are listed in the cfg file (stop is given as
+the first argument to each script).  If \fBrestart\fP is given, it
+executes a stop sequence followed by a start sequence.
+.Pp
+The \fBcplant\fP script first looks for \*Q disabled \*U lines, then
+regular lines, then \*Q default \*U lines (see the \fBcfg\fP man page).
+.Pp
+.Pp
+.SH SEE ALSO
+    
+
+.Pp
+\fBcfg\fP,
+Guide to building and installing Cplant

@@ -1,0 +1,70 @@
+
+ NAS Parallel Benchmarks 2.3 -- EP Benchmark
+
+ Number of random numbers generated:    536870912  
+ Number of active processes:                    2
+
+EP Benchmark Results:
+
+CPU Time =   76.7158
+N = 2^   28
+No. Gaussian Pairs =     210832767.
+Sums =    -4.295875165638679D+03   -1.580732573678578D+04
+Counts:
+  0      98257395.
+  1      93827014.
+  2      17611549.
+  3       1110028.
+  4         26536.
+  5           245.
+  6             0.
+  7             0.
+  8             0.
+  9             0.
+
+
+ EP Benchmark Completed.
+ Class           =                        A
+ Size            =                536870912  
+ Iterations      =                        0
+ Time in seconds =                    76.72
+ Total processes =                        2
+ Compiled procs  =                        2
+ Mop/s total     =                     7.00
+ Mop/s/process   =                     3.50
+ Operation type  = Random numbers generated
+ Verification    =               SUCCESSFUL
+ Version         =                      2.3
+ Compile date    =              21 May 1998
+
+ Compile options:
+    MPIF77       = /Net/mp/cplant/bin/f77 
+    FLINK        = $(MPIF77)
+    FMPI_LIB     = -L$(MPIPATH) -lmpi 
+    FMPI_INC     = -I$(MPIPATH)/include
+    FFLAGS       = -O3 -align records -align dcommons
+    FLINKFLAGS   = (none)
+    RAND         = randi8
+
+
+ Please send the results of this run to:
+
+ NPB Development Team 
+ Internet: npb@nas.nasa.gov
+ 
+ If email is not available, send this to:
+
+ MS T27A-1
+ NASA Ames Research Center
+ Moffett Field, CA  94035-1000
+
+ Fax: 415-604-3957
+
+
+Contacting node allocation daemon...
+2 nodes are allocated to your job ID 819
+
+   Node name        Rank  Node   PID   Elapsed  Exit Code  Terminating Signal
+------------------- ----  ----  -----  -------  ---------  ------------------
+                       0    18  14379  0:01:19       0       none
+                       1    19  14385  0:01:19       0       none

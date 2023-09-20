@@ -1,0 +1,121 @@
+#! /bin/sh 
+
+# Author:  Tom Gordon and Alexander Horz
+# Date:    11-28-89
+# Last Modified:  29 Jan 93
+
+
+prefix=/usr/local
+FORMAT=$prefix/lib/sgml-tools
+SGMLS=$prefix/bin/sgmls
+SGMLSASP=$prefix/bin/sgmlsasp
+REPDIR=${REPDIR:=$FORMAT/rep/qwertz} # default directory of replacement files
+USERREP=""
+SGML_PATH=${SGML_PATH:=$FORMAT/dtd/%N.dtd:$FORMAT/dtd/%P.dtd}
+export SGML_PATH
+
+TYPE=latex		      # default formatter 
+TABS="-8"		      # expand replaces tabs with 8 spaces
+CHECK="no"		      # don't just check SGML syntax
+
+# The preprocessor has been removed.  Add a new tool for preproccesing
+# Author/Editor files made on the Mac, perhaps with a command line
+# option here to invoke it.
+
+INCLUDE=""
+SGMLFILE=" "
+FILEROOT=" "
+PROGNAME=$0
+TF1=/tmp/$$1
+
+TMPFILES="$TF1"
+
+cleanup () {	# remove temporary files
+	for i in $TMPFILES
+	do
+		if [ -f $i ]
+		then
+			/bin/rm $i.sgml
+		fi	
+	done
+}
+
+trap 'cleanup; exit 1' 1 2 3 9
+
+usage () {
+echo "	format  [-c]		* just check syntax";
+echo "		[-T <format>]	* latex | nroff | grops | man ...";
+echo "		[-t <n>]	* tabstops each <n>th col (default 8)";
+echo "		[-r <filename>] * replacement file";
+echo "		<filename>	* .sgml extension is optional";
+exit 1 
+}
+
+case "$1" in
+	"help" | "HELP" | "Help" | "-help") usage
+esac
+
+set -- `getopt cr:T:t: $*`
+
+if [ $? != 0 ]
+then
+	usage
+fi
+
+for i in $*
+do
+        case $i in
+	      -c)	CHECK="yes"; shift;;
+	      -T)	TYPE=$2; shift; shift;;
+	      -t) 	TABS="-"$2; shift; shift;;
+	      -r)       USERREP=$2; shift; shift;;
+              --)       shift;
+			break;;
+        esac
+done
+
+if [ "$1" = "" ] 
+then
+   	cat > $TF1.sgml 	# write standard input to file
+	FILE=$TF1
+else
+	FILE=$1
+fi;
+
+if [ -f $FILE.sgml ] 
+then
+	FILEROOT=$FILE
+	SGMLFILE=$FILEROOT.sgml
+elif [ ! -f $FILE ] 
+then
+	echo $PROGNAME: cannot find $FILE or $FILE.sgml  >&2
+	exit 1
+else
+	SGMLFILE=$FILE
+	FILEROOT=$FILE
+fi
+
+# add the type specific entity files to SGML_PATH
+
+SGML_PATH=$REPDIR/$TYPE/%N:$SGML_PATH
+export SGML_PATH
+
+if [ $CHECK = "yes" ]
+then
+	$SGMLS -s $SGMLFILE > /dev/null
+	if [ $? = 1 ] 
+	then 
+		exit 1
+	else
+		exit 0
+	fi
+else
+	# format the document, writing to standard out
+	REP=$REPDIR/$TYPE/mapping
+
+	$SGMLS $SGMLFILE | $SGMLSASP $USERREP $REP | expand $TABS
+fi
+
+cleanup
+
+# end of format script

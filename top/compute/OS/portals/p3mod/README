@@ -1,0 +1,10 @@
+$Id: README,v 1.1 2000/01/28 17:25:45 rolf Exp $
+
+- This module is not kept backward compatible with 2.0.x kernels
+- For now we expect the Portals 2.0 module to be there. We want it
+    to be inserted first, since rtscts.mod (and pkt.mod) depends
+    on it, and the IP module depends in turn on the rtscts module.
+
+    We make p3.mod dependent on portals.mod and therefore establish
+    a clear order and can let protals.mod install and remove
+    /proc/cplant.

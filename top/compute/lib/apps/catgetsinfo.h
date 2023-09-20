@@ -1,0 +1,84 @@
+/*************************************************************************
+Cplant Release Version 2.0.1.10
+Release Date: Nov 5, 2002 
+#############################################################################
+#
+#     This Cplant(TM) source code is the property of Sandia National
+#     Laboratories.
+#
+#     This Cplant(TM) source code is copyrighted by Sandia National
+#     Laboratories.
+#
+#     The redistribution of this Cplant(TM) source code is subject to the
+#     terms of the GNU Lesser General Public License
+#     (see cit/LGPL or http://www.gnu.org/licenses/lgpl.html)
+#
+#     Cplant(TM) Copyright 1998, 1999, 2000, 2001, 2002 Sandia Corporation. 
+#     Under the terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+#     license for use of this work by or on behalf of the US Government.
+#     Export of this program may require a license from the United States
+#     Government.
+#
+#############################################################################
+**************************************************************************/
+/* Copyright (C) 1996, 1997 Free Software Foundation, Inc.
+   This file is part of the GNU C Library.
+   Contributed by Ulrich Drepper, <drepper@gnu.ai.mit.edu>.
+
+   The GNU C Library is free software; you can redistribute it and/or
+   modify it under the terms of the GNU Library General Public License as
+   published by the Free Software Foundation; either version 2 of the
+   License, or (at your option) any later version.
+
+   The GNU C Library is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+   Library General Public License for more details.
+
+   You should have received a copy of the GNU Library General Public
+   License along with the GNU C Library; see the file COPYING.LIB.  If not,
+   write to the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+   Boston, MA 02111-1307, USA.  */
+
+#include <sys/types.h>
+#include <bits/libc-lock.h>
+
+struct catalog_obj
+{
+  u_int32_t magic;
+  u_int32_t plane_size;
+  u_int32_t plane_depth;
+  /* This is in fact two arrays in one: always a pair of name and
+     pointer into the data area.  */
+  u_int32_t name_ptr[0];
+};
+
+
+/* This structure will be filled after loading the catalog.  */
+typedef struct catalog_info
+{
+  enum { closed, nonexisting, mmapped, malloced } status;
+
+  const char *cat_name;
+  const char *env_var;
+  const char *nlspath;
+
+  size_t plane_size;
+  size_t plane_depth;
+  u_int32_t *name_ptr;
+  const char *strings;
+
+  struct catalog_obj *file_ptr;
+  size_t file_size;
+
+  __libc_lock_define (,lock);
+} *__nl_catd;
+
+
+
+/* The magic number to signal we really have a catalog file.  */
+#define CATGETS_MAGIC 0x960408de
+
+
+/* Prototypes for helper functions.  */
+void __open_catalog (__nl_catd __catalog);

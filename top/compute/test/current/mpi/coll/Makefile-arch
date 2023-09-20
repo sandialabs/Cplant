@@ -1,0 +1,33 @@
+#
+# $Id: Makefile-arch,v 1.1 2001/10/29 22:49:26 pumatst Exp $
+#
+
+include ../../../../../../Makefile-common
+
+COLLSOURCES    = $(shell ls ../*.c)
+COLLEXECS      = $(filter-out test, $(notdir $(COLLSOURCES:.c=)))
+P2PUTILITIES   = test.o gcomm.o
+
+CC             = $(CPCC)
+FC             = $(CPF77)
+
+EXECS          = $(COLLEXECS)
+
+INSTALLDIR     = $(testdir)
+INSTALLTARGETS = $(EXECS)
+
+vpath %.c ..l:../../pt2pt
+vpath %.a $(CPLANT_TOP)/lib/comm/$(CPLANT_ARCH)-$(OS):$(CPLANT_TOP)/lib/puma/$(CPLANT_ARCH)-$(OS)\
+          $(CPLANT_TOP)/compute/lib/apps/$(CPLANT_ARCH)-$(OS)
+
+all: $(EXECS)
+
+$(COLLEXECS) : % : ../coll/%.c $(P2PUTILITIES)
+	$(CC) -o $@ $^ -lmpi -lm 
+
+install uninstall: $(INSTALLTARGETS)
+	@$($@)
+
+clean:
+	-rm -f $(COLLEXECS) $(P2PUTILITIES)
+

@@ -1,0 +1,270 @@
+.if n .ds Q \&"
+.if t .ds Q ``
+.if n .ds U \&"
+.if t .ds U ''
+.TH bebopd 8L "04 May 2001" "Cplant" "Cplant Utilities"
+.tr \&
+.nr bi 0
+.nr ll 0
+.nr el 0
+.de Pp
+.ie \\n(ll>0 \{\
+.ie \\n(bi=1 \{\
+.nr bi 0
+.if \\n(t\\n(ll=0 \{.IP \\(bu\}
+.if \\n(t\\n(ll=1 \{.IP \\n+(e\\n(el.\}
+.\}
+.el .sp 
+.\}
+.el \{\
+.ie \\nh=1 \{\
+.LP
+.nr h 0
+.\}
+.el .PP 
+.\}
+..
+.SH NAME
+    
+
+.Pp
+\fBbebopd\fP -- Cplant node allocation daemon
+.SH SYNOPSIS
+    
+
+.Pp
+\fBbebopd\fP [\fB-D\fP] 
+[\fB-S\fP [1|0]] 
+[\fB-L\fP [1|0]] 
+[\fB-daemon\fP]
+.Pp
+[\fB-alternative\fP] 
+[\fB-r \fIoptional-file-name\fP\fP] 
+[\fB-help\fP]
+.Pp
+[\fB-PBSsupport\fP] 
+[\fB-PBSupdate\fP] 
+[\fB-PBSlist \fInode,list\fP\fP]
+.SH DESCRIPTION
+    
+
+.Pp
+The \fBbebopd\fP daemon runs in the service partition.  It is the
+point in the Cplant where knowledge of compute node status resides.
+It has the following interfaces:
+.Pp
+.Pp
+.PP
+.nr ll +1
+.nr t\n(ll 2
+.TP
+.I "PCTs"
+.nr bi 1
+.Pp
+ 
+The \fBbebopd\fP receives messages
+from the compute node PCTs when they start and end, and when an
+application terminates.  If the 
+\fBbebopd\fP is restarted,
+it contacts the PCTs to identify itself to them.  The \fBbebopd\fP
+sends status queries as needed to the PCTs and maintains the
+responses. 
+.TP
+.I "yod"
+.nr bi 1
+.Pp
+ 
+The \fBbebopd\fP accepts yod requests on behalf of 
+users wishing to run a parallel
+application.  The \fBbebopd\fP attempts to allocate to the job 
+the requested nodes, and assigns a numeric job ID to the application. 
+.TP
+.I "pingd"
+.nr bi 1
+.Pp
+ 
+It also accepts pingd requests for updates from the compute partition,
+and returns pingd a list of compute node status information.  It
+accepts requests from pingd to send a SIGTERM
+or a SIGKILL to an application, kill PCTs, or to
+note that a PCT it thought was out there is gone.  The bebopd may also
+receive requests from pingd to turn on or off PBSsupport or PBSupdate,
+or to change the number of nodes reserved for interactive (i.e. non-PBS) use.
+
+.TP
+.I "PBS server"
+.nr bi 1
+.Pp
+When the bebopd is run in PBSupdate mode, it updates the PBS server
+whenever the number of live compute nodes changes.  That is, it
+uses the PBS qmgr client to keep the resources_available.size and
+resources_max.size attributes of the PBS server accurate.
+.nr ll -1
+.PP
+.Pp
+.Pp
+The \fBbebopd\fP as designed today exists as a single process on one
+node of the service partition.  The plan
+is to run \fBbebopd\fP as a distributed service across the service partition,
+both in the interest of fault tolerance and to improve response
+time to yod and pingd users.
+.SH OPTIONS
+    
+
+.Pp
+.PP
+.nr ll +1
+.nr t\n(ll 2
+
+.TP
+.I "-alternative"
+.nr bi 1
+.Pp
+Every portals process has a portal ID.  It is this ID that the
+portals module uses when dispatching received messages to processes.
+For testing purposes we may want to
+run another bebopd on the same node. 
+This argument causes the \fBbebopd\fP to request an unused portal ID from the
+portals module.  The bebopd will display it's alternative portal ID on 
+startup.
+
+.TP
+.I "-D"
+.nr bi 1
+.Pp
+This option causes the \fBbebopd\fP to output information about
+what it is doing.  Repeating the \fI-D\fP option on the command
+line increases the amount of information.
+
+.TP
+.I "-S [0|1]        "
+.nr bi 1
+.Pp
+The \fBbebopd\fP outputs warnings and errors, and, if the
+\fI-D\fP option is used, status information.
+The \fI0\fP switch turns off all output from the \fBbebopd\fP to stderr.
+The \fI1\fP switch turns it on.  By default, the \fBbebopd\fP \fIdoes not\fP
+write to stderr.
+ 
+.TP
+.I "-L [0|1]        "
+.nr bi 1
+.Pp
+The \fBbebopd\fP outputs warnings and errors, and, if the
+\fI-D\fP option is used, status information.
+The \fI0\fP switch turns off all output from the \fBbebopd\fP to the
+log file.
+The \fI1\fP switch turns it on.  By default, the \fBbebopd\fP \fIdoes\fP
+write to log file.
+
+
+.TP
+.I "-r \fIoptional-file-name\fP"
+.nr bi 1
+.Pp
+This option specifies that the \fBbebopd\fP is being restarted.
+The \fBbebopd\fP always saves a file (\f(CRsaved_pct_list\fR in the
+same directory as the bebopd registry file)
+containing a list of active
+PCTs when it exits.  When \fBbebopd\fP restarts, it reads in
+this file and contacts the PCTs for their status.  If an
+\fIoptional-file-name\fP is given, the bebopd will look there
+for the PCT list instead of in the \f(CRsaved_pct_list\fR file.
+
+.TP
+.I "-help"
+.nr bi 1
+.Pp
+This option displays the list of bebopd options.
+
+.TP
+.I "-daemon"
+.nr bi 1
+.Pp
+This option runs the bebopd in the background.  The default is to
+run the bebopd as a foreground process.
+
+.TP
+.I "-PBSsupport"
+.nr bi 1
+.TP
+.I "-PBSupdate"
+.nr bi 1
+.Pp
+PBS (Portal Batch System) on Cplant requires support from the bebopd.
+The bebopd is running in
+PBSsupport mode if it is keeping track of the number of live compute
+nodes in the machine and policing PBS users to ensure they use no more
+nodes than they were allocated.  The bebopd is running in PBSupdate mode
+if in addition it sends updates to the PBS server whenever the number
+of live compute nodes changes.  These two arguments can be used to
+turn on PBSsupport or to turn on PBSupdate.
+Since PBSupdate implies PBSsupport, turning on
+PBSupdate automatically turns on PBSsupport.
+
+.TP
+.I "-PBSlist \fInode,list\fP"
+.nr bi 1
+.Pp
+The bebopd can reserve \fInumNodes\fP nodes for interactive use.  PBS will
+not be able to schedule these nodes for batch jobs.  Specify the list
+of interactive nodes here (ie- 23,45..78,99).
+.nr ll -1
+.PP
+.Pp
+.SH ERRORS
+    
+
+.Pp
+Errors and warnings are logged to /var/log/cplant on the node hosting
+the bebopd.
+.SH SIGNALS
+    
+
+.Pp
+On receiving a SIGUSR1 or SIGUSR2, the bebopd will write to the log file
+it's identifying information and what routine it is in.
+On receiving a SIGHUP, the bebopd will close and reopen it's log file,
+list identifying information to the log file, and re-read the site file.
+.SH FILES
+    
+
+.Pp
+.PP
+.nr ll +1
+.nr t\n(ll 2
+.TP
+.I "/etc/local/saved_pct_list"
+.nr bi 1
+.Pp
+This file lists all PCTs that were active when the last
+\fBbebopd\fP terminated.  
+.TP
+.I "/etc/local/site"
+.nr bi 1
+.Pp
+This file defines site specific information that may be required
+by the \fBbebopd\fP.
+.TP
+.I "/var/log/cplant"
+.nr bi 1
+.Pp
+This is the log file where Cplant daemons and utilities log
+status.
+.nr ll -1
+.PP
+.Pp
+.Pp
+.SH SEE ALSO
+    
+
+.Pp
+\fBpingd\fP
+\fByod\fP
+\fBpct\fP
+\fBsite\fP
+.SH BUGS
+    
+
+.Pp
+Let us know if you locate any (cplant-help@cs.sandia.gov).

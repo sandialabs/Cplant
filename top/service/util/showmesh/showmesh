@@ -1,0 +1,329 @@
+#!/usr/bin/perl
+###############################################################################
+# showmesh
+#
+# perl script that parses pingd output and formats it like the
+# Puma showmesh command.
+# 
+# Updated to use the CIToolkit Table.pm formatting library,
+# add some command line options, and parse hostnames from pingd
+# as well as (SU node). -ND
+#
+###############################################################################
+
+use lib ($ENV{CLUSTER_CONFIG} ? $ENV{CLUSTER_CONFIG} : "/cluster/lib");
+use CConf;
+use lib ($CConf::config{lib});
+
+use Util;
+use Table;	# CIToolkit matrix formatting library
+
+#
+# Set some constants and initialize some variables
+#
+$cplant_path = "/cplant";
+$PINGD         = "$cplant_path/sbin/pingd -f|";
+# returns something like:
+# 1023 ( t-31 n-32 )      301   1324/  37 cdloren   39:36:54    9575
+#   or like:
+# 1023 ( node.n-32.t-31 )      301   1324/  37 cdloren   39:36:54    9575
+
+%nodes         = ();
+%jobs          = ();
+
+$stalechar     = '-';
+$availchar     = '*';
+$unknownchar   = '?';
+$allocatedchar = '+';
+$unavailchar   = '\\';
+$servicechar   = '$';
+$jobcharlen    = 1;  # default of 1 for when there's no jobs running yet
+$main::alpha_index = 0; # start labling jobs at 'a'
+
+#
+# Parse command line and check arguments
+#
+{
+    use Getopt::Long;
+    &GetOptions('transpose',	\$transpose,
+		'badnodes',	\$showbad,
+		'stalenodes',	\$showstale,
+		'compress',	\$nospaces,
+		'help',		sub { system("perldoc $0"); exit; },
+		);
+}
+
+
+sub get_name {
+	#
+	# A stupid hack to make sure we get the hostname back...
+	#
+	my $string = shift;
+	if ( /(\w+-\d+)\s+\w+-(\d+)/ ) {
+		# we have the funny "( SU node )" labels
+		my $su = $1;
+		my $node = int $2;
+		# remove the padding that pingd puts in.
+        	$su   =~ s/-0+(\d)/-$1/;
+		return "node.n-$node.$su";
+	}
+	# otherwise, pingd just returned the hostname, I hope.
+	return $string;
+}
+
+###############################################################################
+# Parse the pingd output
+###############################################################################
+
+# open up a read pipe from pingd
+open PINGD or die "**Internal error** - unable to start $PINGD";
+
+# get the first line of output
+$_= <PINGD>;
+
+# look for problems
+if ( (/Can not register myself as PPID=/)       ||
+     (/can't locate bebopd registry file name/) ||
+     (/Sorry, unable to locate bebopd/)          ) {
+    die "**Internal error** - unable to determine status\n";
+}
+
+# get the next line of output
+$_ = <PINGD>;
+
+# look for problems
+if ( /No reponse with data from bebopd, sorry/ ) {
+    die "**Internal error** - unable to determine status\n";
+}
+
+# everything should be ok
+# eat the next three lines
+$i = 3;
+while ( <PINGD> && --$i ) {};
+
+# grab information about each node    
+while( <PINGD> ) {
+
+    # node has a job running
+    if ( /^\s*(\d+)\s+\(\s+(.+)\s+\)\s+(\d+)\s+(\d+)\/\s*(\d+)\s+(\w+)\s+(\d+):(\d+):(\d+)/ ) {
+
+	$pnid = int $1;
+        $node = $2;
+	$jid  = int $3;
+	#$pid  = int $4;
+        $rank = int $5;
+        $user = $6;
+        $hour = int $7;
+        $min  = int $8;
+        $sec  = int $9;
+
+	$name = get_name($node);
+
+        # process job not seen before
+	if ( ! defined $jobs{ $jid } ) {
+	    $jobs{$jid}		= &getalpha($main::alpha_index++);
+	    $jobcharlen		= length($jobs{$jid});
+	    $jobs{$jid}{user}	= $user;
+            $jobs{$jid}{maxrank}= $rank;
+            $jobs{$jid}{time}	= 0;
+	}
+
+        # process a job seen before
+	$nodes{$name} = $jobs{$jid};
+ 
+        $jobs{$jid}{time} += ($hour * 3600) + ($min * 60) + $sec;
+
+        # figure out how big the job is
+	if ( $jobs{$jid}{maxrank} < $rank ) {
+	    $jobs{$jid}{maxrank} = $rank;
+	}
+
+    }
+
+    # stale node
+    if ( /^\s*(\d+)\s+\(\s+(.+)\s+\)\s+node data is stale/ ) {
+
+	$pnid = int $1;
+        $node = $2;
+	$name = get_name($node);
+
+	$nodes{$name} = $stalechar;
+
+	$statuscount{$stalechar}++;
+
+	push @stalenodes, $name;
+    }
+
+    # node reported in for allocation
+    if ( /^\s*(\d+)\s+\(\s+(.+)\s+\)\s+node reported in for possible allocation/ ) {
+
+        $pnid = int $1;
+        $node = $2;
+	$name = get_name($node);
+
+        $nodes{$name} = $allocatedchar;
+
+	$statuscount{$allocatedchar}++;
+    }
+
+    # unavailable node
+    if ( /^\s*(\d+)\s+\(\s+(.+)\s+\)\s+node is unavailable/ ) {
+
+	$pnid = int $1;
+        $node = $2;
+	$name = get_name($node);
+
+	$nodes{$name} = $unavailchar;
+
+	$statuscount{$unavailchar}++;
+    }
+
+    # free node
+    if ( /^\s*(\d+)\s+\(\s+(.+)\s+\)\s*$/ ) {
+
+	$pnid = int $1;
+        $node = $2;
+	$name = get_name($node);
+
+	$nodes{$name} = $availchar;
+
+	$statuscount{$availchar}++;
+    }
+
+    # get total free (more as a sanity check...)
+    if ( /^Total free: (\d+)$/ ) {
+	$free = $1;
+    }
+
+}
+
+# close the pipe
+close PINGD;
+
+###############################################################################
+# Form the mesh display
+###############################################################################
+
+my $t=Table->new([keys %nodes], {	small_headers => 1,
+					vertical_col_headers => 1,
+					colsort => 'myrinet'
+				} );
+if ($transpose) {
+	$t->section_width(8);
+} else {
+	# actually, the default is to transpose it
+	#  and the -tr argument is more of a "don't transpose"...
+	# (nodes across and racks down usually fit better)
+	$t->transpose;
+	$t->section_height(8);
+}
+
+# compress the output a little more
+$nospaces and $t->space_between_columns(0);
+
+# Display nodes that were not in the %nodes list with a "?"
+$t->missing_char($unknownchar);
+# Display nodes that exist but have no data with a " ",
+# (probably an error parsing pingd?)
+$t->unknown_char($unknownchar);
+
+#
+# Actually print the table, using data from %nodes
+#
+$t->print_table(\%nodes);
+
+@badnodes = ($t->unknown, $t->missing);
+
+
+###############################################################################
+
+#
+# print the legend
+#
+print "\nLegend:\n";
+
+#printf   " $servicechar    service node %s",
+#  $statuscount{$servicechar} ? "($statuscount{$servicechar})\n" : "\n";
+printf   " $unknownchar    non-existent node %s",
+  scalar @badnodes ? sprintf "(%s)\n", scalar @badnodes : "\n";
+printf   " $unavailchar    dead node %s",
+  $statuscount{$unavailchar} ? "($statuscount{$unavailchar})\n" : "\n";
+printf " $allocatedchar    allocated node %s",
+  $statuscount{$allocatedchar} ? "($statuscount{$allocatedchar})\n" : "\n";
+printf     " $stalechar    stale node %s",
+  $statuscount{$stalechar} ? "($statuscount{$stalechar})\n" : "\n";
+printf     " $availchar    free node %s",
+  $statuscount{$availchar} ? "($statuscount{$availchar})\n" : "\n";
+
+if ($statuscount{$availchar} != $free) {
+  print "\nWarning: pingd reports that there are $free available nodes, but I counted ", $statuscount{$availchar}, ".\n";
+}
+
+print "\n";
+
+
+#
+# print job info
+#
+print " Job    ID      User    Size    Time\n"
+     ."-----  ----  ---------  ----  --------\n";
+
+format JOBS =
+@>>>>  @>>>  @>>>>>>>>  @>>>  @>>>>>>>
+$job, $jobs{$job}, $jobs{$job}{user}, $size, $time
+.
+
+$~ = "JOBS";
+
+foreach $job ( sort keys %jobs ) {
+    $size = $jobs{$job}{maxrank} + 1;
+    $avg  = $jobs{$job}{time} / $size;
+    $hour = $avg / 3600;
+    $avg  = $avg % 3600;
+    $min  = $avg / 60;
+    $sec  = $avg % 60;
+    $time = sprintf "%.2d:%.2d:%.2d", $hour, $min, $sec;
+    write;
+}
+
+$~ = "STDOUT";
+
+print "\n\n";
+
+#
+# if the -b option was given,
+# list the nodes we have no data for
+# (some of them anyway.  If a whole rack is missing,
+#   then it will probably be left out)
+#
+$showbad and print "non-existent nodes are:\n ", join(' ', @badnodes), "\n\n";
+#
+# similarly, if the -s option was given, list stale nodes.
+$showstale and print "stale nodes are:\n ", join(' ', @stalenodes), "\n\n";
+
+
+###########################################################################
+
+=head1 NAME
+
+showmesh - display the status of the cluster in a table
+
+=head1 SYNOPSIS
+
+  showmesh [-b[adnodes]] [-s[talenodes]] [-tr[anspose]] [-c[ompress]] [-help]
+
+=head1 OPTIONS
+
+--stalenodes
+  List stale nodes, for easy cut and paste into other tools
+
+--badnodes
+  List nodes that were not reported by pingd or have an unknown status
+
+--transpose
+  Flip the mesh to print nodes down and racks across
+
+--compress
+  Don't print any spaces between columns
+
+=cut

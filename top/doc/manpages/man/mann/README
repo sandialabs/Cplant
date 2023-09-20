@@ -1,0 +1,4 @@
+We no longer write .n man pages from scratch.  Create an
+sgml file over in ../../sgml and build the .n from that.
+Let's keep the Makefile however, since it documents how
+to create .html from .n.

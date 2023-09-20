@@ -1,0 +1,78 @@
+.if n .ds Q \&"
+.if t .ds Q ``
+.if n .ds U \&"
+.if t .ds U ''
+.TH build-sss0 1M "08 January 1999" "Cplant" "Cplant System Manager's Manual"
+.tr \&
+.nr bi 0
+.nr ll 0
+.nr el 0
+.de Pp
+.ie \\n(ll>0 \{\
+.ie \\n(bi=1 \{\
+.nr bi 0
+.if \\n(t\\n(ll=0 \{.IP \\(bu\}
+.if \\n(t\\n(ll=1 \{.IP \\n+(e\\n(el.\}
+.\}
+.el .sp 
+.\}
+.el \{\
+.ie \\nh=1 \{\
+.LP
+.nr h 0
+.\}
+.el .PP 
+.\}
+..
+.SH NAME
+    
+
+.Pp
+\fBbuild-sss0\fP -- install LINUX on a system support station level 0
+(SSS0)  
+.SH SYNOPSIS
+    
+
+.Pp
+\fBbuild-sss0 -c cab_num -p cab_pos -d disk\fP 
+.SH DESCRIPTION
+    
+
+.Pp
+\fBboot-sss0\fP installs LINUX on an SSS0. \fBcab_num\fP is the number of the 
+system support cabinet in which the CPU resides. \fBcab_pos\fP is the 
+position of the CPU within the cabinet. Numbers are zero based. \fBdisk\fP
+defines the type of harddisk. Valid disk types are \fBhda\fP and \fBsda\fP. 
+\fBbuild-sss0\fP adds an entry to \fBsss0-config\fP and then calls
+\fBinstall-os\fP. It also adds a route to /etc/sysconfig/static-routes 
+which defines a route to the SSS0's second ethernet card. After LINUX is
+installed \fBudpate-sss0, udpate-sbin and update-ct\fP are called to install
+cplant tools.
+.SH NOTES
+    
+
+.Pp
+The LINUX distribution which is installed on the SSS0 is copied from
+\fBnfs-root-alpha\fP. 
+.SH LIMITATIONS
+    
+
+.Pp
+This script assumes 8 SSS0's to a cabinet. 
+The sss0 must have already been discovered.
+.SH AUTHOR
+    
+
+.Pp
+Michael Levenhagen
+.SH SEE ALSO
+    
+
+.Pp
+\fBupdate-sss0\fP,
+\fBupdate-sbin\fP,
+\fBupdate-ct\fP,
+\fBinstall-os\fP,
+\fB/cplant/sss0-config\fP
+\fB/cplant/nfs-root-alpha\fP
+\fB/etc/sysconfig/static-routes\fP

@@ -1,0 +1,25 @@
+#!/usr/bin/perl -w
+use Cwd;
+
+# tar up a Cplant binary distribution; use src-build to
+# to create a source distribution
+
+$src_path = shift;
+$dst_file = shift;
+
+if ( ! ( $dst_file =~ /^\// ) )  {
+    $dst_file = cwd(). "/" . $dst_file;    
+} 
+
+print $src_path, " ", $dst_file, "\n"; 
+
+chdir $src_path;
+
+#system "mkdir alpha-linux/mcps 2> /dev/null";
+#system "cp top/compute/OS/Myrinet/MCP/rtsmcp alpha-linux/mcps ";
+system "cp top/support/cplant/sbin/install-cplant .";
+#system "rm -rf alpha-linux/test/*"; 
+
+system "tar cf - install-cplant alpha-linux top/support/cplant | gzip -c > $dst_file";
+
+system "rm install-cplant";

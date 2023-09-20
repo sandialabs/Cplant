@@ -1,0 +1,416 @@
+#!/usr/bin/perl -w
+#-------------------------------------------------------------------------------
+# FILE:		pingdtest
+# PURPOSE: 	Test the options of pingd
+# NOTES:	Only the options a user can execute are being tested.  A job
+#		must be submitted for some of the options.
+# AUTHOR:	Don Moore, 6535
+#-------------------------------------------------------------------------------
+# *** Read the pingd configuration file ***
+#-------------------------------------------------------------------------------
+($ConfigFile)= @ARGV;					# configuration filename
+open (CFGFILE, $ConfigFile) or die "Can't open $ConfigFile: $!\n";
+$line = <CFGFILE>;
+while (defined($line)) {
+	if (defined($line)) {
+		chomp ($line);
+		($Keyword, $Value) = split(/=+/, $line);
+		if ($Keyword =~ /^Logfile/) {
+			$STARTFILE = "> $Value";   # open log file for overwrite
+			$LOGFILE = ">> $Value";	      # open log file for append
+		} elsif ($Keyword =~ /^Executable/) {
+			$Executable = "$Value";		    # a test application
+		} elsif ($Keyword =~ /^WaitExecutable/) {
+			$WaitExecutable = "$Value";   # another test application
+		} elsif ($Keyword =~ /^WaitTime/) {
+			$WaitTime = "$Value";    # seconds application will wait
+		} elsif ($Keyword =~ /^ComputeNodes/) {
+			$ComputeNodes = "$Value";      # number of compute nodes
+		} elsif ($Keyword =~ /^BinPath/) {
+			$BinPath = "$Value";		     # path for PBS qsub
+		} elsif ($Keyword =~ /^CplantBinPath/) {
+			$CplantBinPath = "$Value";		  # path for yod
+		} elsif ($Keyword =~ /^CplantSbinPath/) {
+			$CplantSbinPath = "$Value";		# path for pingd
+		} elsif ($Keyword =~ /^OutputPath/) {
+			$OutputPath = "$Value";	    # path for other ouput files
+		}
+		$line = <CFGFILE>;
+	} # end if (defined($line))
+} # end while (defined($line))
+close CFGFILE;
+#-------------------------------------------------------------------------------
+# *** Initialize variables
+#-------------------------------------------------------------------------------
+$TestNumber = 0;				    # numbers to track the tests
+$TestFlag = 1;				  	  # test success or failure flag
+@TestList = ();						# array for failed tests
+$ListNumber = 0;		     # for listing the tests in the failed array
+$IncrTestNum = 1;					 # increment test number
+$KeepTestNum = 0;				   # don't increment test number
+$ZeroReturn = 0;				    # zero error return from yod
+#-------------------------------------------------------------------------------
+# *** Open the pingd log file for environment information
+#-------------------------------------------------------------------------------
+open (STARTFILE) or die "Can't open results STARTFILE for overwrite.\n";
+print STARTFILE "\nThis is a non-interactive test for the pingd options\n";
+print STARTFILE "LOGFILE = $LOGFILE\n";
+print STARTFILE "Executable = $Executable\n";
+print STARTFILE "WaitExecutable = $WaitExecutable\n";
+print STARTFILE "ComputeNodes = $ComputeNodes\n";
+print STARTFILE "BinPath = $BinPath\n";
+print STARTFILE "CplantBinPath = $CplantBinPath\n";
+print STARTFILE "CplantSbinPath = $CplantSbinPath\n";
+print STARTFILE "OutputPath = $OutputPath\n";
+close STARTFILE;
+#-------------------------------------------------------------------------------
+# *** Test pingd query options ***
+#-------------------------------------------------------------------------------
+$Description = "Test pingd (default)"; 
+$OutputFile = $OutputPath . "Pingd.log";
+$Command = $CplantSbinPath . "pingd";
+runTest ($Command, $Description, "> ", $OutputFile, $ZeroReturn, $IncrTestNum);
+
+$Description = "Test pingd -all";
+$OutputFile = $OutputPath . "PingdAll.log";
+$Command = $CplantSbinPath . "pingd -all";
+runTest ($Command, $Description, "> ", $OutputFile, $ZeroReturn, $IncrTestNum);
+
+$Description = "Test pingd -a(ll)";
+$OutputFile = $OutputPath . "PingdA.log";
+$Command = $CplantSbinPath . "pingd -a";
+runTest ($Command, $Description, "> ", $OutputFile, $ZeroReturn, $IncrTestNum);
+
+$Description = "Test pingd -fast";
+$OutputFile = $OutputPath . "PingdFast.log";
+$Command = $CplantSbinPath . "pingd -fast";
+runTest ($Command, $Description, "> ", $OutputFile, $ZeroReturn, $IncrTestNum);
+
+$Description = "Test pingd -f(ast)";
+$OutputFile = $OutputPath . "PingdF.log";
+$Command = $CplantSbinPath . "pingd -f";
+runTest ($Command, $Description, "> ", $OutputFile, $ZeroReturn, $IncrTestNum);
+
+$Description = "Test pingd -gone - Don't know how to do this";
+recordOptionsNotTested ($Description);
+#-------------------------------------------------------------------------------
+# *** Test pingd -help and -xtrahelp options ***
+#-------------------------------------------------------------------------------
+$Description = "Test pingd -help";
+$OutputFile = $OutputPath . "PingdHelp.log";
+$Command = $CplantSbinPath . "pingd -help";
+runTest ($Command, $Description, "> ", $OutputFile, $ZeroReturn, $IncrTestNum);
+
+$Description = "Test pingd -h(elp)";
+$OutputFile = $OutputPath . "PingdH.log";
+$Command = $CplantSbinPath . "pingd -h";
+runTest ($Command, $Description, "> ", $OutputFile, $ZeroReturn, $IncrTestNum);
+
+$Description = "Test pingd -xtrahelp";
+$OutputFile = $OutputPath . "PingdXtrahelp.log";
+$Command = $CplantSbinPath . "pingd -xtrahelp";
+runTest ($Command, $Description, "> ", $OutputFile, $ZeroReturn, $IncrTestNum);
+
+$Description = "Test pingd -x(trahelp)";
+$OutputFile = $OutputPath . "PingdX.log";
+$Command = $CplantSbinPath . "pingd -x";
+runTest ($Command, $Description, "> ", $OutputFile, $ZeroReturn, $IncrTestNum);
+#-------------------------------------------------------------------------------
+# *** Test pingd -interrupt option ***
+#-------------------------------------------------------------------------------
+$Description =  "Test pingd -interrupt";
+$OutputFile = $OutputPath . "PingdInterrupt.log";
+$Command = $CplantBinPath . "yod -kill -sz $ComputeNodes $WaitExecutable $WaitTime";
+buildScript ("IntrptScript", $Command);		  # build script for job
+$Command = $BinPath . "qsub IntrptScript";          # submit job to interrupt
+runTest ($Command, $Description, "> ", $OutputFile, $ZeroReturn, $IncrTestNum);
+sleep 10;
+$Command = $CplantSbinPath . "pingd -interrupt -mine -NoInquire";		       # interupt my job
+runTest ($Command, $Description, ">> ", $OutputFile, $ZeroReturn, $KeepTestNum);
+sleep 5;
+$Command = $CplantSbinPath . "pingd -mine";	# see if the job is gone
+runTest ($Command, $Description, ">> ", $OutputFile, $ZeroReturn, $KeepTestNum);
+removeScript ("IntrptScript");				     # remove the script
+#-------------------------------------------------------------------------------
+# *** Test pingd -job job-ID and pbsjob job-ID options ***
+#-------------------------------------------------------------------------------
+$Description = "Test pingd -job job-ID";
+$OutputFile = $OutputPath . "PingdJobId.log";
+$Command = $CplantBinPath . "yod -kill -sz $ComputeNodes $WaitExecutable $WaitTime";
+buildScript ("JobIdScript", $Command);			  # build script for job
+$Command = $BinPath . "qsub JobIdScript";		   # submit job to reset
+runTest ($Command, $Description, "> ", $OutputFile, $ZeroReturn, $IncrTestNum);
+sleep 5;
+getJobId ();					     # get job id running my job
+$Command = $CplantSbinPath . "pingd -job $JobId";
+runTest ($Command, $Description, ">> ", $OutputFile, $ZeroReturn, $KeepTestNum);
+sleep $WaitTime;
+removeScript ("JobIdScript");				     # remove the script
+
+$Description = "Test pingd -pbsjob job-ID";
+$OutputFile = $OutputPath . "PingdPBSjob.log";
+$Command = $CplantBinPath . "yod -kill -sz $ComputeNodes $WaitExecutable $WaitTime";
+buildScript ("PBSIdScript", $Command);			  # build script for job
+$Command = $BinPath . "qsub PBSIdScript";		   # submit job to reset
+runTest ($Command, $Description, "> ", $OutputFile, $ZeroReturn, $IncrTestNum);
+sleep 5;
+getPBSJobId ();
+$Command = $CplantSbinPath . "pingd -pbsjob $PBSJobId";
+runTest ($Command, $Description, ">> ", $OutputFile, $ZeroReturn, $KeepTestNum);
+removeScript ("PBSIdScript");				     # remove the script
+#-------------------------------------------------------------------------------
+# *** Test pingd -kill option - System Administrators only ***
+#-------------------------------------------------------------------------------
+$Description = "Test pingd -kill - System Administrators only";
+recordOptionsNotTested ($Description);
+#-------------------------------------------------------------------------------
+# *** Test pingd -list (node-list) option ***
+#-------------------------------------------------------------------------------
+$Description = "Test pingd -list (node-list)";
+$OutputFile = $OutputPath . "PingdList.log";
+$NodeList = "1,5,7,12..18,100..150,152";
+$Command = $CplantSbinPath . "pingd -list $NodeList";
+runTest ($Command, $Description, "> ", $OutputFile, $ZeroReturn, $IncrTestNum);
+
+$Description = "Test pingd -l (node-list)";
+$OutputFile = $OutputPath . "PingdL.log";
+$NodeList = "1,5,7,12..18,100..150,152";
+$Command = $CplantSbinPath . "pingd -l $NodeList";
+runTest ($Command, $Description, "> ", $OutputFile, $ZeroReturn, $IncrTestNum);
+
+$Description = "Test pingd -list (node-list) Bad Nodes";
+$OutputFile = $OutputPath . "PingdBadL1.log";
+$NodeList = "52,99,134..188,234..534";
+$Command = $CplantSbinPath . "pingd -list $NodeList";
+runTest ($Command, $Description, "> ", $OutputFile, $ZeroReturn, $IncrTestNum);
+
+$Description = "Test pingd -list (node-list) Bad Node";
+$OutputFile = $OutputPath . "PingdBadL2.log";
+$NodeList = "52,99,134..188,1234";
+$Command = $CplantSbinPath . "pingd -list $NodeList";
+runTest ($Command, $Description, "> ", $OutputFile, $ZeroReturn, $IncrTestNum);
+#-------------------------------------------------------------------------------
+# *** Test pingd -PBSsupport, -PBSupdate, and -PBSinteractive options ***
+#-------------------------------------------------------------------------------
+$Description = "Test pingd -PBSsupport - These are Sys Admin options.";
+recordOptionsNotTested ($Description);
+
+$Description = "Test pingd -PBSupdate - These are Sys Admin options.";
+recordOptionsNotTested ($Description);
+
+$Description = "Test pingd -PBSinteractive - These are Sys Admin options.";
+recordOptionsNotTested ($Description);
+#-------------------------------------------------------------------------------
+# *** Test pingd -mine option ***
+#-------------------------------------------------------------------------------
+$Description = "Test pingd -mine";
+$OutputFile = $OutputPath . "PingdMine.log";
+$Command = $CplantSbinPath . "pingd -mine";
+runTest ($Command, $Description, "> ", $OutputFile, $ZeroReturn, $IncrTestNum);
+
+$Description = "Test pingd -m(ine)";
+$OutputFile = $OutputPath . "PingdM.log";
+$Command = $CplantSbinPath . "pingd -m";
+runTest ($Command, $Description, "> ", $OutputFile, $ZeroReturn, $IncrTestNum);
+
+$Description = "Test pingd -mine - No job submitted";
+$OutputFile = $OutputPath . "PingdEmptyMine.log";
+$Command = $CplantSbinPath . "pingd -mine";
+runTest ($Command, $Description, "> ", $OutputFile, $ZeroReturn, $IncrTestNum);
+#-------------------------------------------------------------------------------
+# *** Test pingd -reset and -NoInquire options ***
+#-------------------------------------------------------------------------------
+$Description =  "Test pingd -reset -NoInquire";
+$OutputFile = $OutputPath . "PingdReset.log";
+$Command = $CplantBinPath . "yod -kill -sz $ComputeNodes $WaitExecutable $WaitTime";
+buildScript ("ResetScript", $Command);		  # build script for job
+$Command = $BinPath . "qsub ResetScript";		   # submit job to reset
+runTest ($Command, $Description, "> ", $OutputFile, $ZeroReturn, $IncrTestNum);
+sleep 10;
+$Command = $CplantSbinPath . "pingd -reset -mine -NoInquire";			  # reset my job
+runTest ($Command, $Description, ">> ", $OutputFile, $ZeroReturn, $KeepTestNum);
+sleep 5;
+$Command = $CplantSbinPath . "pingd -mine";		# see if the job is gone
+runTest ($Command, $Description, ">> ", $OutputFile, $ZeroReturn, $KeepTestNum);
+removeScript ("ResetScript");				     # remove the script
+#-------------------------------------------------------------------------------
+# *** Test pingd -summary option ***
+#-------------------------------------------------------------------------------
+$Description = "Test pingd -summary";
+$OutputFile = $OutputPath . "PingdSummary.log";
+$Command = $CplantSbinPath . "pingd -summary";
+runTest ($Command, $Description, "> ", $OutputFile, $ZeroReturn, $IncrTestNum);
+
+$Description = "Test pingd -s(ummary)";
+$OutputFile = $OutputPath . "PingdS.log";
+$Command = $CplantSbinPath . "pingd -s";
+runTest ($Command, $Description, "> ", $OutputFile, $ZeroReturn, $IncrTestNum);
+#-------------------------------------------------------------------------------
+# *** Test pingd -verbose option ***
+#-------------------------------------------------------------------------------
+$Description = "Test pingd -verbose";
+$OutputFile = $OutputPath . "PingdVerbose.log";
+$Command = $CplantBinPath . "yod -kill -sz $ComputeNodes $WaitExecutable $WaitTime";
+buildScript ("VerboseScript", $Command);		  # build script for job
+$Command = $BinPath . "qsub VerboseScript";		   # submit job to reset
+runTest ($Command, $Description, "> ", $OutputFile, $ZeroReturn, $IncrTestNum);
+sleep 5;
+$Command = $CplantSbinPath . "pingd -verbose";
+runTest ($Command, $Description, ">> ", $OutputFile, $ZeroReturn, $KeepTestNum);
+removeScript ("VerboseScript");				     # remove the script
+
+$Description = "Test pingd -v(erbose)";
+$OutputFile = $OutputPath . "PingdV.log";
+$Command = $CplantSbinPath . "pingd -v";
+runTest ($Command, $Description, "> ", $OutputFile, $ZeroReturn, $IncrTestNum);
+
+$Description = "Test pingd -verbose -mine";
+$OutputFile = $OutputPath . "PingdVerboseMine.log";
+$Command = $CplantSbinPath . "pingd -verbose -mine";
+runTest ($Command, $Description, "> ", $OutputFile, $ZeroReturn, $IncrTestNum);
+
+$Description = "Test pingd -verbose -all";
+$OutputFile = $OutputPath . "PingdVerboseAll.log";
+$Command = $CplantSbinPath . "pingd -verbose -all";
+runTest ($Command, $Description, "> ", $OutputFile, $ZeroReturn, $IncrTestNum);
+#-------------------------------------------------------------------------------
+# *** List the tests that failed ***
+#-------------------------------------------------------------------------------
+if ($TestFlag == 0) {
+	open (LOGFILE) or die "Can't open $LOGFILE file.\n";
+	print LOGFILE "\n***** One or more tests failed. *****\n";
+        foreach $TestList (@TestList) {
+		print LOGFILE "\t$TestList\n";
+	}
+	close LOGFILE;
+} else {
+        open (LOGFILE) or die "Can't open $LOGFILE file.\n";
+        print LOGFILE "\n***** Successful test. *****\n";
+        close LOGFILE;
+}#-------------------------------------------------------------------------------
+# *** Subroutines ***
+#-------------------------------------------------------------------------------
+sub buildScript () {
+#-------------------------------------------------------------------------------
+# PURPOSE:	Build a script file with the commands to submit a PBS job
+# AUTHOR:	Don Moore, 6535
+# INPUTS:	$_[0] - name of script file
+#		$_[1] - command to execute from script
+# OUTPUTS:	A script for running a job using PBS	
+#-------------------------------------------------------------------------------
+	open (SCRIPT, "> $_[0]") or die "Can't open $_[0] $!\n";
+	print SCRIPT "#!/bin/bash\n";
+	print SCRIPT "#PBS -l size=$ComputeNodes\n";
+	print SCRIPT "#PBS -l walltime=0:15:0\n";
+	print SCRIPT "#PBS -q default\n";
+	print SCRIPT "cd \$PBS_O_WORKDIR\n";
+	print SCRIPT $_[1];
+	close SCRIPT;
+} # End buildScript
+
+sub getJobId () {
+#-------------------------------------------------------------------------------
+# PURPOSE:	Get the Job Id of my job from pingd -mine
+# AUTHOR:	Don Moore, 6535
+# INPUTS:	$1 - the job id number from my job (\d+)
+# OUTPUTS:	$JobId - a job number for a job running my application
+#-------------------------------------------------------------------------------
+	$PINGD = $CplantSbinPath . "pingd -mine";
+	open(PINGD, "$PINGD 2>&1 |");
+	while(<PINGD>) {
+		if (/^\s*\d+\s+\(.*\)\s*(\d+)/) {
+			$JobId = $1;
+			last;
+		}
+	}
+} # End getJobId
+
+sub getPBSJobId () {
+#-------------------------------------------------------------------------------
+# PURPOSE:	Get PBS Job Id of my job from pingd -mine
+# AUTHOR:	Don Moore, 6535
+# INPUTS:	$1 - PBS Job Id number from my job (\d+)
+# OUTPUTS:	$JobId - a PBS job number for a job running my application
+#-------------------------------------------------------------------------------
+	$PINGD = $CplantSbinPath . "pingd -mine";
+	open(PINGD, "$PINGD 2>&1 |");
+	while(<PINGD>) { 
+	        if (/PBS\s*#\s*(\d+)$/) {
+	                $PBSJobId = $1;
+	                last;
+	        }       
+	}
+} # End getPBSJobId
+
+sub recordOptionsNotTested () {
+#-------------------------------------------------------------------------------
+# PURPOSE:	Record in the log file that a pingd option was not tested
+# AUTHOR:	Don Moore, 6535
+# INPUTS:	$_[0] - short description of the test
+# OUTPUTS:	None	
+#-------------------------------------------------------------------------------
+	open (LOGFILE) or die "Can't open $LOGFILE file.\n";
+	print LOGFILE "\nOption not tested:\n\t$_[0]\n";
+	close LOGFILE;
+} # End recordOptionsNotTested
+
+sub removeScript () {
+#-------------------------------------------------------------------------------
+# PURPOSE:	remove the scripts built by buildScript
+# AUTHOR:	Don Moore, 6535
+# INPUTS:	$_[0] - name of script file
+#-------------------------------------------------------------------------------
+	sleep $WaitTime;
+	system "rm $_[0]";				     # remove the script
+	system "rm $_[0].*";		   # remove the script's .e and .o files
+} # End removeScript
+
+sub runTest () {
+#-------------------------------------------------------------------------------
+# PURPOSE:	Run one pingd option test
+# AUTHOR:	Don Moore, 6535
+# INPUTS:	$_[0] - command for pingd option being tested
+#		$_[1] - short description of the test
+#		$_[2] - overwrite or append a file
+#		$_[3] - name of result file
+#		$_[4] - error code for return from pingd
+#		$_[5] - increment test number flag
+# OUTPUTS:	$Status - Success or failure from pingd	
+#-------------------------------------------------------------------------------
+	open (RSTFILE, $_[2] . $_[3]) or die "Can't open $_[3] file.\n";
+	open (LOGFILE) or die "Can't open $LOGFILE.\n";
+	if ($_[5]) {		   # if first part of test increment test number
+		$TestNumber += 1;
+		$TestTime = localtime();		 # date and time of test
+		print RSTFILE "Test $TestNumber: $TestTime\n";
+		print LOGFILE "\nTest $TestNumber:\n\t$_[1]\n";
+		print LOGFILE "\t$TestTime\n";
+	}
+	print RSTFILE "\t$_[0]\n";	# print the option tested to result file
+	close RSTFILE;
+        $Status = system "$_[0] >> $_[3] 2>&1";	 # output both stdout and stderr
+	if (!$_[4]) {			  # if a zero from pingd is a good thing
+		if ($Status != 0) {		   # if pingd doesn't return a 0
+        		print LOGFILE "\tTest failed.\n";
+			$TestFlag = 0;
+			$TestList[$ListNumber] = $_[1];#put description in array
+			$ListNumber += 1;
+		} else {
+			print LOGFILE "\tTest completed as expected.\n";
+		}
+	} else {			   # if a zero from pingd is a bad thing
+                if ($Status == 0) {			  # if pingd returns a 0
+                        print LOGFILE "\t\tTest failed.\n";
+			print "\tTest failed.\n";
+                        $TestFlag = 0;
+                        $TestList[$ListNumber] = $_[1];#put description in array
+                        $ListNumber += 1;
+                } else {
+                        print LOGFILE "\tTest completed as expected.\n";
+                }
+
+	}
+        print LOGFILE "\tPingd output status = $Status.\n";
+        print LOGFILE "\tThe output file for this option is in:\n\t\t $_[3]\n";
+	close LOGFILE;
+} # End runTest

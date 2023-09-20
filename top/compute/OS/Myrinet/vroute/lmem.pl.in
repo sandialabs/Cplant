@@ -1,0 +1,192 @@
+#! /usr/bin/perl
+
+  # lmem.pl
+  # run the lanai memory test "mcpmemtst"
+  # on all the nodes in the specified SUs
+  # RUN FROM ADMIN NODE as a foreground process
+  # or as a cron job BY ROOT
+
+  # WARNING: mcpmemtst is very intrusive; it wipes
+  # out everything (the mcp, eg.) in lanai memory.
+  # it leaves hosts in a state where only certain
+  # modules are loaded and no mcp is running...
+
+  # usage: lmem.pl -su su-list [-mail]
+
+  # where su-list is a comma-separated set of
+  # ranges: 1-16,18-21,23,24 for example
+
+  # valid nodes are determined by assigning an su size based
+  # on the installation type (obtained from hostname command)
+  # and attempting to rsh to each host in the each specified su
+
+  $cplant_path = "CPLANT_PATH";
+
+  # CONFIGURATION ########################################################
+  # who to mail results to in case -mail option is given
+  @whotocontact = ("jhlaros\@sandia.gov", "jsotto\@sandia.gov", 
+                   "gmcgir\@sandia.gov", "redavis\@sandia.gov");
+  $file_loc= "/tmp/lmem";
+  ########################################################################
+
+  $do_mail = 0;
+  $su_arg = 0;
+
+  while ( $ARGV = shift ) {
+    if ($ARGV ne "-su" && $ARGV ne "-mail") {
+      print("usage: lmem -su su-list [-mail]\n");
+      print("usage: where su-list is a comma-separated list\n");
+      print("usage: of su ranges, eg: 1-6,11-21,23,24\n");
+      exit -1;
+    }
+    if ($ARGV eq "-su" ) {
+      $ARGV = shift;
+      @clumps = split(/,/,$ARGV);
+      $su_arg = 1;
+    }
+    if ($ARGV eq "-mail" ) {
+      $do_mail = 1;
+    }
+  }
+
+  if ( $su_arg == 0) {
+    print("usage: lmem -su su-list [-mail]\n");
+    print("usage: where su-list is a comma-separated list\n");
+    print("usage: of su ranges, eg: 1-6,11-21,23,24\n");
+    exit -1;
+  }
+
+  for ($i=1; $i<@whotocontact; $i++) {
+    $contact_str .= " -c $whotocontact[$i]";
+  }
+  $contact_str .= " $whotocontact[0]";
+
+  # figure out the installation type from known types
+
+  $install = "unknown";
+
+  $known_install = 0;
+  $admin = `hostname`;
+  chop($admin);
+  if ( $admin =~ /alaska/ ) {
+    $install = "alaska";
+    $susize = 16;
+    $known_install = 1;
+  }
+  if ( $admin =~ /siberia/ ) {
+    $install = "siberia";
+    $susize = 16;
+    $known_install = 1;
+  }
+  if ( $admin =~ /iceberg/ ) {
+    $install = "iceberg";
+    $susize = 8;
+    $known_install = 1;
+  }
+
+  if ( $known_install ==  0) {
+    print("ERROR: installation is not a known type (like alaska...)\n");
+    exit -1;
+  }
+
+  print("lmem: doing lanai memory test in a \"$install\"-type install\n");
+ #----------------------------------------------------------------------
+ #                            get started
+ #----------------------------------------------------------------------
+
+  print("backing up log file in $file_loc\n");
+  system("mv $file_loc/lmem.log $file_loc/lmem.log.bak"); 
+  system("rm $file_loc/c-*");
+
+  $msg  = "lmem.pl (lanai memory test) starting\n";
+  $msg .= "on admin node $admin\n\n";
+  $msg .= "another msg will be sent on successful completion...\n\n";
+  $msg .= "progress can be monitored in $file_loc/lmem.log\n\n";
+
+  if ($do_mail == 1) {
+    system("echo '$msg' | mail -s 'Start of Lanai Memory Test' $contact_str"); 
+  }
+
+  $rsh_failures = 0;
+  $failures = 0;
+
+  # a clump looks like: either x-x+n or just x (2-9 or 7, eg.)
+  # outer loop on the clumps
+
+  foreach $j (@clumps) {
+    @sus = split(/-/,$j);
+    $s0 = $sus[0];
+    if ( @sus == 1 ) {
+      $sn = $sus[0];
+    }
+    else {
+      $sn = $sus[1];
+    }
+
+    # process each su in this clump
+
+    for ($su=$s0; $su<=$sn; $su++) {
+
+      for ($i=0; $i<$susize; $i++) {
+        # test ability to rsh to node
+        $hname = "c-$i.SU-$su";
+        $ec = `rsh $hname ps aux 2>&1 &`;
+        sleep(8);
+        if ( ! ($ec =~ /init/) ) {
+          open(LOG,">>$file_loc/lmem.log\n");
+          print(LOG "FAILED to rsh to node $hname...");
+          close(LOG);
+          $rsh_failures++;
+        }
+        else {
+          open(ERRORS,">$file_loc/$hname");
+
+          print("doing mcpmemtst on $hname...\n");
+          open(LOG,">>$file_loc/lmem.log\n");
+          print(LOG "doing mcpmemtst on $hname...\n");
+          close(LOG);
+          system("rsh $hname $cplant_path/etc/cplant stop");
+          system("rsh $hname $cplant_path/etc/start-rtscts start /cplant");
+          $ec = `rsh $hname /sbin/lsmod`;
+          if ( !($ec =~ /rtscts/)) {
+            print("ERROR: cant load rtscts module on node $hname\n");
+            print(ERRORS "FAILED to load rtscts module\n");
+            open(LOG,">>$file_loc/lmem.log\n");
+            print(LOG "ERROR: cant load rtscts on node $hname...\n");
+            close(LOG);
+            $failures++;
+          }
+          else {
+            $ec = `rsh $hname $cplant_path/sbin/mcpmemtst -suppress`;
+            if ( $ec =~ /FAILED/ ) {
+              $failures++;
+            }
+            print(ERRORS "$ec\n");
+          }
+          close(ERRORS);
+        }
+      }
+    }
+  }
+
+  $msg  = "======================================================\n";
+  $msg .= "lmem.pl (lanai memory test) completing\n";
+  $msg .= "its checkout on $admin.\n\n";
+  $msg .= "it looks like there were $rsh_failures rsh failures\n";
+  $msg .= "and $failures failures in testing lanai memory\n";
+  $msg .= "here is a summary:\n\n";
+
+  $ec = `grep FAILED $file_loc/c-*`;
+
+  $msg .= "$ec\n";
+
+  $msg .= "results compiled in $file_loc (grep for FAILED\n"; 
+  $msg .= "on the files there for specific failures)\n";
+  $msg .= "======================================================\n";
+  if ($do_mail == 1) {
+    system("echo '$msg' | mail -s 'Completion of Lanai Memory Test' $contact_str"); 
+  }
+  print("$msg");
+  open(LOG,">>$file_loc/lmem.log\n");
+  print(LOG "$msg");
+  close(LOG);

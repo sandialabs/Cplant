@@ -1,0 +1,3538 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN"
+           "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<meta name="GENERATOR" content="TtH 2.86">
+
+
+<title>The Portals 3.0 Message Passing Interface</title>
+
+<p>
+
+<p>
+ 
+<center>SAND99-2959<br />
+Unlimited Release<br />
+
+<p>
+<br />Printed December 1999
+
+<p>
+<br /><br /><br /><br /><br /><br /><br /><font size="+1"><b>The Portals 3.0 Message Passing Interface <br />Revision 1.0
+<a href="#tthFtNtAAC" name="tthFrefAAC"><sup>2</sup></a>
+</b></font>
+<br /><br /><br />Ron Brightwell, Tramm Hudson, and Rolf Riesen<br />
+Computational Sciences, Computer Sciences, and Mathematics Center<br />
+Sandia National Laboratories<br />
+P.O. Box 5800<br />
+Albuquerque, NM 87185-1110
+<br />
+Arthur B. Maccabe<br />
+Department of Computer Science<br />
+The University of New Mexico<br />
+Albuquerque, NM 87131
+
+<p>
+<br /><br /><br /><font size="+1"><b>Abstract</b></font>
+
+<p>
+</center>
+<blockquote>  This report presents a specification for the Portals 3.0 message
+  passing interface.  Portals 3.0 is intended to allow scalable,
+  high-performance network communication between nodes of a parallel
+  computing system.  Specifically, it is designed to support a
+  parallel computing platform composed of clusters of commodity
+  workstations connected by a commodity system area network fabric.
+  In addition, Portals 3.0 is well suited to massively parallel
+  processing and embedded systems.  Portals 3.0 represents an adaption
+  of the data movement layer developed for massively parallel
+  processing platforms, such as the 4500-node Intel TeraFLOPS machine.
+</blockquote>
+
+<p>
+ <br /><br /><br /><br /><br /><br /><br /><br /><br /><br />
+<center><font size="+1"><b>Acknowledgment</b></font>
+
+<blockquote>
+  Several people have contributed to the philosophy, design, and
+  implementation of the Portals message passing architecture as it has
+  evolved.  We acknowledge the following people for their
+  contributions: Al Audette, Lee Ann Fisk, David Greenberg, Gabi
+  Istrail, Chu Jong, Mike Levenhagen, Jim Otto, Mark Sears, Lance
+  Shuler, Mack Stallcup, Jeff VanDyke, Dave van Dresser, Lee Ward, and
+  Stephen Wheat.
+</blockquote>
+</center>
+
+<p>
+
+<h1>Contents </h1><a href="#tth_sEc1"
+>1&nbsp; Introduction</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#tth_sEc1.1"
+>1.1&nbsp; Overview</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#tth_sEc1.2"
+>1.2&nbsp; Purpose</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#tth_sEc1.3"
+>1.3&nbsp; Background</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#tth_sEc1.4"
+>1.4&nbsp; Scalability</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#tth_sEc1.5"
+>1.5&nbsp; Communication Model</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#tth_sEc1.6"
+>1.6&nbsp; Zero Copy, OS Bypass and Application Bypass</a><br />
+<a href="#tth_sEc2"
+>2&nbsp; An Overview of the Portals API</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#tth_sEc2.1"
+>2.1&nbsp; Data Movement</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#tth_sEc2.2"
+>2.2&nbsp; Portal Addressing</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#tth_sEc2.3"
+>2.3&nbsp; Access Control</a><br />
+<a href="#tth_sEc3"
+>3&nbsp; The Portals API</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#tth_sEc3.1"
+>3.1&nbsp; Naming Conventions</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#tth_sEc3.2"
+>3.2&nbsp; Base Types</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#tth_sEc3.2.1"
+>3.2.1&nbsp; Sizes</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#tth_sEc3.2.2"
+>3.2.2&nbsp; Handles</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#tth_sEc3.2.3"
+>3.2.3&nbsp; Indexes</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#tth_sEc3.2.4"
+>3.2.4&nbsp; Match Bits</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#tth_sEc3.2.5"
+>3.2.5&nbsp; Network Interfaces</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#tth_sEc3.2.6"
+>3.2.6&nbsp; Identifiers</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#tth_sEc3.2.7"
+>3.2.7&nbsp; Status Registers</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#tth_sEc3.3"
+>3.3&nbsp; Initialization and Cleanup</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#tth_sEc3.3.1"
+>3.3.1&nbsp; PtlInit</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#tth_sEc3.3.2"
+>3.3.2&nbsp; PtlFini</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#tth_sEc3.4"
+>3.4&nbsp; Process Identification</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#tth_sEc3.4.1"
+>3.4.1&nbsp; The Process Id Type</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#tth_sEc3.4.2"
+>3.4.2&nbsp; PtlGetId</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#tth_sEc3.4.3"
+>3.4.3&nbsp; PtlTransId</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#tth_sEc3.5"
+>3.5&nbsp; Network Interfaces</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#tth_sEc3.5.1"
+>3.5.1&nbsp; PtlNIInit</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#tth_sEc3.5.2"
+>3.5.2&nbsp; PtlNIFini</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#tth_sEc3.5.3"
+>3.5.3&nbsp; PtlNIBarrier</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#tth_sEc3.5.4"
+>3.5.4&nbsp; PtlNIStatus</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#tth_sEc3.5.5"
+>3.5.5&nbsp; PtlNIDist</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#tth_sEc3.5.6"
+>3.5.6&nbsp; PtlNIHandle</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#tth_sEc3.6"
+>3.6&nbsp; Match Entries and Match Lists</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#tth_sEc3.6.1"
+>3.6.1&nbsp; PtlMEAttach</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#tth_sEc3.6.2"
+>3.6.2&nbsp; PtlMEInsert</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#tth_sEc3.6.3"
+>3.6.3&nbsp; PtlMEUnlink</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#tth_sEc3.7"
+>3.7&nbsp; Memory Descriptors</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#tth_sEc3.7.1"
+>3.7.1&nbsp; The Memory Descriptor Type</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#tth_sEc3.7.2"
+>3.7.2&nbsp; PtlMDAttach</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#tth_sEc3.7.3"
+>3.7.3&nbsp; PtlMDInsert</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#tth_sEc3.7.4"
+>3.7.4&nbsp; PtlMDBind</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#tth_sEc3.7.5"
+>3.7.5&nbsp; PtlMDUnlink</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#tth_sEc3.7.6"
+>3.7.6&nbsp; PtlMDUpdate</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#tth_sEc3.8"
+>3.8&nbsp; Events and Event Queues</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#tth_sEc3.8.1"
+>3.8.1&nbsp; Kinds of Events</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#tth_sEc3.8.2"
+>3.8.2&nbsp; The Event Type</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#tth_sEc3.8.3"
+>3.8.3&nbsp; PtlEQAlloc</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#tth_sEc3.8.4"
+>3.8.4&nbsp; PtlEQFree</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#tth_sEc3.8.5"
+>3.8.5&nbsp; PtlEQCount</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#tth_sEc3.8.6"
+>3.8.6&nbsp; PtlEQGet</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#tth_sEc3.8.7"
+>3.8.7&nbsp; PtlEQWait</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#tth_sEc3.9"
+>3.9&nbsp; The Access Control Table</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#tth_sEc3.9.1"
+>3.9.1&nbsp; PtlACEntry</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#tth_sEc3.10"
+>3.10&nbsp; Data Movement Operations</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#tth_sEc3.10.1"
+>3.10.1&nbsp; PtlPut</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#tth_sEc3.10.2"
+>3.10.2&nbsp; PtlGet</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#tth_sEc3.11"
+>3.11&nbsp; Summary</a><br />
+<a href="#tth_sEc4"
+>4&nbsp; The Semantics of Message Transmission</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#tth_sEc4.1"
+>4.1&nbsp; Sending Messages</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#tth_sEc4.2"
+>4.2&nbsp; Receiving Messages</a><br />
+<a href="#tth_sEc5"
+>5&nbsp; Examples</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#tth_sEc5.1"
+>5.1&nbsp; Parallel File Servers</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#tth_sEc5.2"
+>5.2&nbsp; Dealing with Dropped Requests</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#tth_sEc5.3"
+>5.3&nbsp; Message Transmission in MPI</a><br />
+ 
+
+<p>
+
+<h1>List of Figures </h1>&nbsp;&nbsp;&nbsp;&nbsp;<a href="#tth_fIg1"
+>1&nbsp;  Portal Put (Send)</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#tth_fIg2"
+>2&nbsp;  Portal Get</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#tth_fIg3"
+>3&nbsp;  Portal Addressing Structures</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#tth_fIg4"
+>4&nbsp;  Portals Address Translation</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#tth_fIg5"
+>5&nbsp;  Parallel File Server</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#tth_fIg6"
+>6&nbsp;  Message Reception in MPI</a><br />
+
+<p>
+
+<h1>List of Tables </h1>&nbsp;&nbsp;&nbsp;&nbsp;<a href="#tth_tAb1"
+>1&nbsp;  Object Type Codes</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#tth_tAb2"
+>2&nbsp;  Types Defined by the Portals 3.0 API</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#tth_tAb3"
+>3&nbsp;  Functions Defined by the Portals 3.0 API</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#tth_tAb4"
+>4&nbsp;  Function Return Codes for the Portals 3.0 API</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#tth_tAb5"
+>5&nbsp;  Other Constants Defined by the Portals 3.0 API</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#tth_tAb6"
+>6&nbsp;  Information Passed in a Put Request</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#tth_tAb7"
+>7&nbsp;  Information Passed in an Acknowledgement</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#tth_tAb8"
+>8&nbsp;  Information Passed in a Get Request</a><br />
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#tth_tAb9"
+>9&nbsp;  Information Passed in a Reply</a><br />
+
+<p>
+<br /><br /><br /><br /><br /><br /><br /><br /><br /><br />
+<center><font size="+1"><b>Glossary</b></font>
+</center>
+
+<dl compact="compact"><dt><b>API</b></dt>
+	<dd> Application Programming Interface.  A definition of the
+  functions and semantics provided by library of functions.<dt><b>Group</b></dt>
+	<dd> The collection of <em>processes</em> loaded as a parallel
+  job.<dt><b>Initiator</b></dt>
+	<dd> A <em>process</em> that initiates a message operation.<dt><b>Message</b></dt>
+	<dd> An application-defined unit of data that is exchanged
+  between <em>processes</em>.<dt><b>Message Operation</b></dt>
+	<dd> Either a put operation, which writes data,
+  or a get operation, which reads data.<dt><b>Network</b></dt>
+	<dd>  A network provides point-to-point communication
+  between <em>nodes</em>.   Internally, a network may provide multiple
+  routes between endpoints (to improve fault tolerance or to improve
+  performance characteristics); however, multiple paths will not be
+  exposed outside of the network.<dt><b>Node</b></dt>
+	<dd>  A node is an endpoint in a <em>network</em>.  Nodes
+  provide processing capabilities and memory.  A node may provide
+  multiple processors (an SMP node) or it may act as a <em>gateway</em>
+  between networks.<dt><b>Process</b></dt>
+	<dd> The instantiation of an executing program on a node.<dt><b>Rank</b></dt>
+	<dd> Each <em>process</em> in a <em>group</em> is assigned a unique 
+  integer in the range 0 to n, where n is the number of
+  <em>processes</em> in the <em>group</em>.<dt><b>Target</b></dt>
+	<dd> A <em>process</em> that is acted upon by a message
+  operation.
+</dl>
+
+<p>
+
+<center><font size="+1"><b>The Portals 3.0 Message Passing System <br />Revision 1.0</b></font>
+</center>
+
+<p>
+<br /><br /><br /> <h2><a name="tth_sEc1">
+1</a>&nbsp;&nbsp;Introduction</h2><a name="sec:intro">
+</a>
+
+<p>
+     <h3><a name="tth_sEc1.1">
+1.1</a>&nbsp;&nbsp;Overview</h3>
+
+<p>
+This document describes an application programming interface for
+message passing between nodes in a system area network.  The goal of
+this interface is to improve the scalability and performance of
+network communication by defining the functions and semantics of
+message passing required for scaling a parallel computing system to
+ten thousand nodes.  This goal is achieved by providing an interface
+that will allow a quality implementation to take advantage of the
+inherently scalable design of Portals.
+
+<p>
+This document is divided into several sections:
+
+<dl compact="compact"><dt><b>Section&nbsp;<a href="#sec:intro">1</a>-Introduction</b></dt>
+	<dd>&nbsp;<br />
+  This section describes the purpose and scope of the Portals API.<dt><b>Section&nbsp;<a href="#sec:apiover">2</a>-An Overview of the Portals 3.0 API</b></dt>
+	<dd>&nbsp;<br />
+  This section gives a brief overview of the Portals API.  The goal is 
+  to introduce the key concepts and terminology used in the
+  description of the API.<dt><b>Section&nbsp;<a href="#sec:api">3</a>-The Portals 3.0 API</b></dt>
+	<dd>&nbsp;<br />
+  This section describes the functions and semantics of the Portals
+  application programming interface.<dt><b>Section&nbsp;<a href="#sec:semantics">4</a>-The Semantics of Message
+  Transmission</b></dt>
+	<dd>&nbsp;<br />
+  This section describes the semantics of message transmission.  In
+  particular, the information transmitted in each type of message and
+  the processing of incoming messages.<dt><b>Section&nbsp;<a href="#sec:examples">5</a>-Examples</b></dt>
+	<dd>&nbsp;<br />
+  This section presents several examples intended to illustrates the
+  use of the Portals API.
+</dl>
+
+<p>
+     <h3><a name="tth_sEc1.2">
+1.2</a>&nbsp;&nbsp;Purpose</h3>
+
+<p>
+Existing message passing technologies available for commodity cluster
+networking hardware do not meet the scalability goals required by the
+Cplant&nbsp;[<a href="#Cplant" name="CITECplant">1</a>] project at Sandia National Laboratories.  The goal
+of the Cplant project is to construct a commodity cluster that can
+scale to the order of ten thousand nodes.  This number greatly exceeds
+the capacity for which existing message passing technologies have been
+designed and implemented.
+
+<p>
+In addition to the scalability requirements of the network, these
+technologies must also be able to support a scalable implementation of
+the Message Passing Interface (MPI)&nbsp;[<a href="#MPIstandard" name="CITEMPIstandard">7</a>] standard, which
+has become the <i>de facto</i> standard for parallel scientific
+computing.  While MPI does not impose any scalability limitations,
+existing message passing technologies do not provide the functionality
+needed to allow implementations of MPI to meet the scalability
+requirements of Cplant.
+
+<p>
+The following are properties of a network architecture that do not
+impose any inherent scalability limitations:
+
+<ul><p>
+<li> Connectionless - Many connection-oriented architectures, such as
+      VIA&nbsp;[<a href="#VIA" name="CITEVIA">3</a>] and TCP/IP sockets, have limitations on the number
+      of peer connections that can be established.</li>
+<p>
+<li> Network independence - Many communication systems depend on the
+      host processor to perform operations in order for messages in
+      the network to be consumed.  Message consumption from the
+      network should not be dependent on host processor activity, such
+      as the operating system scheduler or user-level thread
+      scheduler.</li>
+<p>
+<li> User-level flow control - Many communication systems manage flow
+      control internally to avoid depleting resources, which can
+      significantly impact performance as the number of communicating
+      processes increases.</li>
+<p>
+<li> OS Bypass - High performance network communication should not
+      involve memory copies into or out of a kernel-managed protocol
+      stack.</li>
+</ul>
+
+<p>
+The following are properties of a network architecture that do not
+impose scalability limitations for an implementation of MPI:
+
+<p>
+
+<ul><p>
+<li> Receiver-managed - Sender-managed message passing
+      implementations require a persistent block of memory to be
+      available for every process, requiring memory resources to
+      increase with job size and requiring user-level flow control
+      mechanisms to manage these resources.</li>
+<p>
+<li> User-level Bypass - While OS Bypass is necessary for
+      high-performance, it alone is not sufficient to support the
+      Progress Rule of MPI asynchronous operations.</li>
+<p>
+<li> Unexpected messages - Few communication systems have support for
+      receiving messages for which there is no prior notification.
+      Support for these types of messages is necessary to avoid flow
+      control and protocol overhead.</li>
+</ul>
+
+<p>
+     <h3><a name="tth_sEc1.3">
+1.3</a>&nbsp;&nbsp;Background</h3>
+
+<p>
+Portals were originally designed for and implemented on the nCube
+machine as part of the SUNMOS (Sandia/UNM OS)&nbsp;[<a href="#SUNMOS" name="CITESUNMOS">6</a>] and
+Puma&nbsp;[<a href="#PumaOS" name="CITEPumaOS">11</a>] lightweight kernel development projects.  Portals
+went through two design phases, the latter of which is used on the
+4500-node Intel TeraFLOPS machine&nbsp;[<a href="#TFLOPS" name="CITETFLOPS">10</a>].  Portals have been
+very successful in meeting the needs of such a large machine, not only
+as a layer for a high-performance MPI implementation&nbsp;[<a href="#PumaMPI" name="CITEPumaMPI">2</a>],
+but also for implementing the scalable run-time environment and
+parallel I/O capabilities of the machine.
+
+<p>
+The second generation Portals implementation was designed to take full
+advantage of the hardware architecture of large MPP machines.  However,
+efforts to implement this same design on commodity cluster technology
+identified several limitations, due to the differences in network
+hardware as well as to shortcomings in the design of Portals.
+
+<p>
+     <h3><a name="tth_sEc1.4">
+1.4</a>&nbsp;&nbsp;Scalability</h3>
+
+<p>
+The primary goal in the design of Portals is scalability.  Portals are
+designed specifically for an implementation capable of supporting a
+parallel job running on ten thousand nodes.  Performance is critical
+only in terms of scalability.  That is, the level of message passing
+performance is characterized by how far it allows an application to
+scale and not by how it performs in a two-node ping-pong benchmark.
+
+<p>
+Portals are designed to allow for scalability, not to guarantee it.
+Portals cannot overcome the shortcomings of a poorly designed
+application program.  Applications that have inherent scalability
+limitations, either through design or implementation, will not be
+transformed by Portals into scalable applications.  Scalability must
+be addressed at all levels.  Portals do not inhibit scalability, but
+do not guarantee it either.
+
+<p>
+To support scalability, the Portals interface maintains a minimal
+amount of state.  Portals provide reliable, ordered delivery of
+messages between pairs of processes.  They are connectionless: a
+process is not required to explicitly establish a point-to-point
+connection with another process in order to communicate.  Moreover,
+all buffers used in the transmission of messages are maintained in
+user space.  The target process determines how to respond to incoming
+messages, and messages for which there are no buffers are discarded.
+
+<p>
+     <h3><a name="tth_sEc1.5">
+1.5</a>&nbsp;&nbsp;Communication Model</h3>
+
+<p>
+Portals combine the characteristics of both one-side and two-sided
+communication.  They define a ``matching put'' operation and a
+``matching get'' operation.  The destination of a put (or send) is not
+an explicit address; instead, each message contains a set of match
+bits that allow the receiver to determine where incoming messages
+should be placed.  This flexibility allows Portals to support both
+traditional one-sided operations and two-sided send/receive
+operations.
+
+<p>
+Portals allows the target to determine whether incoming messages are
+acceptable.  A target process can choose to accept message operations
+from any specific process or can choose to ignore message operations
+from any specific process.  
+
+<p>
+     <h3><a name="tth_sEc1.6">
+1.6</a>&nbsp;&nbsp;Zero Copy, OS Bypass and Application Bypass</h3>
+
+<p>
+In traditional system architectures, network packets arrive at the
+network interface card (NIC), are passed through one or more protocol
+layers in the operating system, and eventually copied into the address
+space of the application.  As network bandwidth began to approach
+memory copy rates, reduction of memory copies became a critical
+concern.  This concern lead to the development of zero-copy message
+passing protocols in which message copies are eliminated or pipelined
+to avoid the loss of bandwidth.
+
+<p>
+A typical zero-copy protocol has the NIC generate an interrupt for the
+CPU when a message arrives from the network.  The interrupt handler
+then controls the transfer of the incoming message into the address
+space of the appropriate application.  The interrupt latency, the time
+from the initiation of an interrupt until the interrupt handler is
+running, is fairly significant.  To avoid this cost, some modern NICs
+have processors that can be programmed to implement part of a message
+passing protocol.  Given a properly designed protocol, it is possible
+to program the NIC to control the transfer of incoming messages,
+without needing to interrupt the CPU.  Because this strategy does not
+need to involve the OS on every message transfer, it is frequently
+called ``OS Bypass.''  ST&nbsp;[<a href="#ST" name="CITEST">12</a>], VIA&nbsp;[<a href="#VIA" name="CITEVIA">3</a>], FM&nbsp;[<a href="#FM2" name="CITEFM2">5</a>],
+GM&nbsp;[<a href="#GM" name="CITEGM">9</a>], and Portals are examples of OS Bypass protocols.
+
+<p>
+Many protocols that support OS Bypass still require that the
+application actively participate in the protocol to ensure progress.
+As an example, the long message protocol of PM requires that the
+application receive and reply to a request to put or get a long
+message.  This complicates the runtime environment, requiring a thread
+to process incoming requests, and significantly increases the latency
+required to initiate a long message protocol.  The Portals message
+passing protocol does not require activity on the part of the
+application to ensure progress.  We use the term ``Application
+Bypass'' to refer to this aspect of the Portals protocol.
+
+<p>
+ <h2><a name="tth_sEc2">
+2</a>&nbsp;&nbsp;An Overview of the Portals API</h2><a name="sec:apiover">
+</a>
+
+<p>
+In this section, we give a conceptual overview of the Portals API.
+The goal is to provide a context for understanding the detailed
+description of the API presented in the next section.
+
+<p>
+     <h3><a name="tth_sEc2.1">
+2.1</a>&nbsp;&nbsp;Data Movement</h3><a name="sec:dmsemantics">
+</a>
+
+<p>
+A portal represents an opening in the address space of a process.
+Other processes can use a portal to read (get) or write (put) the
+memory associated with the portal.  Every data movement operation
+involves two processes, the <b>initiator</b> and the
+<b>target</b>.  The initiator is the process that initiates the data
+movement operation.  The target is the process that responds to the
+operation by either accepting the data for a put operation, or
+replying with the data for a get operation.
+
+<p>
+In this discussion, activities attributed to a process may refer to
+activities that are actually performed by the process or <em>on
+  behalf of the process</em>.  The inclusiveness of our terminology is
+important in the context of <em>application bypass</em>.  In particular,
+when we note that the target sends a reply in the case of a get
+operation, it is possible that reply will be generated by another
+component in the system, bypassing the application.
+
+<p>
+Figures&nbsp;<a href="#fig:put">1</a> and <a href="#fig:get">2</a> present graphical
+interpretations of the Portal data movement operations: put and get.
+In the case of a put operation, the initiator sends a put request
+message containing the data to the target.  The target translates the
+portal addressing information in the request using its local portal
+structures.  When the request has been processed, the target
+optionally sends an acknowledgement message.
+
+<p>
+
+<p>
+<a name="tth_fIg0.1">
+</a> 
+<table align="center" border="0"><tr><td>
+</td><td><table border="0"><tr><td><img src="put.png" alt="put.png" />
+</td></tr></table><!--vbox-->
+</td><td></td></table><!--hboxt-->
+
+<center>Figure 0.1: Portal Put (Send)</center>
+<a name="fig:put">
+</a>
+
+<p>
+In the case of a get operation, the initiator sends a get request to
+the target.  As with the put operation, the target translates the
+portal addressing information in the request using its local portal
+structures.  Once it has translated the portal addressing information,
+the target sends a reply that includes the requested data.
+
+<p>
+
+<p>
+<a name="tth_fIg0.2">
+</a> 
+<table align="center" border="0"><tr><td>
+</td><td><table border="0"><tr><td><img src="get.png" alt="get.png" />
+</td></tr></table><!--vbox-->
+</td><td></td></table><!--hboxt-->
+
+<center>Figure 0.2: Portal Get</center>
+<a name="fig:get">
+</a>
+
+<p>
+We should note that portal address translations are only performed on
+nodes that respond to operations initiated by other nodes.
+Acknowledgements and replies to get operations bypass the portals
+address translation structures.
+
+<p>
+     <h3><a name="tth_sEc2.2">
+2.2</a>&nbsp;&nbsp;Portal Addressing</h3>
+
+<p>
+One-sided data movement models (e.g., shmem&nbsp;[<a href="#CraySHMEM" name="CITECraySHMEM">4</a>],
+ST&nbsp;[<a href="#ST" name="CITEST">12</a>], MPI-2&nbsp;[<a href="#MPI2" name="CITEMPI2">8</a>]) typically use a triple to address
+memory on a remote node.  This triple consists of a process id, memory
+buffer id, and offset.  The process id identifies the target process,
+the memory buffer id specifies the region of memory to be used for the
+operation, and the offset specifies an offset within the memory
+buffer.
+
+<p>
+In addition to the standard address components (process id, memory
+buffer id, and offset), a portal address includes a set of match bits.
+This addressing model is appropriate for supporting one-sided
+operations as well as traditional two-sided message passing
+operations.  Specifically, the Portals API provides the flexibility
+needed for an efficient implementation of MPI-1, which defines
+two-sided operations with one-sided semantics.
+
+<p>
+Figure&nbsp;<a href="#fig:portals">3</a> presents a graphical representation of the
+structures used by a target in the interpretation of a portal address.
+The process id is used to route the message to the appropriate node
+and is not reflected in this diagram.  The memory buffer id, called
+the <b>portal id</b>, is used as an index into the portal table.
+Each element of the portals table identifies a match list.  Each
+element of the match list specifies two bit patterns: a set of ``don't
+care'' bits, and a set of ``must match'' bits.  In addition to the two
+sets of match bits, each match list element has a list of memory
+descriptors.  Each memory descriptor identifies a memory region and an
+optional event queue.  The memory region specifies the memory to be
+used in the operation and the event queue is used to record
+information about these operations.
+
+<p>
+
+<p>
+<a name="tth_fIg0.3">
+</a> 
+<table align="center" border="0"><tr><td>
+</td><td><table border="0"><tr><td><img src="portals.png" alt="portals.png" />
+</td></tr></table><!--vbox-->
+</td><td></td></table><!--hboxt-->
+
+<center>Figure 0.3: Portal Addressing Structures</center>
+<a name="fig:portals">
+</a>
+
+<p>
+Figure&nbsp;<a href="#fig:flow">4</a> illustrates the steps involved in translating a
+portal address, starting from the first element in a match list.  If
+the match criteria specified in the match list entry are met and the
+first entry in the memory descriptor list accepts the
+operation<a href="#tthFtNtAAB" name="tthFrefAAB"><sup>1</sup></a>, the operation (put or get)
+is performed using the memory region specified in the memory
+descriptor.  (Note, while the match list is searched for a matching
+entry, only the first element in the memory descriptor list is
+considered for the operation.)  If the memory descriptor specifies
+that it is to be unlinked after a successful operation, it is unlinked
+from the list of memory descriptors.  Next, if the memory descriptor
+is unlinked and this empties the memory descriptor list, the match
+entry will also be unlinked if its unlink flag has been set.  Finally,
+if there is an event queue specified in the memory descriptor, the
+operation is logged in the event queue.
+
+<p>
+
+<p>
+<a name="tth_fIg0.4">
+</a> 
+<table align="center" border="0"><tr><td>
+</td><td><table border="0"><tr><td><img src="flow.png" alt="flow.png" />
+</td></tr></table><!--vbox-->
+</td><td></td></table><!--hboxt-->
+
+<center>Figure 0.4: Portals Address Translation</center>
+<a name="fig:flow">
+</a>
+
+<p>
+If the match criteria specified in the match list entry are not met or
+the memory descriptor associated with the match list entry rejects the
+operation, the address translation continues with the next match list
+entry.  If the end of the match list has been reached, the address
+translation is aborted and the incoming requested is discarded.
+
+<p>
+     <h3><a name="tth_sEc2.3">
+2.3</a>&nbsp;&nbsp;Access Control</h3>
+
+<p>
+A process can control access to its portals using an access control
+list.  Each entry in the access control list specifies a process id
+and a portal table index.  The access control list is actually an
+array of entries.  Each incoming request includes an index into the
+access control list (i.e., a ``cookie'' or hint).  If the id of the
+process issuing the request doesn't match the id specified in the
+access control list entry or the portal table index specified in the
+request doesn't match the portal table index specified in the access
+control list entry, the request is rejected.
+
+<p>
+Process identifiers and portal table indexes may include wildcard values to
+increase the flexibility of this mechanism.  When the access control
+list is initialized, the entry with index zero enables access to all
+portals for all processes in the same application and the entry with
+index one enables access to all portals for all system processes.  The
+remaining entries are set to disable all other access.
+
+<p>
+Two aspects of this design merit further discussion.  First, the model
+assumes that the information in a message header, the sender's id in
+particular, is trustworthy.  In most contexts, we assume that the
+entity that constructs the header is trustworthy; however, using
+cryptographic techniques, we could easily devise a protocol that would
+ensure the authenticity of the sender.
+
+<p>
+Second, because the access check is performed by the receiver, it is
+possible that a malicious process will generate thousands of messages
+that will be denied by the receiver.  This could saturate the network
+and/or the receiver, resulting in a <em>denial of service</em> attack.
+Moving the check to the sender using capabilities, would remove the
+potential for this form of attack.  However, the solution introduces
+the complexities of capability management (exchange of capabilities,
+revocation, protections, etc).
+
+<p>
+ <h2><a name="tth_sEc3">
+3</a>&nbsp;&nbsp;The Portals API</h2><a name="sec:api">
+</a>
+
+<p>
+     <h3><a name="tth_sEc3.1">
+3.1</a>&nbsp;&nbsp;Naming Conventions</h3><a name="sec:conv">
+</a>
+The Portals API defines two types of entities: functions and types.
+Function always start with <em>Ptl</em> and use mixed upper and lower
+case.  When used in the body of this report, function names appear in
+italic face, e.g., <em>PtlInit</em>.  The functions associated with an
+object type will have names that start with <em>Ptl</em>, followed by
+the two letter object type code shown in Table&nbsp;<a href="#tab:objcodes">1</a>.  As
+an example, the function <em>PtlEQAlloc</em> allocates resources for an
+event queue.
+
+<p>
+
+<p>
+<a name="tth_tAb0.1">
+</a>   <center>Table 0.1: Object Type Codes</center><a name="tab:objcodes">
+</a>
+  
+<p>
+<br />  
+<center><font size="-1">    
+<table>
+<tr><td><em>xx</em> </td><td>Name </td><td>Section </td></tr>
+<tr><td>EQ </td><td>Event Queue       </td><td><a href="#sec:eq">3.8</a> </td></tr>
+<tr><td>MD </td><td>Memory Descriptor </td><td><a href="#sec:md">3.7</a> </td></tr>
+<tr><td>ME </td><td>Match Entry       </td><td><a href="#sec:me">3.6</a> </td></tr>
+<tr><td>NI </td><td>Network Interface </td><td><a href="#sec:ni">3.5</a> </td></tr></table>
+
+  </font></center>
+
+<p>
+Type names use lower case with underscores to separate words.  Each
+type name starts with <tt>ptl_</tt> and ends with <tt>_t</tt>.  When
+used in the body of this report, type names appear in a fixed font,
+e.g., <tt>ptl_match_bits_t</tt>.
+
+<p>
+Names for constants use upper case with underscores to separate words.
+Each constant name starts with <tt>PTL_</tt>.  When used in the body
+of this report, type names appear in a fixed font, e.g.,
+<tt>PTL_OK</tt>.
+
+<p>
+     <h3><a name="tth_sEc3.2">
+3.2</a>&nbsp;&nbsp;Base Types</h3>
+
+<p>
+The Portals API defines a variety of base types.  These types
+represent a simple renaming of the base types provided by the C
+programming language.  In most cases these new type names have been
+introduced to improve type safety and to avoid issues arising from
+differences in representation sizes (e.g., 16-bit or 32-bit integers).
+
+<p>
+
+<h4>Sizes</h4><a name="sec:size-t">
+</a>
+The type <tt>ptl_size_t</tt> is an unsigned integral type used for
+representing sizes.
+
+<p>
+
+<h4>Handles</h4><a name="sec:handle-type">
+</a>
+Objects maintained by the API are accessed through handles.  Handle
+types have names of the form <tt>ptl_handle_<em>xx</em>_t</tt>, where
+<em>xx</em> is one of the two letter object type codes shown in
+Table&nbsp;<a href="#tab:objcodes">1</a>.  For example, the type
+<tt>ptl_handle_ni_t</tt> is used for network interface handles.
+
+<p>
+Each type of object is given a unique handle type to enhance type
+checking.  The type, <tt>ptl_handle_any_t</tt>, can be used when a
+generic handle is needed.  Every handle value can be converted into a
+value of type <tt>ptl_handle_any_t</tt> without loss of information.
+
+<p>
+Handles are not simple values.  Every portals object is associated
+with a specific network interface and an identifier for this interface
+(along with an object identifier) is part of the handle for the
+object.
+
+<p>
+
+<h4>Indexes</h4><a name="sec:index-type">
+</a>
+The types <tt>ptl_pt_index_t</tt> and <tt>ptl_ac_index_t</tt> are
+integral types used for representing portal table indexes and access
+control tables indexes, respectively.
+
+<p>
+
+<h4>Match Bits</h4><a name="sec:mb-type">
+</a>
+The type <tt>ptl_match_bits_t</tt> is capable of holding unsigned
+64-bit integer values.
+
+<p>
+
+<h4>Network Interfaces</h4><a name="sec:ni-type">
+</a>
+The type <tt>ptl_interface_t</tt> is an integral type used for
+identifying different network interfaces.  Users will need to consult
+the local documentation to determine appropriate values for the
+interfaces available.  The special value <tt>PTL_IFACE_DEFAULT</tt>
+identifies the default interface.
+
+<p>
+
+<h4>Identifiers</h4><a name="sec:id-type">
+</a>
+The type <tt>ptl_id_t</tt> is an integral type used for representing
+group ids, node ids, process ids, and rank ids.
+
+<p>
+
+<h4>Status Registers</h4><a name="sec:stat-type">
+</a>
+Each network interface maintains an array of status registers that can
+be accessed using the <tt>PtlNIStatus</tt> function (see
+Section&nbsp;<a href="#sec:nistatus">3.5.4</a>).  The type <tt>ptl_sr_index_t</tt> defines
+the types of indexes that can be used to access the status registers.
+The only index defined for all implementations is
+<tt>PTL_SR_DROP_COUNT</tt> which identifies the status register that
+counts the dropped requests for the interface.  Other indexes (and
+registers) may be defined by the implementation.
+
+<p>
+The type <tt>ptl_sr_value_t</tt> defines the types of values held in
+status registers.  This is a signed integer type.  The size is
+implementation dependent, but must be at least 32 bits.
+
+<p>
+     <h3><a name="tth_sEc3.3">
+3.3</a>&nbsp;&nbsp;Initialization and Cleanup</h3><a name="sec:init">
+</a>
+
+<p>
+The Portals API includes a function, <em>PtlInit</em>, to initialize the
+library and a function, <em>PtlFini</em>, to cleanup after the
+application is done using the library.
+
+<p>
+
+<h4>PtlInit</h4>
+
+<pre>
+int PtlInit( void );
+
+</pre>
+
+<p>
+The <em>PtlInit</em> function initializes the Portals library.  This
+function should be called by all processes in an application before
+calling any of the functions defined by the Portal API.  This function
+should be called once and only once during initialization by each
+process in a parallel job.
+
+<p>
+
+<h4>Return Codes</h4>
+
+<dl compact="compact">                                                             <dt><b>PTL_OK</b></dt>
+	<dd> Indicates success.<dt><b>PTL_FAIL</b></dt>
+	<dd> Indicates an error during initialization.
+</dl>
+
+<p>
+
+<h4>Implementation Notes</h4>
+This operation may be implemented as a collective operation involving
+all of the processes in a group.
+
+<p>
+
+<h4>PtlFini</h4>
+
+<pre>
+void PtlFini( void );
+
+</pre>
+
+<p>
+The <em>PtlFini</em> function cleans up after the Portals library is no
+longer needed by a process.  After this function is called, calls to
+any of the functions defined by the Portal API or use of the
+structures set up by the Portals API will result in undefined
+behavior.  This function should be called once and only once during
+termination by each process in a parallel job.  Typically, this
+function will be called in the exit sequence of each process.
+
+<p>
+     <h3><a name="tth_sEc3.4">
+3.4</a>&nbsp;&nbsp;Process Identification</h3><a name="sec:pid">
+</a>
+
+<p>
+Processes that use the Portals API, can be identified using a node id
+and process id.  Every node in the computing system has a unique node
+identifier and every process running on a node has a unique process
+identifier.  As such, any process in the computing system can be
+identified by its node id and process id.  Processes can also be
+identified using a group id and rank id.  When a portals job is
+loaded, it is given a unique group identifier. In addition, each
+process in the job is assigned a unique rank id starting at zero.
+
+<p>
+The Portals API defines a type, <tt>ptl_process_id_t</tt> for
+representing process ids using either or both of the schemes, a
+function, <em>PtlGetId</em>, which can be used to obtain the id of the
+current process, and a function, <em>PtlTransId</em>, to translate
+addresses between the two schemes.
+
+<p>
+
+<h4>The Process Id Type</h4><a name="sec:pid-type">
+</a>
+
+<pre>
+typedef enum { PTL_ADDR_NID, PTL_ADDR_GID, PTL_ADDR_BOTH } ptl_addr_kind_t;
+
+typedef struct {
+    ptl_addr_kind_t addr_kind;   /* kind of address pair */
+    ptl_id_t        nid, pid;    /* node id, process id  */
+    ptl_id_t        gid, rid;    /* group id, rank id    */
+} ptl_process_id_t;
+
+</pre>
+
+<p>
+The <tt>ptl_process_id_t</tt> type uses a tag and up to four
+identifiers to represent a process id.  Whenever a process id is
+filled in by the interface (e.g., by <em>PtlGetId</em> or when an event
+is recorded), the <tt>addr_kind</tt> member is set to
+<tt>PTL_ADDR_BOTH</tt>, and all four of the four remaining members
+will be set to the appropriate values.  When a process id is passed to
+an operation in the Portals API (e.g., <em>PtlGetId</em> or
+<em>PtlGet</em>), the <tt>addr_kind</tt> member must be
+<tt>PTL_ADDR_NID</tt> or <tt>PTL_ADDR_GID</tt> and the <tt>nid</tt>
+and <tt>pid</tt> or <tt>gid</tt> and <tt>rid</tt> members must be
+filled in, respectively.
+
+<p>
+
+<h4>PtlGetId</h4>
+
+<pre>
+int PtlGetId( ptl_process_id_t* id, ptl_id_t* gsize );
+
+</pre>
+
+<p>
+
+<h4>Return Codes</h4>
+
+<dl compact="compact">                                                             <dt><b>PTL_OK</b></dt>
+	<dd> Indicates success.<dt><b>PTL_NOINIT</b></dt>
+	<dd> Indicates that the Portals API has not been
+  successfully initialized.<dt><b>PTL_SEGV</b></dt>
+	<dd> Indicates that <tt>id</tt> or <tt>gsize</tt> is not a
+  legal address.
+</dl>
+
+<p>
+
+<h4>Arguments</h4>
+
+<table>
+<tr><td>id </td><td align="right">output </td><td>On successful return, this location will hold the id
+  for the calling process.</td></tr>
+<tr><td>gsize </td><td align="right">output </td><td>On successful return, this location will hold the
+  number of processes in the process group for this process.
+</td></tr></table>
+
+
+<p>
+
+<h4>Implementation Notes</h4>
+Notice that process identifiers are independent of the network
+interface(s) used by the process.
+
+<p>
+
+<h4>PtlTransId</h4>
+
+<pre>
+int PtlTransId( ptl_process_id_t* id );
+
+</pre>
+
+<p>
+
+<h4>Return Codes</h4>
+
+<dl compact="compact">                                                             <dt><b>PTL_OK</b></dt>
+	<dd> Indicates success.<dt><b>PTL_NOINIT</b></dt>
+	<dd> Indicates that the Portals API has not been
+  successfully initialized.<dt><b>PTL_SEGV</b></dt>
+	<dd> Indicates that <tt>id</tt> is not a legal address.<dt><b>PTL_ADDR_UNKNOWN</b></dt>
+	<dd> Indicates that the address could not be
+  translated.
+</dl>
+
+<p>
+
+<h4>Arguments</h4>
+
+<table>
+<tr><td>id </td><td align="right">input </td><td>A pointer to the process address to be translated.
+  This address should be expressed using nid, pid or gid, rid
+  addressing, i.e., <tt>addr_kind</tt> should be <tt>PTL_ADDR_NID</tt> 
+  or <tt>PTL_ADDR_GID</tt>.</td></tr>
+<tr><td>id </td><td align="right">output </td><td>On successful return, this location will hold a
+  process address with all four address members filled in, i.e.,
+  <tt>addr_kind</tt> will be <tt>PTL_ADDR_BOTH</tt>.
+</td></tr></table>
+
+
+<p>
+
+<h4>Implementation Notes</h4>
+This operation should be implemented as a local operation.  That is,
+the API should not query other nodes to determine the translation for
+a process address.  As a minimum, the API should be able to translate
+any addresses for processes in the same group as the calling process.
+Other translations can be provided at the discretion of the
+implementor.  For example, an implementation may maintain a cache of
+recent addresses that it has seen.  (Every incoming message includes
+all four addresses for the sending process.)
+
+<p>
+     <h3><a name="tth_sEc3.5">
+3.5</a>&nbsp;&nbsp;Network Interfaces</h3><a name="sec:ni">
+</a>
+The Portals API supports the use of multiple network interfaces.
+However, each interface is treated as an independent entity.
+Combining interfaces (e.g., ``bonding'' to create a higher bandwidth
+connection) must be implemented by the application or embedded in the
+underlying network.  Interfaces are treated as independent entities to
+make it easier to cache information on individual network interface
+cards.
+
+<p>
+Once initialized, each interface provides a portal table, an access
+control table, and a collection of status registers.  See
+Section&nbsp;<a href="#sec:me">3.6</a> for a discussion of updating portal table entries
+using the <em>PtlMEAttach</em> function.  See Section&nbsp;<a href="#sec:ac">3.9</a> for a
+discussion of the initialization and updating of entries in the access
+control table.  See Section&nbsp;<a href="#sec:nistatus">3.5.4</a> for a discussion of the 
+<em>PtlNIStatus</em> function which can be used to determine the value
+of a status register.
+
+<p>
+Every other type of Portal object (e.g., memory descriptor, event
+queue, or match entry) is associated with a specific network
+interface.  The association to a network interface is established when
+the object is created and is encoded in the handle for the object.
+
+<p>
+Each network interface is initialized and shutdown independently.  The
+initialization routine, <em>PtlNIInit</em>, returns a handle for an
+interface object which is used in all subsequent portal operations.
+The <em>PtlNIFini</em> function is used to shutdown an interface and
+release any resources that are associated with the interface.
+
+<p>
+The Portals API also defines the <em>PtlNIStatus</em> function to query
+the status registers for a network interface, the <em>PtlNIDist</em>
+function to determine the ``distance'' to another process, and the
+<em>PtlNIHandle</em> function to determine the network interface that an
+object is associated with.
+
+<p>
+
+<h4>PtlNIInit</h4><a name="sec:niinit">
+</a>
+
+<pre>
+int PtlNIInit( ptl_interface_t  interface,
+               ptl_pt_index_t   ptl_size,
+               ptl_ac_index_t   acl_size,
+               ptl_handle_ni_t* handle );
+
+</pre>
+
+<p>
+ The <em>PtlNIInit</em> function is used to initialized the Portals API
+for a network interface.  This function must be called before any
+other operations that apply to the interface.  It is an error to
+initialize a network interface more than once in the same process.
+
+<p>
+
+<h4>Return Codes</h4>
+
+<dl compact="compact">                                                             <dt><b>PTL_OK</b></dt>
+	<dd> Indicates success.<dt><b>PTL_NOINIT</b></dt>
+	<dd> Indicates that the Portals API has not been
+  successfully initialized.<dt><b>PTL_INIT_DUP</b></dt>
+	<dd> Indicates a duplicate initialization of
+  <tt>interface</tt>.<dt><b>PTL_INIT_INV</b></dt>
+	<dd> Indicates that <tt>interface</tt> is not a valid
+  network interface.<dt><b>PTL_NOSPACE</b></dt>
+	<dd> Indicates that there is insufficient memory to
+  initialize the interface.<dt><b>PTL_INV_PSIZE</b></dt>
+	<dd> Indicates that <tt>ptl_size</tt> is invalid.<dt><b>PTL_INV_ASIZE</b></dt>
+	<dd> Indicates that <tt>acl_size</tt> is invalid.<dt><b>PTL_SEGV</b></dt>
+	<dd> Indicates that <tt>handle</tt> is not a legal address.
+</dl>
+
+<p>
+
+<h4>Arguments</h4>
+
+<table>
+<tr><td>interface </td><td align="right">input </td><td>Identifies the network interface to be
+  initialized.  (See section&nbsp;<a href="#sec:ni-type">3.2.5</a> for a discussion of
+  values used to identify network interfaces.) </td></tr>
+<tr><td>ptl_size </td><td align="right">input </td><td>Specifies the number of entries in the portal
+  table for this interface. </td></tr>
+<tr><td>acl_size </td><td align="right">input </td><td>Specifies the size of the access control list for
+  this interface.  (See section&nbsp;<a href="#sec:ac">3.9</a> for more information
+  about access control lists.) </td></tr>
+<tr><td>handle </td><td align="right">output </td><td>On successful return, this location will hold a
+  handle for the interface.
+</td></tr></table>
+
+
+<p>
+
+<h4>Implementation Notes</h4>
+The maximum number of portal table entries allowed by a specific
+interface is implementation dependent.  Some portal table indexes may
+be reserved by the implementation.  The initialization routine is a
+local operation and should not involve communication with any other
+nodes.
+
+<p>
+
+<h4>PtlNIFini</h4><a name="sec:nifini">
+</a>
+
+<pre>
+int PtlNIFini( ptl_handle_ni_t interface );
+
+</pre>
+
+<p>
+The <em>PtlNIFini</em> function is used to release the resources
+allocated for a network interface.  Once the <em>PtlNIFini</em>
+operation has been started, the results of pending API operations
+(e.g., operations initiated by another thread) for this interface are
+undefined.  Similarly, the effects of incoming operations (puts and
+gets) or return values (acknowledgements and replies) for this
+interface are undefined.
+
+<p>
+
+<h4>Return Codes</h4>
+
+<dl compact="compact">                                                             <dt><b>PTL_OK</b></dt>
+	<dd> Indicates success.<dt><b>PTL_NOINIT</b></dt>
+	<dd> Indicates that the Portals API has not been
+  successfully initialized.<dt><b>PTL_INV_NI</b></dt>
+	<dd> Indicates that <tt>interface</tt> is not a valid
+  network interface handle.
+</dl>
+
+<p>
+
+<h4>Arguments</h4>
+
+<table>
+<tr><td>interface </td><td align="right">input </td><td>A handle for the interface to shutdown.
+</td></tr></table>
+
+
+<p>
+
+<h4>PtlNIBarrier</h4><a name="sec:nibarrier">
+</a>
+
+<pre>
+int PtlNIBarrier( ptl_handle_ni_t interface );
+
+</pre>
+
+<p>
+The <em>PtlNIBarrier</em> function blocks the calling process until all
+processes in the process group have invoked the <em>PtlNIBarrier</em>
+function for the specified interface.
+
+<p>
+
+<h4>Return Codes</h4>
+
+<dl compact="compact">                                                             <dt><b>PTL_OK</b></dt>
+	<dd> Indicates success.<dt><b>PTL_NOINIT</b></dt>
+	<dd> Indicates that the Portals API has not been
+  successfully initialized.<dt><b>PTL_INV_NI</b></dt>
+	<dd> Indicates that <tt>interface</tt> is not a valid
+  network interface handle.
+</dl>
+
+<p>
+
+<h4>Arguments</h4>
+
+<table>
+<tr><td>interface </td><td align="right">input  </td><td>A handle for the interface to use. </td></tr>
+<tr><td></td></tr></table>
+
+
+<p>
+
+<h4>PtlNIStatus</h4><a name="sec:nistatus">
+</a>
+
+<pre>
+int PtlNIStatus( ptl_handle_ni_t interface,
+                 ptl_sr_index_t  register,
+                 ptl_sr_value_t* status );
+
+</pre>
+
+<p>
+The <em>PtlNIStatus</em> function returns the value of a status register
+for the specified interface.  (See section&nbsp;<a href="#sec:stat-type">3.2.7</a> for
+more information on status register indexes and status register
+values.)
+
+<p>
+
+<h4>Return Codes</h4>
+
+<dl compact="compact">                                                             <dt><b>PTL_OK</b></dt>
+	<dd> Indicates success.<dt><b>PTL_NOINIT</b></dt>
+	<dd> Indicates that the Portals API has not been
+  successfully initialized.<dt><b>PTL_INV_NI</b></dt>
+	<dd> Indicates that <tt>interface</tt> is not a valid
+  network interface handle.<dt><b>PTL_INV_SR_INDX</b></dt>
+	<dd> Indicates that <tt>register</tt> is not a valid
+  status register.<dt><b>PTL_SEGV</b></dt>
+	<dd> Indicates that <tt>status</tt> is not a legal address.
+</dl>
+
+<p>
+
+<h4>Arguments</h4>
+
+<table>
+<tr><td>interface </td><td align="right">input  </td><td>A handle for the interface to use. </td></tr>
+<tr><td>register  </td><td align="right">input  </td><td>An index for the status register to read. </td></tr>
+<tr><td>status    </td><td align="right">output </td><td>On successful return, this location will hold the
+  current value of the status register. </td></tr>
+<tr><td></td></tr></table>
+
+
+<p>
+
+<h4>Implementation Notes</h4>
+The only status register that must be defined is a drop count register
+(<tt>PTL_SR_DROP_COUNT</tt>).  Implementations may define additional
+status registers.  Identifiers for the indexes associated with these
+registers should start with the prefix <tt>PTL_SR_</tt>.
+
+<p>
+
+<h4>PtlNIDist</h4>
+
+<pre>
+int PtlNIDist( ptl_handle_ni_t  interface,
+               ptl_process_id_t process,
+               double*          distance );
+
+</pre>
+
+<p>
+The <em>PtlNIDist</em> function returns the distance to another process
+using the specified interface.  Distances are only defined relative to
+an interface.  Distance comparisons between different interfaces on
+the same node may be meaningless.
+
+<p>
+
+<h4>Return Codes</h4>
+
+<dl compact="compact">                                                             <dt><b>PTL_OK</b></dt>
+	<dd> Indicates success.<dt><b>PTL_NOINIT</b></dt>
+	<dd> Indicates that the Portals API has not been
+  successfully initialized.<dt><b>PTL_INV_NI</b></dt>
+	<dd> Indicates that <tt>interface</tt> is not a valid
+  network interface handle.<dt><b>PTL_INV_PROC</b></dt>
+	<dd> Indicates that <tt>process</tt> is not a valid
+  process identifier.<dt><b>PTL_SEGV</b></dt>
+	<dd> Indicates that <tt>distance</tt> is not a legal
+  address.
+</dl>
+
+<p>
+
+<h4>Arguments</h4>
+
+<table>
+<tr><td>interface </td><td align="right">input  </td><td>A handle for the interface to use. </td></tr>
+<tr><td>process   </td><td align="right">input  </td><td>An identifier for the process whose distance is being
+  requested. </td></tr>
+<tr><td>distance  </td><td align="right">output </td><td>On successful return, this location will hold the
+  distance to the remote process.
+</td></tr></table>
+
+
+<p>
+
+<h4>Implementation Notes</h4>
+This function should return a static measure of distance.  Examples
+include minimum latency, the inverse of available bandwidth, or the
+number of switches between the two endpoints.
+
+<p>
+
+<h4>PtlNIHandle</h4>
+
+<pre>
+int PtlNIHandle( ptl_handle_any_t handle,
+                 ptl_handle_ni_t* interface );
+
+</pre>
+
+<p>
+The <em>PtlNIHandle</em> function returns a handle for the network
+interface that the object identified by <tt>handle</tt> is associated
+with.  If the object identified by <tt>handle</tt> is a network
+interface, this function returns the same value it is passed.
+
+<p>
+
+<h4>Return Codes</h4>
+
+<dl compact="compact">                                                             <dt><b>PTL_OK</b></dt>
+	<dd> Indicates success.<dt><b>PTL_NOINIT</b></dt>
+	<dd> Indicates that the Portals API has not been
+  successfully initialized.<dt><b>PTL_INV_HANDLE</b></dt>
+	<dd> Indicates that <tt>handle</tt> is not a valid
+  handle.<dt><b>PTL_SEGV</b></dt>
+	<dd> Indicates that <tt>interface</tt> is not a legal
+  address.
+</dl>
+
+<p>
+
+<h4>Arguments</h4>
+
+<table>
+<tr><td>handle    </td><td align="right">input  </td><td>A handle for the object. </td></tr>
+<tr><td>interface </td><td align="right">output </td><td>On successful return, this location will hold a
+  handle for the network interface associated with <tt>handle</tt>.
+</td></tr></table>
+
+
+<p>
+
+<h4>Implementation Notes</h4>
+Every handle should encode the network interface and the object id
+relative to this handle.  Both are presumably encoded using integer
+values.
+
+<p>
+     <h3><a name="tth_sEc3.6">
+3.6</a>&nbsp;&nbsp;Match Entries and Match Lists</h3><a name="sec:me">
+</a>
+
+<p>
+A match list is a chain of match entries.  Each match entry includes a
+list of memory descriptors and a set of match criteria.  The match
+criteria can be used to reject incoming requests based on process id
+and/or the match bits provided in the request.  A match list is
+created using the <em>PtlMEAttach</em> function which creates a match
+list consisting of a single match entry, attaches the match list to
+the specified portal index, and returns a handle for the match entry.
+Match entries can be dynamically inserted and removed from a match
+list using the <em>PtlMEInsert</em> and <em>PtlMEUnlink</em> functions.
+
+<p>
+
+<h4>PtlMEAttach</h4><a name="sec:meattach">
+</a>
+
+<pre>
+typedef enum { PTL_RETAIN, PTL_UNLINK } ptl_unlink_t;
+
+int PtlMEAttach( ptl_handle_ni_t  interface,
+                 ptl_pt_index_t   index,
+                 ptl_process_id_t matchid,
+                 ptl_match_bits_t match_bits,
+                 ptl_match_bits_t ignorebits,
+                 ptl_unlink_t     unlink,
+                 ptl_handle_me_t* handle );
+
+</pre>
+
+<p>
+Values of the type <tt>ptl_unlink_t</tt> are used to control whether
+an item is unlinked from a list.  The value <tt>PTL_UNLINK</tt>
+enables unlinking.  The value <tt>PTL_RETAIN</tt> disables unlinking.
+
+<p>
+The <em>PtlMEAttach</em> function creates a match list consisting of a
+single entry and attaches this list to the portal table for
+<tt>interface</tt>.  If the portal table already has a match list
+attached to the specified index, the existing list (including any
+attached memory descriptor lists) must first be unlinked.
+
+<p>
+
+<h4>Return Codes</h4>
+
+<dl compact="compact">                                                             <dt><b>PTL_OK</b></dt>
+	<dd> Indicates success.<dt><b>PTL_NOINIT</b></dt>
+	<dd> Indicates that the Portals API has not been
+  successfully initialized.<dt><b>PTL_INUSE</b></dt>
+	<dd> Indicates that the portal table index already has a
+match entry attached.<dt><b>PTL_INV_PTINDEX</b></dt>
+	<dd> Indicates that <tt>index</tt> is not a valid
+  portal table index.<dt><b>PTL_INV_PROC</b></dt>
+	<dd> Indicates that <tt>matchid</tt> is not a valid
+  process identifier.<dt><b>PTL_NOSPACE</b></dt>
+	<dd> Indicates that there is insufficient memory to
+  allocate the match entry.<dt><b>PTL_SEGV</b></dt>
+	<dd> Indicates that <tt>handle</tt> is not a legal address.
+</dl>
+
+<p>
+
+<h4>Arguments</h4>
+
+<table>
+<tr><td>interface </td><td align="right">input  </td><td>A handle for the interface to use. </td></tr>
+<tr><td>index </td><td align="right">input </td><td>The portal table index where the match list
+  should be attached. </td></tr>
+<tr><td>matchid </td><td align="right">input </td><td>Specifies the match criteria for the process id of
+  the requestor.  The constant <tt>PTL_ID_ANY</tt> can be used to
+  wildcard any of the ids in the <tt>ptl_process_id_t</tt> structure. </td></tr>
+<tr><td>match_bits, ignorebits </td><td align="right">input </td><td>Specify the match criteria to apply
+  to the match bits in the incoming request.  The <tt>ignorebits</tt>
+  are used to mask out insignificant bits in the incoming match bits.
+  The resulting bits are then compared to the match entry's match bits
+  to determine if the incoming request meets the match criteria. </td></tr>
+<tr><td>unlink </td><td align="right">input </td><td>Indicates the match list entry should be unlinked
+  when the last memory descriptor associated with this match entry is
+  unlinked.  (Note, the check for unlinking a match entry only occurs
+  when a memory descriptor is unlinked and this leaves the memory
+  descriptor list empty.) </td></tr>
+<tr><td>handle </td><td align="right">output </td><td>On successful return, this location will hold a
+  handle for the newly created match entry.
+</td></tr></table>
+
+
+<p>
+
+<h4>PtlMEInsert</h4><a name="sec:meinsert">
+</a>
+
+<pre>
+typedef enum { PTL_INS_BEFORE, PTL_INS_AFTER } ptl_ins_pos_t;
+
+int PtlMEInsert( ptl_handle_me_t  current,
+                 ptl_process_id_t matchid,
+                 ptl_match_bits_t match_bits,
+                 ptl_match_bits_t ignorebits,
+                 ptl_unlink_t     unlink,
+                 ptl_ins_pos_t    position,
+                 ptl_handle_me_t* handle );
+
+</pre>
+
+<p>
+Values of the type <tt>ptl_ins_pos_t</tt> are used to control where a
+new item is inserted in a list.  The value <tt>PTL_INS_BEFORE</tt> is
+used to insert the new item before the current item.  The value
+<tt>PTL_INS_AFTER</tt> is used to insert the new item after the
+current item.
+
+<p>
+The <em>PtlMEInsert</em> function creates a new match entry and inserts
+this entry into the match list containing <tt>current</tt>.
+
+<p>
+
+<h4>Return Codes</h4>
+
+<dl compact="compact">                                                             <dt><b>PTL_OK</b></dt>
+	<dd> Indicates success.<dt><b>PTL_NOINIT</b></dt>
+	<dd> Indicates that the Portals API has not been
+  successfully initialized.<dt><b>PTL_INV_PROC</b></dt>
+	<dd> Indicates that <tt>matchid</tt> is not a valid
+  process identifier.<dt><b>PTL_INV_ME</b></dt>
+	<dd> Indicates that <tt>current</tt> is not a valid match
+  entry handle.<dt><b>PTL_ML_TOOLONG</b></dt>
+	<dd> Indicates that the resulting match list is too
+  long.  The maximum length for a match list is defined by the
+  interface.<dt><b>PTL_NOSPACE</b></dt>
+	<dd> Indicates that there is insufficient memory to
+  allocate the match entry.<dt><b>PTL_SEGV</b></dt>
+	<dd> Indicates that <tt>handle</tt> is not a legal address.
+</dl>
+
+<p>
+
+<h4>Arguments</h4>
+
+<table>
+<tr><td>current </td><td align="right">input </td><td>A handle for a match entry.  The new match entry
+  will be inserted immediately before or immediately after this match
+  entry.</td></tr>
+<tr><td>matchid, match_bits, ignorebits, unlink </td><td align="right">input </td><td>See the discussion
+  for <em>PtlMEAttach</em>.</td></tr>
+<tr><td>position </td><td align="right">input </td><td>Indicates whether the new match entry should be
+  inserted before or after the <tt>current</tt> entry.</td></tr>
+<tr><td>handle </td><td align="right">input </td><td>See the discussion for <em>PtlMEAttach</em>.</td></tr>
+<tr><td></td></tr></table>
+
+
+<p>
+
+<h4>PtlMEUnlink</h4><a name="sec:meunlink">
+</a>
+
+<pre>
+int PtlMEUnlink( ptl_handle_me_t entry );
+
+</pre>
+
+<p>
+The <em>PtlMEUnlink</em> function can be used to unlink a match entry
+from a match list.  This operation also releases any resources
+associated with the match entry (including the list of associated
+memory descriptors).  It is an error to use the match entry handle
+after calling <em>PtlMEUnlink</em>.
+
+<p>
+
+<h4>Return Codes</h4>
+
+<dl compact="compact">                                                             <dt><b>PTL_OK</b></dt>
+	<dd> Indicates success.<dt><b>PTL_NOINIT</b></dt>
+	<dd> Indicates that the Portals API has not been
+  successfully initialized.<dt><b>PTL_INV_ME</b></dt>
+	<dd> Indicates that <tt>entry</tt> is not a valid match
+  entry handle.
+</dl>
+
+<p>
+
+<h4>Arguments</h4>
+
+<table>
+<tr><td>entry </td><td align="right">input </td><td>A handle for the match entry to be unlinked.
+</td></tr></table>
+
+
+<p>
+     <h3><a name="tth_sEc3.7">
+3.7</a>&nbsp;&nbsp;Memory Descriptors</h3><a name="sec:md">
+</a>
+
+<p>
+A memory descriptor contains information about a region of an
+application process' memory and an event queue where information about
+the operations performed on the memory descriptor are recorded.  The
+Portals API provides three operations to create memory descriptors:
+<em>PtlMDAttach</em>, <em>PtlMEInsert</em>, and <em>PtlMEBind</em>; an
+operation to update a memory descriptor, <em>PtlMDUpdate</em>; and an
+operation to unlink and release the resources associated with a memory
+descriptor, <em>PtlMDUnlink</em>.
+
+<p>
+
+<h4>The Memory Descriptor Type</h4><a name="sec:md-type">
+</a>
+
+<pre>
+typedef struct {
+    void*           start;
+    ptl_size_t      length;
+    int             threshold;
+    unsigned int    options;
+    void*           user_ptr;
+    ptl_handle_eq_t eventq;
+} ptl_md_t;
+
+</pre>
+
+<p>
+The <tt>ptl_md_t</tt> type defines the application view of a memory
+descriptor.  Values of this type are used to initialize and update the
+memory descriptors.
+
+<p>
+
+<h4>Members</h4>
+
+<dl compact="compact">                                                             <dt><b>start, length</b></dt>
+	<dd> Specify the memory region associated with the
+  memory descriptor.  The <tt>start</tt> member specifies the starting
+  address for the memory region and the <tt>length</tt> member
+  specifies the length of the region.  The <tt>start</tt>member can be
+  NULL provided that the <tt>length</tt> member is zero.  (Zero length
+  buffers are useful to record events.)  There are no alignment
+  restrictions on the starting address or the length of the region;
+  although, unaligned messages may be slower (i.e., lower bandwidth
+  and/or longer latency) on some implementations.<dt><b>threshold</b></dt>
+	<dd> Specifies the maximum number of operations that can
+  be performed on the memory descriptor.  An operation is any action
+  that could possibly generate an event (see Section sec:ek-type for
+  the different types of events).  In the usual case, the threshold
+  value is decremented for each operation on the memory descriptor.
+  When the threshold value is zero, the memory descriptor is
+  <em>inactive</em>, and does not respond to operations.  A memory
+  descriptor can have an initial threshold value of zero to allow for
+  manipulation of an inactive memory descriptor by the local process.
+  A threshold value of <tt>PTL_MD_THRESH_INF</tt> indicates that there
+  is no bound on the number of operations that may be applied to a
+  memory descriptor.  Note that local operations (e.g.,
+  <em>PtlMDUpdate</em>) are not applied to the threshold count.<dt><b>options</b></dt>
+	<dd> Specifies the behavior of the memory descriptor.  There
+  are five options that can be selected: enable put operations (yes or
+  no), enable get operations (yes or no), offset management (local or
+  remote), message truncation (yes or no), and acknowledgement (yes or
+  no).  Values for this argument can be constructed using a bitwise or
+  of the following values:
+  
+<blockquote>
+    
+<dl compact="compact">                                                             <dt><b>PTL_MD_OP_PUT</b></dt>
+	<dd> Specifies that the memory descriptor will
+      respond to <em>put</em> operations.  By default, memory
+      descriptors reject <em>put</em> operations.<dt><b>PTL_MD_OP_GET</b></dt>
+	<dd> Specifies that the memory descriptor will
+      respond to <em>get</em> operations.  By default, memory
+      descriptors reject <em>get</em> operations.<dt><b>PTL_MD_MANAGE_REMOTE</b></dt>
+	<dd> Specifies that the offset used in
+      accessing the memory region is provided by the incoming request.
+      By default, the offset is maintained locally.  When the offset
+      is maintained locally, the offset is incremented by the length
+      of the request so that the next operation will access the next
+      part of the memory region.<dt><b>PTL_MD_TRUNCATE</b></dt>
+	<dd> Specifies that the length provided in the
+      incoming request can be reduced to match the memory available in
+      the region.  (The memory available in a memory region is
+      determined by subtracting the offset from the length of the
+      memory region.)  By default, if the length in the incoming
+      operation is greater than the amount of memory available, the
+      operation is rejected.<dt><b>PTL_MD_ACK_DISABLE</b></dt>
+	<dd> Specifies that an acknowledgement should
+      <em>not</em> be sent for incoming <em>put</em> operations, even if
+      requested.  By default, acknowledgements are sent for <em>put</em>
+      operations that request an acknowledgement.  Acknowledgements
+      are never sent for <em>get</em> operations.  The value sent in the
+      reply serves as an implicit acknowledgement.
+    </dl>
+  </blockquote>
+
+<p>
+  <b>Note</b>: It is not considered an error to have a memory
+  descriptor that does not respond to either <em>put</em> or <em>get</em>
+  operations: Every memory descriptor responds to <em>reply</em>
+  operations.  Nor is it considered an error to have a memory
+  descriptor that responds to both <em>put</em> and <em>get</em>
+  operations.<dt><b>user_ptr</b></dt>
+	<dd> A user-specified value that is associated with the
+  memory descriptor.  The value does not need to be a pointer, but
+  must fit in the space used by a pointer.  This value (along with
+  other values) is recorded in events associated with operations on
+  this memory descriptor.<a href="#tthFtNtAAC" name="tthFrefAAC"><sup>2</sup></a><dt><b>eventq</b></dt>
+	<dd> A handle for the event queue used to log the operations
+  performed on the memory region.  If this argument is
+  <tt>PTl_EQ_NONE</tt>, operations performed on this memory descriptor
+  are not logged.
+</dl>
+
+<p>
+
+<h4>PtlMDAttach</h4><a name="sec:mdattach">
+</a>
+
+<pre>
+int PtlMDAttach( ptl_handle_me_t  match,
+                 ptl_md_t         mem_desc,
+                 ptl_unlink_t     unlink,
+                 ptl_handle_md_t* handle );
+
+</pre>
+
+<p>
+The <em>PtlMDAttach</em> operation is used to create a memory descriptor
+list consisting of a single memory descriptor and attach this list to
+a match entry.  If this match entry already has a list of memory
+descriptors, the existing memory descriptors must first be unlinked.
+
+<p>
+
+<h4>Return Codes</h4>
+
+<dl compact="compact">                                                             <dt><b>PTL_OK</b></dt>
+	<dd> Indicates success.<dt><b>PTL_NOINIT</b></dt>
+	<dd> Indicates that the Portals API has not been
+  successfully initialized.<dt><b>PTL_INUSE</b></dt>
+	<dd> Indicates that <tt>match</tt> already has a memory
+descriptor attached.<dt><b>PTL_INV_ME</b></dt>
+	<dd> Indicates that <tt>match</tt> is not a valid
+  match entry handle.<dt><b>PTL_ILL_MD</b></dt>
+	<dd> Indicates that <tt>mem_desc</tt> is not a legal
+  memory descriptor.  This may happen because the memory region
+  defined in <tt>mem_desc</tt> is invalid or because the network
+  interface associated with the <tt>eventq</tt> in <tt>mem_desc</tt>
+  is not the same as the network interface associated with
+  <tt>match</tt>.<dt><b>PTL_NOSPACE</b></dt>
+	<dd> Indicates that there is insufficient memory to
+  allocate the memory descriptor.<dt><b>PTL_SEGV</b></dt>
+	<dd> Indicates that <tt>handle</tt> is not a legal address.
+</dl>
+
+<p>
+
+<h4>Arguments</h4>
+
+<table>
+<tr><td>match </td><td align="right">input </td><td>A handle for the match entry that the memory
+  descriptor will be associated with.</td></tr>
+<tr><td>mem_desc </td><td align="right">input </td><td>Provides initial values for the application
+  visible parts of a memory descriptor.  Other than its use for
+  initialization, there is no linkage between this structure and the
+  memory descriptor maintained by the API. </td></tr>
+<tr><td>unlink </td><td align="right">input </td><td>A flag to indicate whether the memory descriptor is
+  unlinked when its threshold drops to zero.  (Note, the check for
+  unlinking a memory descriptor only occurs when the threshold
+  transitions from one to zero when responding to an operation.  If
+  the threshold is set to zero during initialization or using
+  <em>PtlMDUpdate</em>, the memory descriptor is <b>not</b> unlinked.)
+  </td></tr>
+<tr><td>handle </td><td align="right">output </td><td>On successful return, this location will hold a
+  handle for the newly created memory descriptor.  The <tt>handle</tt>
+  argument can be NULL, in which case the handle will not be
+  returned<a href="#tthFtNtAAD" name="tthFrefAAD"><sup>3</sup></a>.
+</td></tr></table>
+
+
+<p>
+
+<h4>PtlMDInsert</h4><a name="sec:mdinsert">
+</a>
+
+<pre>
+int PtlMDInsert( ptl_handle_md_t  current,
+                 ptl_md_t         mem_desc,
+                 ptl_unlink_t     unlink,
+                 ptl_ins_pos_t    position,
+                 ptl_handle_md_t* handle );
+
+</pre>
+
+<p>
+The <em>PtlMDInsert</em> creates a new memory descriptor and links it
+into the list containing <tt>current</tt>.
+
+<p>
+
+<h4>Return Codes</h4>
+
+<dl compact="compact">                                                             <dt><b>PTL_OK</b></dt>
+	<dd> Indicates success.<dt><b>PTL_NOINIT</b></dt>
+	<dd> Indicates that the Portals API has not been
+  successfully initialized.<dt><b>PTL_INV_ME</b></dt>
+	<dd> Indicates that <tt>match</tt> is not a valid
+  match entry handle.<dt><b>PTL_ILL_MD</b></dt>
+	<dd> Indicates that <tt>mem_desc</tt> is not a legal
+  memory descriptor (e.g., the memory region specified by the memory
+  descriptor may be invalid).<dt><b>PTL_INV_MD</b></dt>
+	<dd> Indicates that <tt>current</tt> is not a valid
+  memory descriptor handle.<dt><b>PTL_NOSPACE</b></dt>
+	<dd> Indicates that there is insufficient memory to
+  allocate the memory descriptor.<dt><b>PTL_SEGV</b></dt>
+	<dd> Indicates that <tt>handle</tt> is not a legal address.
+</dl>
+
+<p>
+
+<h4>Arguments</h4>
+
+<table>
+<tr><td>mem_desc, unlink </td><td align="right">input </td><td>See the discussion for <em>PtlMDAttach</em>. </td></tr>
+<tr><td>position </td><td align="right">input </td><td>Indicates whether the new memory descriptor
+  should be inserted before or after the <tt>current</tt> entry. </td></tr>
+<tr><td>current </td><td align="right">input </td><td>A handle for a memory descriptor.  The new memory
+  descriptor will be inserted immediately before or immediately after
+  this memory descriptor.</td></tr>
+<tr><td>handle </td><td align="right">output </td><td>See the discussion for <em>PtlMDAttach</em>.
+</td></tr></table>
+
+
+<p>
+
+<h4>PtlMDBind</h4><a name="sec:mdbind">
+</a>
+
+<pre>
+int PtlMDBind( ptl_handle_ni_t  interface,
+               ptl_md_t         mem_desc,
+               ptl_handle_md_t* handle );
+
+</pre>
+
+<p>
+The <em>PtlMDBind</em> operation is used to create a ``free floating''
+memory descriptor, i.e., a memory descriptor that is not part of the
+memory descriptor list for a match entry.
+
+<p>
+
+<h4>Return Codes</h4>
+
+<dl compact="compact">                                                             <dt><b>PTL_OK</b></dt>
+	<dd> Indicates success.<dt><b>PTL_NOINIT</b></dt>
+	<dd> Indicates that the Portals API has not been
+  successfully initialized.<dt><b>PTL_INV_NI</b></dt>
+	<dd> Indicates that <tt>interface</tt> is not a valid
+  match entry handle.<dt><b>PTL_ILL_MD</b></dt>
+	<dd> Indicates that <tt>mem_desc</tt> is not a legal
+  memory descriptor.  This may happen because the memory region
+  defined in <tt>mem_desc</tt> is invalid or because the network
+  interface associated with the <tt>eventq</tt> in <tt>mem_desc</tt>
+  is not the same as the network interface, <tt>interface</tt>.<dt><b>PTL_NOSPACE</b></dt>
+	<dd> Indicates that there is insufficient memory to
+  allocate the memory descriptor.<dt><b>PTL_SEGV</b></dt>
+	<dd> Indicates that <tt>handle</tt> is not a legal address.
+</dl>
+
+<p>
+
+<h4>Arguments</h4>
+
+<table>
+<tr><td>interface </td><td align="right">input </td><td>A handle for the network interface that the
+  memory descriptor will be associated with.</td></tr>
+<tr><td>mem_desc </td><td align="right">input </td><td>Provides initial values for the application
+  visible parts of a memory descriptor.  Other than its use for
+  initialization, there is no linkage between this structure and the
+  memory descriptor maintained by the API. </td></tr>
+<tr><td>handle </td><td align="right">output </td><td>On successful return, this location will hold a
+  handle for the newly created memory descriptor.  The <tt>handle</tt>
+  argument must be a valid address and cannot be NULL.
+</td></tr></table>
+
+
+<p>
+
+<h4>PtlMDUnlink</h4><a name="sec:mdfree">
+</a>
+
+<pre>
+int PtlMDUnlink( ptl_handle_md_t mem_desc );
+
+</pre>
+
+<p>
+The <em>PtlMDUnlink</em> function unlinks the memory descriptor from any
+memory descriptor list it may be linked to and releases the resources
+associated with a memory descriptor.  (This function does not free the
+memory region associated with the memory descriptor.)
+
+<p>
+
+<h4>Return Codes</h4>
+
+<dl compact="compact">                                                             <dt><b>PTL_OK</b></dt>
+	<dd> Indicates success.<dt><b>PTL_NOINIT</b></dt>
+	<dd> Indicates that the Portals API has not been
+  successfully initialized.<dt><b>PTL_INV_MD</b></dt>
+	<dd> Indicates that <tt>mem_desc</tt> is not a valid
+  memory descriptor handle.
+</dl>
+
+<p>
+
+<h4>Arguments</h4>
+
+<table>
+<tr><td>mem_desc </td><td align="right">input </td><td>A handle for the memory descriptor to be
+  released.
+</td></tr></table>
+
+
+<p>
+
+<h4>PtlMDUpdate</h4><a name="sec:mdupdate">
+</a>
+
+<pre>
+int PtlMDUpdate( ptl_handle_md_t mem_desc,
+                 ptl_md_t*       old,
+                 ptl_md_t*       new,
+                 ptl_handle_eq_t testq );
+
+</pre>
+
+<p>
+The <em>PtlMDUpdate</em> function provides a conditional, atomic update
+operation for memory descriptors.  If <tt>old</tt> is not NULL, the
+current value of the memory descriptor identified by <tt>mem_desc</tt>
+is recorded in the location identified by <tt>old</tt>.  If
+<tt>new</tt> is not NULL the memory descriptor identified by handle
+will be updated to reflect the values in the structure pointed to by
+<tt>new</tt> if <tt>testq</tt> has the value <tt>PTL_EQ_NONE</tt> or
+if the event queue identified by <tt>testq</tt> is empty.
+
+<p>
+
+<h4>Return Codes</h4>
+
+<dl compact="compact">                                                             <dt><b>PTL_OK</b></dt>
+	<dd> Indicates success.<dt><b>PTL_NOINIT</b></dt>
+	<dd> Indicates that the Portals API has not been
+  successfully initialized.<dt><b>PTL_NOUPDATE</b></dt>
+	<dd> Indicates that the update was not performed
+  because <tt>testq</tt> was not empty.<dt><b>PTL_INV_MD</b></dt>
+	<dd> Indicates that <tt>mem_desc</tt> is not a valid
+  memory descriptor handle.<dt><b>PTL_ILL_MD</b></dt>
+	<dd> Indicates that the value pointed to by <tt>new</tt>
+  is not a legal memory descriptor (e.g., the memory region specified
+  by the memory descriptor may be invalid).<dt><b>PTL_INV_EQ</b></dt>
+	<dd> Indicates that <tt>testq</tt> is not a valid event
+  queue handle.<dt><b>PTL_SEGV</b></dt>
+	<dd> Indicates that <tt>new</tt> or <tt>old</tt> is not a
+  legal address.
+</dl>
+
+<p>
+
+<h4>Arguments</h4>
+
+<table>
+<tr><td>mem_desc </td><td align="right">input </td><td>A handle for the memory descriptor to update. </td></tr>
+<tr><td>old </td><td align="right">output </td><td>If <tt>old</tt> is not the value <tt>NULL</tt>, the
+  current value of the memory descriptor will be stored in the
+  location identified by <tt>old</tt>.</td></tr>
+<tr><td>new </td><td align="right">input </td><td>If <tt>new</tt> is not the value <tt>NULL</tt>, this
+  argument provides the new values for the memory descriptor, if the
+  update is performed. </td></tr>
+<tr><td>testq </td><td align="right">input </td><td>A handle for an event queue used to predicate the
+  update.  If <tt>testq</tt> is equal to <tt>PTL_EQ_NONE</tt>, the
+  update is performed unconditionally.  Otherwise, the update is
+  performed if and only if <tt>testq</tt> is empty.  If the update is
+  not performed, the function returns the value <tt>PTL_NOUPDATE</tt>.
+  (Note, the <tt>testq</tt> argument does not need to be the same as
+  the event queue associated with the memory descriptor.)
+</td></tr></table>
+
+
+<p>
+The conditional update can be used to ensure that the memory
+descriptor has not changed between the time it was examined and the
+time it is updated.  In particular, it is needed to support an MPI
+implementation where the activity of searching an unexpected message
+queue and posting a receive must be atomic.
+
+<p>
+     <h3><a name="tth_sEc3.8">
+3.8</a>&nbsp;&nbsp;Events and Event Queues</h3><a name="sec:eq">
+</a>
+
+<p>
+Event queues are used to log operations performed on memory
+descriptors.  They can also be used to hold acknowledgements for
+completed <em>put</em> operations and to note when the data specified in
+a <em>put</em> operation has been sent (i.e., when it is safe to reuse
+the buffer that holds this data).  Multiple memory descriptors can
+share a single event queue.
+
+<p>
+In addition to the <tt>ptl_handle_eq_t</tt> type, the Portals API
+defines two types associated with events: The
+<tt>ptl_event_kind_t</tt> type defines the kinds of events that can be
+stored in an event queue.  The <tt>ptl_event_t</tt> type defines a
+structure that holds the information associated with an event.
+
+<p>
+The Portals API also provides five functions for dealing with event
+queues: The <em>PtlEQAlloc</em> function is used to allocate the API
+resources needed for an event queue, the <em>PtlEQFree</em> function is
+used to release these resources, the <em>PtlEQCount</em> function can be
+used to obtain the number of events in an event queue, the
+<em>PtlEQGet</em> function can be used to get the next event from an
+event queue, and the <em>PtlEQWait</em> function can be used to block a
+process (or thread) until an event queue has at least one event.
+
+<p>
+
+<h4>Kinds of Events</h4><a name="sec:ek-type">
+</a>
+
+<pre>
+typedef enum { 
+    PTL_EVENT_GET,
+    PTL_EVENT_PUT,
+    PTL_EVENT_REPLY,
+    PTL_EVENT_ACK,
+    PTL_EVENT_SENT
+} ptl_event_kind_t;
+
+</pre>
+
+<p>
+The Portals API defines five types of events that can be logged in an
+event queue:
+
+<dl compact="compact">                                                             <dt><b>PTL_EVENT_GET</b></dt>
+	<dd> A remote <em>get</em> operation was performed on
+  the memory descriptor.  This event is logged after the reply has
+  been sent by the local node.  As such, the process could free the
+  memory descriptor once it sees this event.<dt><b>PTL_EVENT_PUT</b></dt>
+	<dd> A remote <em>put</em> operation was performed on
+  the memory descriptor.  This event is logged after the data (if any)
+  is written into the memory descriptor and after the acknowledgement
+  (if any) has been sent.<dt><b>PTL_EVENT_REPLY</b></dt>
+	<dd> A <em>reply</em> has been received for the memory
+  descriptor.  This event is logged after the data (if any) from the
+  reply has been written into the memory descriptor.<dt><b>PTL_EVENT_ACK</b></dt>
+	<dd> An <em>acknowledgement</em> was received.  This
+  event is logged when the acknowledgement is received<dt><b>PTL_EVENT_SENT</b></dt>
+	<dd> An outgoing buffer was sent (see
+  Section&nbsp;<a href="#sec:put">3.10.1</a>).  This event is logged after the entire
+  buffer has been sent and it is safe for the application to reuse the
+  buffer.
+</dl>
+
+<p>
+
+<h4>The Event Type</h4><a name="sec:event-type">
+</a>
+
+<pre>
+typedef struct {
+    ptl_event_kind_t      type;
+    ptl_process_id_t      initiator;
+    ptl_pt_index_t        portal;
+    ptl_match_bits_t      match_bits;
+    ptl_size_t            rlength;
+    ptl_size_t            mlength;
+    ptl_size_t            offset;
+    ptl_md_t              mem_desc;
+    ptl_hdr_data_t        hdr_data;
+} ptl_event_t;
+
+</pre>
+
+<p>
+An event structure includes the following members:
+
+<dl compact="compact">                                                             <dt><b>type</b></dt>
+	<dd> Indicates the type of operation that generated the event.<dt><b>initiator</b></dt>
+	<dd> The id of the initiator (group id, rank id).<dt><b>portal</b></dt>
+	<dd> The portal table index specified in the request.<dt><b>match_bits</b></dt>
+	<dd> A copy of the match bits specified in the request.
+  See section&nbsp;<a href="#sec:me">3.6</a> for more information on match bits.<dt><b>rlength</b></dt>
+	<dd> The length (in bytes) specified in the request.<dt><b>mlength</b></dt>
+	<dd> The length (in bytes) of the data that was manipulated
+  by the operation.  For truncated operations, the manipulated length
+  will be the number of bytes specified by the memory descriptor
+  (possibly with an offset) operation.  For all other operations, the
+  manipulated length will be the length of the requested operation.<dt><b>offset</b></dt>
+	<dd> Is the displacement (in bytes) into the memory region
+  that the operation used.  The offset can be determined by the
+  operation (see Section&nbsp;<a href="#sec:datamovement">3.10</a>) for a remote managed
+  memory descriptor, or by the local memory descriptor (see
+  Section&nbsp;<a href="#sec:md">3.7</a>).<dt><b>mem_desc</b></dt>
+	<dd> Is a copy of the memory descriptor immediately after
+  the event has been processed.<dt><b>hdr_data</b></dt>
+	<dd> 64 bits of out-of-band user data (see
+  Section&nbsp;<a href="#sec:put">3.10.1</a>).
+</dl>
+
+<p>
+
+<h4>PtlEQAlloc</h4><a name="sec:eqalloc">
+</a>
+
+<pre>
+int PtlEQAlloc( ptl_handle_ni_t  interface,
+                ptl_size_t       count,
+                ptl_handle_eq_t* handle );
+
+</pre>
+
+<p>
+The <em>PtlEQAlloc</em> function is used to build an event queue.
+
+<h4>Return Codes</h4>
+
+<dl compact="compact">                                                             <dt><b>PTL_OK</b></dt>
+	<dd> Indicates success.<dt><b>PTL_NOINIT</b></dt>
+	<dd> Indicates that the Portals API has not been
+  successfully initialized.<dt><b>PTL_INV_NI</b></dt>
+	<dd> Indicates that <tt>interface</tt> is not a valid
+  network interface handle.<dt><b>PTL_NOSPACE</b></dt>
+	<dd> Indicates that there is insufficient memory to
+  allocate the event queue.<dt><b>PTL_SEGV</b></dt>
+	<dd> Indicates that <tt>handle</tt> is not a legal address.
+</dl>
+
+<p>
+
+<h4>Arguments</h4>
+
+<table>
+<tr><td>interface </td><td align="right">input </td><td>A handle for the interface that the event queue
+  will be associated with. </td></tr>
+<tr><td>count </td><td align="right">input </td><td>The number of events that can be stored in the event
+  queue.</td></tr>
+<tr><td>handle </td><td align="right">output </td><td>On successful return, this location will hold a
+  handle for the newly created event queue.
+</td></tr></table>
+
+
+<p>
+
+<h4>PtlEQFree</h4><a name="sec:eqfree">
+</a>
+
+<pre>
+int PtlEQFree( ptl_handle_eq_t eventq );
+
+</pre>
+
+<p>
+The <em>PtlEQFree</em> function releases the resources associated with
+an event queue.  This function does not free the memory region
+associated with the event queue.  It is up to the user to insure that
+no memory descriptors are associated with the event queue once it is
+freed.
+
+<h4>Return Codes</h4>
+
+<dl compact="compact">                                                             <dt><b>PTL_OK</b></dt>
+	<dd> Indicates success.<dt><b>PTL_NOINIT</b></dt>
+	<dd> Indicates that the Portals API has not been
+  successfully initialized.<dt><b>PTL_INV_EQ</b></dt>
+	<dd> Indicates that <tt>eventq</tt> is not a valid event
+  queue handle.
+</dl>
+
+<p>
+
+<h4>Arguments</h4>
+
+<table>
+<tr><td>eventq </td><td align="right">input </td><td>A handle for the event queue to be released.
+</td></tr></table>
+
+
+<p>
+
+<h4>PtlEQCount</h4><a name="sec:eqlast">
+</a>
+
+<pre>
+int PltEQCount( ptl_handle_eq_t eventq,
+                ptl_size_t*     count );
+
+</pre>
+
+<p>
+The <em>PTLEQCount</em> function can be used to discover the number
+events in an event queue.
+
+<p>
+
+<h4>Return Codes</h4>
+
+<dl compact="compact">                                                             <dt><b>PTL_OK</b></dt>
+	<dd> Indicates success.<dt><b>PTL_NOINIT</b></dt>
+	<dd> Indicates that the Portals API has not been
+  successfully initialized.<dt><b>PTL_INV_EQ</b></dt>
+	<dd> Indicates that <tt>eventq</tt> is not a valid event
+  queue handle.<dt><b>PTL_SEGV</b></dt>
+	<dd> Indicates that <tt>count</tt> is not a legal address.
+</dl>
+
+<p>
+
+<h4>Arguments</h4>
+
+<table>
+<tr><td>eventq </td><td align="right">input </td><td>A handle for the event queue. </td></tr>
+<tr><td>count </td><td align="right">output </td><td>On successful return, this location will hold the
+  number of events in the event queue.
+</td></tr></table>
+
+
+<p>
+
+<h4>PtlEQGet</h4><a name="sec:eqget">
+</a>
+
+<pre>
+int PltEQGet( ptl_handle_eq_t eventq,
+              ptl_event_t*    event );
+
+</pre>
+
+<p>
+The <em>PTLEQGet</em> function is a nonblocking function that can be
+used to get the next event in an event queue.  The event is removed
+from the queue.
+
+<p>
+
+<h4>Return Codes</h4>
+
+<dl compact="compact">                                                             <dt><b>PTL_OK</b></dt>
+	<dd> Indicates success.<dt><b>PTL_EQ_DROPPED</b></dt>
+	<dd> Indicates success (i.e., an event is returned)
+  and that at least one event between this event and the last event
+  obtained (using <em>PtlEQGet</em> or <em>PtlEQWait</em>) from this event
+  queue has been dropped due to limited space in the event queue.<dt><b>PTL_NOINIT</b></dt>
+	<dd> Indicates that the Portals API has not been
+  successfully initialized.<dt><b>PTL_EQ_EMPTY</b></dt>
+	<dd> Indicates that <tt>eventq</tt> is empty.<dt><b>PTL_INV_EQ</b></dt>
+	<dd> Indicates that <tt>eventq</tt> is not a valid event
+  queue handle.<dt><b>PTL_SEGV</b></dt>
+	<dd> Indicates that <tt>event</tt> is not a legal address.
+</dl>
+
+<p>
+
+<h4>Arguments</h4>
+
+<table>
+<tr><td>eventq </td><td align="right">input </td><td>A handle for the event queue.</td></tr>
+<tr><td>event </td><td align="right">output</td><td>On successful return, this location will hold the
+  values associated with the next event in the event queue.
+</td></tr></table>
+
+
+<p>
+
+<h4>PtlEQWait</h4><a name="sec:eqwait">
+</a>
+
+<pre>
+int PltEQWait( ptl_handle_eq_t eventq,
+               ptl_event_t*    event );
+
+</pre>
+
+<p>
+The <em>PTLEQWait</em> function can be used to block the calling process
+(thread) until there is an event in an event queue.  This function
+also returns the next event in the event queue and removes this event
+from the queue.  This is the only blocking operation in the Portals
+3.0 API.
+
+<p>
+
+<h4>Return Codes</h4>
+
+<dl compact="compact">                                                             <dt><b>PTL_OK</b></dt>
+	<dd> Indicates success.<dt><b>PTL_EQ_DROPPED</b></dt>
+	<dd> Indicates success (i.e., an event is returned)
+  and that at least one event between this event and the last event
+  obtained (using <em>PtlEQGet</em> or <em>PtlEQWait</em>) from this event
+  queue has been dropped due to limited space in the event queue.<dt><b>PTL_NOINIT</b></dt>
+	<dd> Indicates that the Portals API has not been
+  successfully initialized.<dt><b>PTL_INV_EQ</b></dt>
+	<dd> Indicates that <tt>eventq</tt> is not a valid event
+  queue handle.<dt><b>PTL_SEGV</b></dt>
+	<dd> Indicates that <tt>event</tt> is not a legal address.
+  queue handle.
+</dl>
+
+<p>
+
+<h4>Arguments</h4>
+
+<table>
+<tr><td>eventq </td><td align="right">input </td><td>A handle for the event queue to wait on.  The
+  calling process (thread) will be blocked until <tt>eventq</tt> is
+  not empty.</td></tr>
+<tr><td>event </td><td align="right">output </td><td>On successful return, this location will hold the
+  values associated with the next event in the event queue.
+</td></tr></table>
+
+
+<p>
+     <h3><a name="tth_sEc3.9">
+3.9</a>&nbsp;&nbsp;The Access Control Table</h3><a name="sec:ac">
+</a>
+
+<p>
+Processes can use the access control table to control which processes
+are allowed to perform operations on portal table entries.  Each
+communication interface has a portal table and an access control
+table.  The access control table for the default interface contains an
+entry at index zero that allows all members of the same group to
+communicate.  Entries in the access control table can be manipulated
+using the <em>PtlACEntry</em> function.
+
+<p>
+
+<h4>PtlACEntry</h4><a name="sec:acentry">
+</a>
+
+<pre>
+int PtlACEntry( ptl_handle_ni_t interface,
+                ptl_ac_index_t  index,
+                ptl_processid_t matchid,
+                ptl_pt_index_t  portal );
+
+</pre>
+
+<p>
+The <em>PtlACEntry</em> function can be used to update an entry in the
+access control table for an interface.
+
+<p>
+
+<h4>Return Codes</h4>
+
+<dl compact="compact">                                                             <dt><b>PTL_OK</b></dt>
+	<dd> Indicates success.<dt><b>PTL_NOINIT</b></dt>
+	<dd> Indicates that the Portals API has not been
+  successfully initialized.<dt><b>PTL_INV_NI</b></dt>
+	<dd> Indicates that <tt>interface</tt> is not a valid
+  network interface handle.<dt><b>PTL_AC_INV_INDEX</b></dt>
+	<dd> Indicates that <tt>index</tt> is not a valid
+  access control table index.<dt><b>PTL_INV_PROC</b></dt>
+	<dd> Indicates that <tt>matchid</tt> is not a valid
+  process identifier.<dt><b>PTL_PT_INV_INDEX</b></dt>
+	<dd> Indicates that <tt>portal</tt> is not a valid
+  portal table index.
+</dl>
+
+<p>
+
+<h4>Arguments</h4>
+
+<table>
+<tr><td>interface </td><td align="right">input </td><td>Identifies the interface to use. </td></tr>
+<tr><td>index </td><td align="right">input </td><td>The index of the entry in the access control table
+  to update. </td></tr>
+<tr><td>matchid </td><td align="right">input </td><td>Identifies the process(es) that are allowed to
+  perform operations.  The value <tt>PTL_ID_ANY</tt> can be used to
+  wildcard either or both components of the process identifier. </td></tr>
+<tr><td>portal </td><td align="right">input </td><td>Identifies the portal index(es) that can be used.
+  The value <tt>PTL_PT_INDEX_ANY</tt> can be used to wildcard the
+  portal index.
+</td></tr></table>
+
+
+<p>
+     <h3><a name="tth_sEc3.10">
+3.10</a>&nbsp;&nbsp;Data Movement Operations</h3><a name="sec:datamovement">
+</a>
+
+<p>
+The Portals API provides two data movement operations: <em>PtlPut</em>
+and <em>PtlGet</em>.
+
+<p>
+
+<h4>PtlPut</h4><a name="sec:put">
+</a>
+
+<pre>
+typedef enum { PTL_ACK_REQ, PTL_NOACK_REQ } ptl_ack_req_t;
+
+int PtlPut( ptl_handle_md_t  mem_desc,
+            ptl_ack_req_t    ack_req,
+            ptl_process_id_t target,
+            ptl_pt_index_t   portal,
+            ptl_ac_index_t   cookie,
+            ptl_match_bits_t match_bits,
+            ptl_size_t       offset,
+            ptl_hdr_data_t   hdr_data );
+
+</pre>
+
+<p>
+Values of the type <tt>ptl_ack_req_t</tt> are used to control whether
+an acknowledgement should be sent when the operation completes (i.e.,
+when the data has been written to a memory descriptor of the
+<tt>target</tt> process).  The value <tt>PTL_ACK_REQ</tt> requests an
+acknowledgement, the value <tt>PTL_NOACK_REQ</tt> requests that no
+acknowledgement should be generated.
+
+<p>
+The <em>PtlPut</em> function initiates an asynchronous put operation.
+There are two significant events associated with a put operation:
+completion of the send by the local node (<tt>PTL_EVENT_SENT</tt>) and
+the receipt of an acknowledgement (<tt>PTL_EVENT_ACK</tt>) indicating
+that the operation was accepted by the target.  These events will be
+logged in the event queue associated with the memory descriptor
+(<tt>mem_desc</tt>) used in the put operation.  Using a memory
+descriptor that does not have an associated event queue results in
+these events being discarded.  In this case, the application must have
+another mechanism (e.g., a higher level protocol) for determining when
+it is safe to modify the memory region associated with the memory
+descriptor.
+
+<p>
+
+<h4>Return Codes</h4>
+
+<dl compact="compact">                                                             <dt><b>PTL_OK</b></dt>
+	<dd> Indicates success.<dt><b>PTL_NOINIT</b></dt>
+	<dd> Indicates that the Portals API has not been
+  successfully initialized.<dt><b>PTL_INV_MD</b></dt>
+	<dd> Indicates that <tt>mem_desc</tt> is not a valid
+  memory descriptor.<dt><b>PTL_INV_PROC</b></dt>
+	<dd> Indicates that <tt>target</tt> is not a valid
+  process id.
+</dl>
+
+<p>
+
+<h4>Arguments</h4>
+
+<table>
+<tr><td>mem_desc </td><td align="right">input </td><td>A handle for the memory descriptor that describes
+  the memory to be sent.  If the memory descriptor has an event queue
+  associated with it, it will be used to record an event when the
+  message has been sent (<tt>PTL_EVENT_SENT</tt>). </td></tr>
+<tr><td>ack_req </td><td align="right">input </td><td>Controls whether an acknowledgement event is
+  requested.  Acknowledgements are only sent when they are requested
+  by the initiating process <b>and</b> the memory descriptor has an
+  event queue <b>and</b> the target memory descriptor enables them.</td></tr>
+<tr><td>target </td><td align="right">input </td><td>A process id for the target process.</td></tr>
+<tr><td>portal </td><td align="right">input </td><td>The index in the remote portal table.</td></tr>
+<tr><td>cookie </td><td align="right">input </td><td>The index into the access control table of the
+  target process.</td></tr>
+<tr><td>match_bits </td><td align="right">input </td><td>The match bits to use for message selection at
+  the target process.</td></tr>
+<tr><td>offset </td><td align="right">input </td><td>The offset into the target memory descriptor (only
+  used when the target memory descriptor has the
+  <tt>PTL_MD_MANAGE_REMOTE</tt> option set).</td></tr>
+<tr><td>hdr_data </td><td align="right">input </td><td>64 bits of user data that can be included in
+  message header.  This data is written to an event queue entry at the
+  target if an event queue is present on the matching memory
+  descriptor.
+</td></tr></table>
+
+
+<p>
+
+<h4>PtlGet</h4><a name="sec:get">
+</a>
+
+<pre>
+int PtlGet( ptl_handle_md_t  mem_desc,
+            ptl_process_id_t target,
+            ptl_pt_index_t   portal,
+            ptl_ac_index_t   cookie,
+            ptl_match_bits_t match_bits,
+            ptl_size_t       offset );
+
+</pre>
+
+<p>
+The <em>PtlGet</em> function initiates a remote read operation.
+
+<p>
+
+<h4>Return Codes</h4>
+
+<dl compact="compact">                                                             <dt><b>PTL_OK</b></dt>
+	<dd> Indicates success.<dt><b>PTL_NOINIT</b></dt>
+	<dd> Indicates that the Portals API has not been
+  successfully initialized.<dt><b>PTL_INV_MD</b></dt>
+	<dd> Indicates that <tt>mem_desc</tt> is not a valid
+  memory descriptor.<dt><b>PTL_INV_PROC</b></dt>
+	<dd> Indicates that <tt>target</tt> is not a valid
+  process id.
+</dl>
+
+<p>
+
+<h4>Arguments</h4>
+
+<table>
+<tr><td>mem_desc </td><td align="right">input </td><td>A handle for the memory descriptor that describes
+  the memory into which the requested data will be received.  The
+  memory descriptor can have an event queue associated with it to
+  record events, such as when the message has been received
+  (<tt>PTL_EVENT_REPLY</tt>).</td></tr>
+<tr><td>target </td><td align="right">input </td><td>A process id for the target process.</td></tr>
+<tr><td>portal </td><td align="right">input </td><td>The index in the remote portal table.</td></tr>
+<tr><td>cookie </td><td align="right">input </td><td>The index into the access control table of the
+  target process.</td></tr>
+<tr><td>match_bits </td><td align="right">input </td><td>The match bits to use for message selection at
+  the target process.</td></tr>
+<tr><td>offset </td><td align="right">input </td><td>The offset into the target memory descriptor
+  (ignored unless the target memory descriptor has the
+  <tt>PTL_MD_MANAGE_REMOTE</tt> option set).
+</td></tr></table>
+
+
+<p>
+     <h3><a name="tth_sEc3.11">
+3.11</a>&nbsp;&nbsp;Summary</h3>
+We conclude this section by summarizing the names introduced by the
+Portals 3.0 API.  We start by summarizing the names of the types
+introduced by the API.  This is followed by a summary of the functions
+introduced by the API.  Which is followed by a summary of the function
+return codes.  Finally, we conclude with a summary of the other
+constant values introduced by the API.
+
+<p>
+Table&nbsp;<a href="#tab:types">2</a> presents a summary of the types defined by the
+Portals API.  The first column in this table gives the type name, the
+second column gives a brief description of the type, the third column
+identifies the section where the type is defined, and the fourth
+column lists the functions that have arguments of this type.
+
+<p>
+
+<p>
+<a name="tth_tAb0.2">
+</a>   <center>Table 0.2: Types Defined by the Portals 3.0 API</center><a name="tab:types">
+</a>
+  
+<p>
+<br />  
+<center><font size="-1">    
+<table>
+<tr><td></b>Name    </td><td align="right">Meaning </td><td>Section </td><td align="right">Functions </td></tr>
+<tr><td>ptl_ac_index_t   </td><td align="right">indexes for an access control table </td><td><a href="#sec:index-type">3.2.3</a> </td><td align="right">PtlACEntry, PtlPut, PtlGet </td></tr>
+<tr><td>ptl_ack_req_t    </td><td align="right">acknowledgement request types </td><td><a href="#sec:put">3.10.1</a> 
+         </td><td align="right">PtlPut </td></tr>
+<tr><td>ptl_addr_kind_t  </td><td align="right">kinds of process addresses (nid, pid or gid,
+         rid) </td><td><a href="#sec:pid-type">3.4.1</a> </td><td align="right"></td></tr>
+<tr><td>ptl_event_kind_t </td><td align="right">kinds of events (get, put, reply, etc.) </td><td><a href="#sec:ek-type">3.8.1</a> </td><td align="right">PtlGetId </td></tr>
+<tr><td>ptl_event_t      </td><td align="right">information about events </td><td><a href="#sec:event-type">3.8.2</a> </td><td align="right">PtlEQGet </td></tr>
+<tr><td>ptl_handle_any_t  </td><td align="right">handles for any object </td><td><a href="#sec:handle-type">3.2.2</a> </td><td align="right">PtlNIHandle </td></tr>
+<tr><td>ptl_handle_eq_t  </td><td align="right">handles for event queues </td><td><a href="#sec:handle-type">3.2.2</a> </td><td align="right">PtlEQAlloc, PtlEQFree,
+         PtlEQCount, PtlEQGet, PtlEQWait, PtlMDUpdate </td></tr>
+<tr><td>ptl_handle_md_t  </td><td align="right">handles for memory descriptors </td><td><a href="#sec:handle-type">3.2.2</a> </td><td align="right">PtlMDAlloc, PtlMDUnlink, PtlMDUpdate,
+         PtlMEAttach, PtlMEInsert, PtlPut, PtlGet </td></tr>
+<tr><td>ptl_handle_me_t  </td><td align="right">handles for match entries </td><td><a href="#sec:handle-type">3.2.2</a> </td><td align="right">PtlMEAttach, PtlMEInsert, PtlMEUnlink
+         </td></tr>
+<tr><td>ptl_handle_ni_t  </td><td align="right">handles for network interfaces </td><td><a href="#sec:handle-type">3.2.2</a> </td><td align="right">PtlNIInit, PtlNIFini, PtlNIStatus,
+         PtlNIDist, PtlEQAlloc, PtlACEntry, PtlPut, PtlGet 
+         </td></tr>
+<tr><td>ptl_id_t </td><td align="right">identifiers (nid, pid, gid, rid) </td><td><a href="#sec:id-type">3.2.6</a> </td><td align="right"></td></tr>
+<tr><td>ptl_ins_pos_t    </td><td align="right">insertion position (before or after) </td><td><a href="#sec:meinsert">3.6.2</a> </td><td align="right">PtlMeInsert, PtlMDInsert </td></tr>
+<tr><td>ptl_interface_t  </td><td align="right">identifiers for network interfaces </td><td><a href="#sec:ni-type">3.2.5</a> </td><td align="right">PtlNIInit </td></tr>
+<tr><td>ptl_match_bits_t </td><td align="right">match (and ignore) bits </td><td><a href="#sec:mb-type">3.2.4</a> </td><td align="right">PtlMEAttach, PtlMEInsert, PtlPut, PtlGet
+         </td></tr>
+<tr><td>ptl_md_t         </td><td align="right">memory descriptors </td><td><a href="#sec:md-type">3.7.1</a> </td><td align="right">PtlMDAttach, PtlMDInsert, PtlMDUpdate </td></tr>
+<tr><td>ptl_process_id_t </td><td align="right">process identifiers </td><td><a href="#sec:pid-type">3.4.1</a> </td><td align="right">PtlGetId, PtlNIDist, PtlMEAttach,
+         PtlACEntry, PtlPut, PtlGet </td></tr>
+<tr><td>ptl_pt_index_t   </td><td align="right">indexes for portal tables </td><td><a href="#sec:index-type">3.2.3</a> </td><td align="right">PtlMEAttach, PtlACEntry </td></tr>
+<tr><td>ptl_size_t       </td><td align="right">sizes </td><td><a href="#sec:size-t">3.2.1</a> </td><td align="right">PtlEQAlloc,
+         PtlEQCount, PtlPut, PtlGet </td></tr>
+<tr><td>ptl_sr_index_t   </td><td align="right">indexes for status registers </td><td><a href="#sec:stat-type">3.2.7</a> </td><td align="right">PtlNIStatus </td></tr>
+<tr><td>ptl_sr_value_t   </td><td align="right">values in status registers </td><td><a href="#sec:stat-type">3.2.7</a> </td><td align="right">PtlNIStatus </td></tr>
+<tr><td>ptl_unlink_t     </td><td align="right">unlink options </td><td><a href="#sec:meattach">3.6.1</a> </td><td align="right">PtlMEAttach, PtlMEInsert, PtlMDAttach, PtlMDInsert </td></tr></table>
+
+  </font></center>
+
+<p>
+Table&nbsp;<a href="#tab:func">3</a> presents a summary of the functions defined by
+the Portals API.  The first column in this table gives the name for
+the function, the second column gives a brief description of the
+operation implemented by the function, and the third column identifies
+the section where the function is defined.
+
+<p>
+
+<p>
+<a name="tth_tAb0.3">
+</a>   <center>Table 0.3: Functions Defined by the Portals 3.0 API</center><a name="tab:func">
+</a>
+  
+<p>
+<br />  
+<center><font size="-1">    
+<table>
+<tr><td>Name </td><td>Operation </td><td>Section </td></tr>
+<tr><td>PtlACEntry  </td><td>update an entry in an access control table </td><td><a href="#sec:ac">3.9</a> </td></tr>
+<tr><td>PtlEQAlloc  </td><td>create an event queue </td><td><a href="#sec:eq">3.8</a> </td></tr>
+<tr><td>PtlEQCount   </td><td>get the number events in an event queue </td><td><a href="#sec:eq">3.8</a> </td></tr>
+<tr><td>PtlEQGet   </td><td>get the next event from an event queue </td><td><a href="#sec:eq">3.8</a> </td></tr>
+<tr><td>PtlEQFree   </td><td>release the resources for an event queue </td><td><a href="#sec:eq">3.8</a> </td></tr>
+<tr><td>PtlEQWait   </td><td>wait for a new event in an event queue </td><td><a href="#sec:eq">3.8</a> </td></tr>
+<tr><td>PtlFini     </td><td>shutdown the Portals API </td><td><a href="#sec:init">3.3</a> </td></tr>
+<tr><td>PtlGet      </td><td>perform a get operation </td><td><a href="#sec:datamovement">3.10</a> </td></tr>
+<tr><td>PtlGetId    </td><td>get the id for the current process </td><td><a href="#sec:pid">3.4</a> </td></tr>
+<tr><td>PtlInit     </td><td>initialize the Portals API </td><td><a href="#sec:init">3.3</a> </td></tr>
+<tr><td>PtlMDAttach </td><td>create a memory descriptor and attach it to a
+         match entry </td><td><a href="#sec:md">3.7</a> </td></tr>
+
+<tr><td>PtlMDBind </td><td>create a free-floating memory descriptor</td><td><a href="#sec:mdbind">3.7.4</a></td></tr>
+<tr><td>PtlMDInsert </td><td>create a memory descriptor and insert it in a
+         list </td><td><a href="#sec:md">3.7</a> </td></tr>
+<tr><td>PtlMDUnlink   </td><td>remove a memory descriptor from a list and
+         release its resources </td><td><a href="#sec:md">3.7</a> </td></tr>
+<tr><td>PtlMDUpdate </td><td>update a memory descriptor </td><td><a href="#sec:md">3.7</a> </td></tr>
+<tr><td>PtlMEAttach </td><td>create a match entry and attach it to a portal
+        table </td><td><a href="#sec:me">3.6</a> </td></tr>
+<tr><td>PtlMEInsert </td><td>create a match entry and insert it in a list </td><td><a href="#sec:me">3.6</a> </td></tr>
+<tr><td>PtlMEUnlink </td><td>remove a match entry from a list and release its
+         resources </td><td><a href="#sec:me">3.6</a> </td></tr>
+<tr><td>PtlNIBarrier</td><td>barrier synchronization for a process group </td><td><a href="#sec:ni">3.5</a> </td></tr>
+<tr><td>PtlNIDist   </td><td>get the distance to another process </td><td><a href="#sec:ni">3.5</a> </td></tr>
+<tr><td>PtlNIFini   </td><td>shutdown a network interface </td><td><a href="#sec:ni">3.5</a> </td></tr>
+<tr><td>PtlNIHandle </td><td>get the network interface handle for an object 
+         </td><td><a href="#sec:ni">3.5</a> </td></tr>
+<tr><td>PtlNIInit   </td><td>initialize a network interface </td><td><a href="#sec:ni">3.5</a> </td></tr>
+<tr><td>PtlNIStatus </td><td>read a network interface status register </td><td><a href="#sec:ni">3.5</a> </td></tr>
+<tr><td>PtlPut      </td><td>perform a put operation </td><td><a href="#sec:datamovement">3.10</a> </td></tr>
+<tr><td>PtlTransId  </td><td>translate id </td><td><a href="#sec:pid">3.4</a> </td></tr></table>
+
+  </font></center>
+
+<p>
+Table&nbsp;<a href="#tab:retcodes">4</a> summarizes the return codes used by functions
+defined by the Portals API.  All of these constants are integer
+values.  The first column of this table gives the symbolic name for
+the constant, the second column gives a brief description of the
+value, and the third column identifies the functions that can return
+this value.
+
+<p>
+
+<p>
+<a name="tth_tAb0.4">
+</a>   <center>Table 0.4: Function Return Codes for the Portals 3.0 API</center><a name="tab:retcodes">
+</a>
+  
+<p>
+<br />  
+<center><font size="-1">    
+<table>
+<tr><td></b>Name   </td><td align="right">Meaning </td><td>Functions </td></tr>
+<tr><td>PTL_AC_INV_INDEX </td><td align="right">invalid access control table index </td><td>PtlACEntry </td></tr>
+<tr><td>PTL_ADDR_UNKNOWN </td><td align="right">unknown process address </td><td>PtlTransId </td></tr>
+<tr><td>PTL_EQ_DROPPED  </td><td align="right">at least one event has been dropped </td><td>PtlEQGet, PtlWait </td></tr>
+<tr><td>PTL_EQ_EMPTY    </td><td align="right">no events available in an event queue </td><td>PltEQGet </td></tr>
+<tr><td>PTL_FAIL        </td><td align="right">error during initialization or cleanup </td><td>PtlInit, PtlFini </td></tr>
+<tr><td>PTL_ILL_MD      </td><td align="right">illegal memory descriptor values </td><td>PtlMDAttach, PtlMDInsert, PtlMDBind, PtlMDUpdate </td></tr>
+<tr><td>PTL_INIT_DUP    </td><td align="right">duplicate initialization of an interface </td><td>PtlNIInit </td></tr>
+<tr><td>PTL_INIT_INV    </td><td align="right">initialization of an invalid interface </td><td>PtlNIInit </td></tr>
+<tr><td>PTL_INV_ASIZE   </td><td align="right">invalid access control table size </td><td>PtlNIInit </td></tr>
+<tr><td>PTL_INV_EQ      </td><td align="right">invalid event queue handle </td><td>PtlMDUpdate, PtlEQFree, PtlEQCount, PtlEQGet </td></tr>
+<tr><td>PTL_INV_HANDLE  </td><td align="right">invalid handle </td><td>PtlNIHandle </td></tr>
+<tr><td>PTL_INV_MD      </td><td align="right">invalid memory descriptor handle </td><td>PtlMDInsert, PtlMDUnlink, PtlMDUpdate </td></tr>
+<tr><td>PTL_INV_ME      </td><td align="right">invalid match entry handle </td><td>PtlMDAttach,
+         PtlMDInsert </td></tr>
+<tr><td>PTL_INV_NI      </td><td align="right">invalid network interface handle </td><td>PtlNIBarrier, PtlNIDist, PtlNIFini, PtlMDBind, PtlEQAlloc </td></tr>
+<tr><td>PTL_INV_PROC    </td><td align="right">invalid process identifier </td><td>PtlNIDist, PtlMEAttach, PtlMEInsert, PtlACEntry, PtlPut,
+          PtlGet </td></tr>
+<tr><td>PTL_INV_PSIZE   </td><td align="right">invalid portal table size </td><td>PtlNIInit </td></tr>
+<tr><td>PTL_INV_PTINDEX </td><td align="right">invalid portal table index </td><td>PtlMEAttach </td></tr>
+<tr><td>PTL_INV_REG     </td><td align="right">invalid status register </td><td>PtlNIStatus </td></tr>
+<tr><td>PTL_INV_SR_INDX </td><td align="right">invalid status register index </td><td>PtlNIStatus </td></tr>
+<tr><td>PTL_ML_TOOLONG  </td><td align="right">match list too long </td><td>PtlMEInsert </td></tr>
+<tr><td>PTL_NOINIT     </td><td align="right">uninitialized API </td><td><em>all</em>, except PtlInit </td></tr>
+<tr><td>PTL_NOSPACE     </td><td align="right">insufficient memory </td><td>PtlNIInit, PtlMDAttach, PtlMDInsert, PtlMDBind, PtlEQAlloc,
+         PtlMEAttach, PtlMEInsert </td></tr>
+<tr><td>PTL_NOUPDATE    </td><td align="right">no update was performed </td><td>PtlMDUpdate </td></tr>
+<tr><td>PTL_OK          </td><td align="right">success </td><td><em>all</em> </td></tr>
+<tr><td>PTL_SEGV        </td><td align="right">addressing violation </td><td>PtlGetId, PtlTransId, PtlNIInit, PtlNIStatus, PtlNIDist,
+         PtlNIHandle, PtlMEAttach, PtlMEInsert, PtlMDAttach,
+         PtlMDInsert, PtlMDBind, PtlMDUpdate, PtlEQAlloc, PtlEQCount,
+         PtlEQGet, PtlEQWait </td></tr></table>
+
+  </font></center>
+
+<p>
+Table&nbsp;<a href="#tab:oconsts">5</a> summarizes the remaining constant values
+introduced by the Portals API.  The first column in this table
+presents the symbolic name for the constant, the second column gives a 
+brief description of the value, the third column identifies the type
+for the value, and the fourth column identifies the sections in which
+the value is mentioned.
+
+<p>
+
+<p>
+<a name="tth_tAb0.5">
+</a>   <center>Table 0.5: Other Constants Defined by the Portals 3.0 API</center><a name="tab:oconsts">
+</a>
+  
+<p>
+<br />  
+<center><font size="-1">    
+<table>
+<tr><td></b>Name   </td><td align="right">Meaning </td><td>Base type </td><td align="right">Section </td></tr>
+<tr><td>PTL_ACK_REQ     </td><td align="right">request an acknowledgement </td><td>ptl_ack_req_t </td><td align="right"><a href="#sec:put">3.10.1</a> </td></tr>
+<tr><td>PTL_ADDR_BOTH   </td><td align="right">nid, pid <b>and</b> gid, rid process address
+         </td><td>ptl_addr_kind_t </td><td align="right"><a href="#sec:pid-type">3.4.1</a> </td></tr>
+<tr><td>PTL_ADDR_GID  </td><td align="right">gid, rid process address </td><td>ptl_addr_kind_t </td><td align="right"><a href="#sec:pid-type">3.4.1</a> </td></tr>
+<tr><td>PTL_ADDR_NID    </td><td align="right">nid, pid process address </td><td>ptl_addr_kind_t </td><td align="right"><a href="#sec:pid-type">3.4.1</a> </td></tr>
+<tr><td>PTL_EQ_NONE     </td><td align="right">a NULL event queue handle </td><td>ptl_handle_eq_t </td><td align="right"><a href="#sec:mdupdate">3.7.6</a> </td></tr>
+<tr><td>PTL_EVENT_GET   </td><td align="right">get event </td><td>ptl_event_kind_t </td><td align="right"><a href="#sec:ek-type">3.8.1</a> </td></tr>
+<tr><td>PTL_EVENT_PUT   </td><td align="right">put event </td><td>ptl_event_kind_t </td><td align="right"><a href="#sec:ek-type">3.8.1</a> </td></tr>
+<tr><td>PTL_EVENT_REPLY </td><td align="right">reply event </td><td>ptl_event_kind_t </td><td align="right"><a href="#sec:ek-type">3.8.1</a> </td></tr>
+<tr><td>PTL_EVENT_ACK   </td><td align="right">acknowledgement event </td><td>ptl_event_kind_t </td><td align="right"><a href="#sec:ek-type">3.8.1</a> </td></tr>
+<tr><td>PTL_EVENT_SENT  </td><td align="right">sent event </td><td>ptl_event_kind_t </td><td align="right"><a href="#sec:ek-type">3.8.1</a> </td></tr>
+<tr><td>PTL_ID_ANY      </td><td align="right">wildcard for process id fields </td><td>ptl_id_t </td><td align="right"><a href="#sec:meattach">3.6.1</a> </td></tr>
+<tr><td>PTL_IFACE_DEFAULT </td><td align="right">default interface </td><td>ptl_interface_t </td><td align="right"><a href="#sec:ni-type">3.2.5</a> </td></tr>
+<tr><td>PTL_INS_AFTER     </td><td align="right">insert after </td><td>ptl_ins_pos_t </td><td align="right"><a href="#sec:meinsert">3.6.2</a> </td></tr>
+<tr><td>PTL_INS_BEFORE     </td><td align="right">insert before </td><td>ptl_ins_pos_t </td><td align="right"><a href="#sec:meinsert">3.6.2</a> </td></tr>
+<tr><td>PTL_MD_ACK_DISABLE </td><td align="right">a flag to disable acknowledgements </td><td>int </td><td align="right"><a href="#sec:md-type">3.7.1</a> </td></tr>
+<tr><td>PTL_MD_MANAGE_REMOTE </td><td align="right">a flag to enable the use of remote offsets </td><td>int </td><td align="right"><a href="#sec:md-type">3.7.1</a> </td></tr>
+<tr><td>PTL_MD_OP_GET </td><td align="right">a flag to enable get operations </td><td>int </td><td align="right"><a href="#sec:md-type">3.7.1</a> </td></tr>
+<tr><td>PTL_MD_OP_PUT </td><td align="right">a flag to enable put operations </td><td>int </td><td align="right"><a href="#sec:md-type">3.7.1</a> </td></tr>
+<tr><td>PTL_MD_THRESH_INF </td><td align="right">infinite threshold for a memory descriptor </td><td>int </td><td align="right"><a href="#sec:md-type">3.7.1</a> </td></tr>
+<tr><td>PTL_MD_TRUNCATE </td><td align="right">a flag to enable truncation of a request </td><td>int
+         </td><td align="right"><a href="#sec:md-type">3.7.1</a> </td></tr>
+<tr><td>PTL_NOACK_REQ   </td><td align="right">request no acknowledgement </td><td>ptl_ack_req_t </td><td align="right"><a href="#sec:put">3.10.1</a> </td></tr>
+<tr><td>PTL_PT_INDEX_ANY </td><td align="right">wildcard for portal indexes </td><td>ptl_pt_index_t
+         </td><td align="right"><a href="#sec:acentry">3.9.1</a> </td></tr>
+<tr><td>PTL_RETAIN      </td><td align="right">disable unlinking </td><td>ptl_unlink_t </td><td align="right"><a href="#sec:meattach">3.6.1</a> </td></tr>
+<tr><td>PTL_SR_DROP_COUNT </td><td align="right">index for the dropped count register
+         </td><td>ptl_sr_index_t </td><td align="right"><a href="#sec:stat-type">3.2.7</a> </td></tr>
+<tr><td>PTL_UNLINK      </td><td align="right">enable unlinking </td><td>ptl_unlink_t </td><td align="right"><a href="#sec:meattach">3.6.1</a> </td></tr></table>
+
+  </font></center>
+
+<p>
+ <h2><a name="tth_sEc4">
+4</a>&nbsp;&nbsp;The Semantics of Message Transmission</h2><a name="sec:semantics">
+</a>
+
+<p>
+The portals API uses four types of messages: put requests,
+acknowledgements, get requests, and replies.  In this section, we
+describe the information passed on the wire for each type of message.
+We also describe how this information is used to process incoming
+messages.
+
+<p>
+     <h3><a name="tth_sEc4.1">
+4.1</a>&nbsp;&nbsp;Sending Messages</h3>
+
+<p>
+Table&nbsp;<a href="#tab:put-wire">6</a> summarizes the information that is
+transmitted for a put request.  The first column provides a
+descriptive name for the information, the second column provides the
+type for this information, the third column identifies the source of
+the information, and the fourth column provides additional notes.
+Most information that is transmitted is obtained directly from the
+<em>PtlPut</em> operation.  Notice that the handle for the memory
+descriptor used in the <em>PtlPut</em> operation is transmitted even
+though this value cannot be interpreted by the target.  A value of
+anything other than <tt>PTL_MD_NONE</tt>, is interpreted as a request
+for an acknowledgement.
+
+<p>
+
+<p>
+<a name="tth_tAb0.6">
+</a>   
+<center><font size="-1">    
+<table>
+<tr><td>Information  </td><td></b>Type    </td><td align="right"></b><em>PtlPut</em> argument  </td><td>Notes </td></tr>
+<tr><td>operation    </td><td>int              </td><td align="right"></td><td>indicates a put request </td></tr>
+<tr><td>initiator    </td><td>ptl_process_id_t </td><td align="right"></td><td>local information </td></tr>
+<tr><td>target       </td><td>ptl_process_id_t </td><td align="right">target     </td><td></td></tr>
+<tr><td>portal index </td><td>ptl_pt_index_t   </td><td align="right">portal     </td><td></td></tr>
+<tr><td>cookie       </td><td>ptl_ac_index_t   </td><td align="right">cookie     </td><td></td></tr>
+<tr><td>match bits   </td><td>ptl_match_bits_t </td><td align="right">match_bits </td><td></td></tr>
+<tr><td>offset       </td><td>ptl_size_t       </td><td align="right">offset     </td><td></td></tr>
+<tr><td>memory desc  </td><td>ptl_handle_md_t  </td><td align="right">mem_desc   </td><td>no ack if <tt>PTL_MD_NONE</tt> </td></tr>
+<tr><td>length       </td><td>ptl_size_t       </td><td align="right">mem_desc   </td><td><tt>length</tt> member </td></tr>
+<tr><td>data         </td><td></b><em>bytes</em> </td><td align="right">mem_desc   </td><td><tt>start</tt> and <tt>length</tt> members </td></tr></table>
+
+    
+<center>Table 0.6: Information Passed in a Put Request</center>
+    <a name="tab:put-wire">
+</a>
+  </font></center>
+
+<p>
+Table&nbsp;<a href="#tab:ack-wire">7</a> summarizes the information transmitted in an
+acknowledgement.  Most of the information is simply echoed from the
+put request.  Notice that the initiator and target are obtained
+directly from the put request, but are swapped in generating the
+acknowledgement.  The only new piece of information in the
+acknowledgement is the manipulated length which is determined as the
+put request is satisfied.
+
+<p>
+
+<p>
+<a name="tth_tAb0.7">
+</a>   
+<center><font size="-1">    
+<table>
+<tr><td>Information        </td><td></b>Type    </td><td align="right">Put Information               </td><td>Notes </td></tr>
+<tr><td>operation          </td><td>int              </td><td align="right"></td><td>indicates an acknowledgement </td></tr>
+<tr><td>initiator          </td><td>ptl_process_id_t </td><td align="right">target       </td><td></td></tr>
+<tr><td>target             </td><td>ptl_process_id_t </td><td align="right">initiator    </td><td></td></tr>
+<tr><td>portal index       </td><td>ptl_pt_index_t   </td><td align="right">portal index </td><td>echo </td></tr>
+<tr><td>match bits         </td><td>ptl_match_bits_t </td><td align="right">match bits   </td><td>echo </td></tr>
+<tr><td>offset             </td><td>ptl_size_t       </td><td align="right">offset       </td><td>echo </td></tr>
+<tr><td>memory desc        </td><td>ptl_handle_md_t  </td><td align="right">memory desc  </td><td>echo </td></tr>
+<tr><td>requested length   </td><td>ptl_size_t       </td><td align="right">length       </td><td>echo </td></tr>
+<tr><td>manipulated length </td><td>ptl_size_t       </td><td align="right"></td><td>obtained from the operation </td></tr></table>
+
+    
+<center>Table 0.7: Information Passed in an Acknowledgement</center>
+    <a name="tab:ack-wire">
+</a>
+  </font></center>
+
+<p>
+Table&nbsp;<a href="#tab:get-wire">8</a> summarizes the information that is
+transmitted for a get request.  Like the information transmitted in a
+put request, most of the information transmitted in a get request is
+obtained directly from the <em>PtlGet</em> operation.  Unlike put
+requests, get requests do not include the event queue handle.  In this 
+case, the reply is generated whenever the operation succeeds and the
+memory descriptor must not be unlinked until the reply is received.
+As such, there is no advantage to explicitly sending the event queue
+handle.
+
+<p>
+
+<p>
+<a name="tth_tAb0.8">
+</a>   
+<center><font size="-1">    
+<table>
+<tr><td>Information  </td><td></b>Type    </td><td align="right"></b><em>PtlGet</em> argument </td><td>Notes </td></tr>
+<tr><td>operation    </td><td>int              </td><td align="right"></td><td>indicates a get operation </td></tr>
+<tr><td>initiator    </td><td>ptl_process_id_t </td><td align="right"></td><td>local information </td></tr>
+<tr><td>target       </td><td>ptl_process_id_t </td><td align="right">target     </td><td></td></tr>
+<tr><td>portal index </td><td>ptl_pt_index_t   </td><td align="right">portal     </td><td></td></tr>
+<tr><td>cookie       </td><td>ptl_ac_index_t   </td><td align="right">cookie     </td><td></td></tr>
+<tr><td>match bits   </td><td>ptl_match_bits_t </td><td align="right">match_bits </td><td></td></tr>
+<tr><td>offset       </td><td>ptl_size_t       </td><td align="right">offset     </td><td></td></tr>
+<tr><td>memory desc  </td><td>ptl_handle_md_t  </td><td align="right">mem_desc   </td><td></td></tr>
+<tr><td>length       </td><td>ptl_size_t       </td><td align="right">mem_desc   </td><td><tt>length</tt> member </td></tr></table>
+
+    
+<center>Table 0.8: Information Passed in a Get Request</center>
+    <a name="tab:get-wire">
+</a>
+  </font></center>
+
+<p>
+Table&nbsp;<a href="#tab:reply-wire">9</a> summarizes the information transmitted in a
+reply.  Like an acknowledgement, most of the information is simply
+echoed from the get request.  The initiator and target are obtained
+directly from the get request, but are swapped in generating the
+acknowledgement.  The only new information in the acknowledgement are
+the manipulated length and the data which are determined as the get
+request is satisfied.
+
+<p>
+
+<p>
+<a name="tth_tAb0.9">
+</a>   
+<center><font size="-1">    
+<table>
+<tr><td>Information        </td><td></b>Type    </td><td align="right">Put Information               </td><td>Notes </td></tr>
+<tr><td>operation          </td><td>int              </td><td align="right"></td><td>indicates an acknowledgement </td></tr>
+<tr><td>initiator          </td><td>ptl_process_id_t </td><td align="right">target       </td><td></td></tr>
+<tr><td>target             </td><td>ptl_process_id_t </td><td align="right">initiator    </td><td></td></tr>
+<tr><td>portal index       </td><td>ptl_pt_index_t   </td><td align="right">portal index </td><td>echo </td></tr>
+<tr><td>match bits         </td><td>ptl_match_bits_t </td><td align="right">match bits   </td><td>echo </td></tr>
+<tr><td>offset             </td><td>ptl_size_t       </td><td align="right">offset       </td><td>echo </td></tr>
+<tr><td>memory desc        </td><td>ptl_handle_md_t  </td><td align="right">memory desc  </td><td>echo </td></tr>
+<tr><td>requested length   </td><td>ptl_size_t       </td><td align="right">length       </td><td>echo </td></tr>
+<tr><td>manipulated length </td><td>ptl_size_t       </td><td align="right"></td><td>obtained from the operation </td></tr>
+<tr><td>data               </td><td><em>bytes</em>     </td><td align="right"></td><td>obtained from the operation </td></tr></table>
+
+    
+<center>Table 0.9: Information Passed in a Reply</center>
+    <a name="tab:reply-wire">
+</a>
+  </font></center>
+
+<p>
+     <h3><a name="tth_sEc4.2">
+4.2</a>&nbsp;&nbsp;Receiving Messages</h3>
+
+<p>
+When an incoming message arrives on a network interface, the runtime
+system first checks that the target process identified in the request
+is a valid process that has initialized the network interface (i.e.,
+that the target process has a valid portal table).  If this test
+fails, the runtime system discards the message and increments the
+dropped message count for the interface.  The remainder of the
+processing depends on the type of the incoming message.  Put and get
+messages are subject to access control checks and translation
+(searching a match list), while acknowledgement and reply messages
+bypass the access control checks and the translation step.
+
+<p>
+Acknowledgement messages include a handle for the event queue where
+the event should be recorded.  Upon receipt of an acknowledgement, the
+runtime system only needs to confirm that the event queue still exists
+and that there is space for another event.  Should the event queue no
+longer exist or if there is not sufficient space in the event queue,
+the message is simply discarded and the dropped message count for the
+interface is incremented.  Otherwise, the runtime system builds an
+acknowledgement event from the information in the acknowledgement
+message and adds it to the event queue.
+
+<p>
+Reception of reply messages is also relatively straightforward.  Each
+reply message includes a handle for a memory descriptor.  If this
+descriptor exists, it is used to receive the message.  A reply message
+will be dropped if the memory descriptor identified in the request
+doesn't exist or if the event queue in the memory descriptor has no
+space and is not <tt>PTL_EQ_NONE</tt>.  In either of these cases, the
+dropped message count for the interface is incremented.  These are the
+only reasons for dropping reply messages.  Every memory descriptor
+accepts and truncates incoming reply messages, eliminating the other
+potential reasons for rejecting a reply message.
+
+<p>
+The critical step in processing an incoming put or get request
+involves mapping the request to a memory descriptor.  This step starts
+by using the portal index in the incoming request to identify a list
+of match entries.  This list of match entries is searched in order
+until a match entry is found whose match criteria matches the match
+bits in the incoming request and whose <b>first</b> memory
+descriptor accepts the request.
+
+<p>
+Because acknowledge and reply messages are generated in response to
+requests made by the process receiving these messages, the checks
+performed by the runtime system for acknowledgements and replies are
+minimal.  In contrast, put and get messages are generated by remote
+processes and the checks performed for these messages are more
+extensive.  Incoming put or get messages may be rejected because:
+
+<ul><p>
+<li> the portal index supplied in the request is not valid;</li>
+<p>
+<li> the cookie supplied in the request is not a valid access control
+  entry;</li>
+<p>
+<li> the access control entry identified by the cookie does not match
+  the identifier of the requesting process;</li>
+<p>
+<li> the access control entry identified by the access control entry
+  does not match the portal index supplied in the request; or</li>
+<p>
+<li> the match bits supplied in the request do not match any of the
+  match entries with a memory descriptor that accepts the request.</li>
+</ul>
+In all cases, if the message is rejected, the incoming message is
+discarded and the dropped message count for the interface is
+incremented.
+
+<p>
+A memory descriptor may reject an incoming request for any of the
+following reasons:
+
+<ul><p>
+<li> the <tt>PTL_MD_PUT</tt> or <tt>PTL_MD_GET</tt> option has not
+  been enabled and the operation is put or get, respectively;</li>
+<p>
+<li> the length specified in the request is too long for the memory
+  descriptor and the <tt>PTL_MD_TRUNCATE</tt> option has not been
+  enabled;</li>
+<p>
+<li> the event queue is not <tt>PTL_EQ_NONE</tt> and there is no
+  space for a new event.</li>
+</ul>
+
+<p>
+ <h2><a name="tth_sEc5">
+5</a>&nbsp;&nbsp;Examples</h2><a name="sec:examples">
+</a>
+
+<p>
+In this section we present several example to illustrate expected
+usage patterns for the Portals 3.0 API.  The first example describes
+how to implement parallel servers using the features of the Portals
+3.0 API.  This example covers the access control list and the use of
+remote managed offsets.  The second example presents an approach to
+dealing with dropped requests.  This example covers aspects of match
+lists and memory descriptors.  The final example covers message
+reception in MPI.  This example illustrates more sophisticated uses of
+matching and a procedure to update a memory descriptor.
+
+<p>
+     <h3><a name="tth_sEc5.1">
+5.1</a>&nbsp;&nbsp;Parallel File Servers</h3><a name="sec:expfs">
+</a>
+
+<p>
+Figure&nbsp;<a href="#fig:file">5</a> illustrates the logical structure of a parallel
+file server.  In this case, the parallel server consists of four
+servers that stripe application data across four disks.  We would like
+to present applications with the illusion that the file server is a
+single entity.  We will assume that all of the processes that
+constitute the parallel server are in a single group and that this
+group is unique to the parallel server.
+
+<p>
+
+<p>
+<a name="tth_fIg0.5">
+</a> 
+<table align="center" border="0"><tr><td>
+</td><td><table border="0"><tr><td><img src="file.png" alt="file.png" />
+</td></tr></table><!--vbox-->
+</td><td></td></table><!--hboxt-->
+
+<center>Figure 0.5: Parallel File Server</center>
+<a name="fig:file">
+</a>
+
+<p>
+When an application establishes a connection to the parallel file
+server, it will allocate a portal and access control list entry for
+communicating with the server.  The access control list entry will
+include the portal and match any process in the parallel file server's
+group, so all of the file server processes will have access to the
+portal.  The portal information and access control entry will be sent
+to the file server at this time.  If the application and server need
+to have multiple, concurrent I/O operations, they can use additional
+portals or match entries to keep the operations from interfering with
+one another.
+
+<p>
+When an application initiates an I/O operation, it first builds a
+memory descriptor that describes the memory region involved in the
+operation.  This memory descriptor will enable the appropriate
+operation (put for read operations and get for write operations) and
+enable the use of remote offsets (this lets the servers decide where
+their data should be placed in the memory region).  After creating the
+memory descriptor and linking it into the appropriate portal entry,
+the application sends a read or write request (using <em>PtlPut</em>) to
+one of the file server processes.  The file server processes can then
+use put or get operations with the appropriate offsets to fill or
+retrieve the contents of the application's buffer.  To know when the
+operation has completed, the application can add an event queue to the
+memory descriptor and add up the lengths of the remote operations
+until the sum is the size of the requested I/O operation.
+
+<p>
+     <h3><a name="tth_sEc5.2">
+5.2</a>&nbsp;&nbsp;Dealing with Dropped Requests</h3><a name="sec:exdrop">
+</a>
+
+<p>
+If a process does not anticipate unexpected requests, they will be
+discarded.  Applications using the Portals API can query the dropped
+count for the interface to determine the number of requests that have
+been dropped (see Section&nbsp;<a href="#sec:nistatus">3.5.4</a>).  While this approach
+minimizes resource consumption, it does not provide information that
+might be critical in debugging the implementation of a higher level
+protocol.
+
+<p>
+To keep track of more information about dropped requests, we use a
+memory descriptor that truncates each incoming request to zero bytes
+and logs the ``dropped'' operations in an event queue.  Note that the
+operations are not dropped in the Portals sense, because the operation
+succeeds.
+
+<p>
+The following code fragment illustrates an implementation of this
+approach.  In this case, we assume that a thread is launched to
+execute the function <tt>watch_drop</tt>.  This code starts by
+building an event queue to log truncated operations and a memory
+descriptor to truncate the incoming requests.  This example only
+captures ``dropped'' requests for a single portal.  In a more
+realistic situation, the memory descriptor would be appended to the
+match list for every portal.  We also assume that the thread is
+capable of keeping up with the ``dropped'' requests. If this is not
+the case, we could use a finite threshold on the memory descriptor to
+capture the first few dropped requests.
+
+<p>
+
+<blockquote><font size="-1">  #include &lt;stdio.h&#62;
+#include &lt;stdlib.h&#62;
+#include &lt;portals.h&#62;
+
+<p>
+#define DROP_SIZE 32       /* number of dropped requests to track */
+
+<p>
+int watch_drop( ptl_handle_ni_t ni, ptl_pt_index_t index ) 
+    ptl_handle_eq_t drop_events;
+    ptl_event_t event;
+    ptl_handle_md_t drop_em;
+    ptl_md_t drop_desc;
+    ptl_process_id_t any_proc;
+    ptl_handle_me_t match_any;
+
+<p>
+    /* create the event queue */
+    if( PtlEQAlloc(ni, DROP_SIZE, </td><td width="150">
+drop_events) != PTL_OK ) 
+        fprintf( stderr, "Couldn't create the event queue" );
+        exit( 1 );
+    
+
+<p>
+    /* build a match entry */
+    any_proc.pid_nid = PTL_ADDR_GID;
+    any_proc.gid = PTL_ID_ANY;
+    any_proc.rid = PTL_ID_ANY;
+    PtlMEAttach( index, any_proc, 0, &nbsp;(ptl_match_bits_t)0, PTL_RETAIN,
+                        </td><td width="150">
+match_any );
+
+<p>
+    /* create the memory descriptor */
+    drop_desc.start = NULL;
+    drop_desc.length = 0;
+    drop_desc.threshold = PTL_MD_THRESH_INF;
+    drop_desc.options = PTL_MD_OP_PUT | PTL_MD_OP_GET | PTL_MD_TRUNCATE;
+    drop_desc.user_ptr = NULL;
+    drop_desc.eventq = drop_events;
+    if( PtlMDAttach(match_any, drop_desc, </td><td width="150">
+drop_em) != PTL_OK ) 
+        fprintf( stderr, "Couldn't create the memory descriptor" );
+        exit( 1 );
+    
+
+<p>
+    /* watch for "dropped" requests */
+    while( 1 ) 
+        if( PtlEQWait( drop_events, </td><td width="150">
+event ) != PTL_OK ) break;
+        fprintf( stderr, "Dropped request from gid =                    event.initiator.gid, event.initiator.rid );
+    
+
+</font></blockquote>
+
+<p>
+     <h3><a name="tth_sEc5.3">
+5.3</a>&nbsp;&nbsp;Message Transmission in MPI</h3><a name="sec:exmpi">
+</a>
+
+<p>
+We conclude this section with a fairly extensive example that
+describes an approach to implementing message transmission for MPI.
+Like many MPI implementations, we distinguish two message transmission
+protocols: a short message protocol and a long message protocol.  We
+use the constant <tt>MPI_LONG_LENGTH</tt> to determine the size of a
+long message.
+
+<p>
+For small messages, the sender simply sends the message and presumes
+that the message will be received (i.e., the receiver has allocated a
+memory region to receive the message body).  For large messages, the
+sender also sends the message, but does not presume that the message
+body will be saved.  Instead, the sender builds a memory descriptor
+for the message and enables get operations on this descriptor.  If the
+target does not save the body of the message, it will record an event
+for the put operation.  When the process later issues a matching MPI
+receive, it will perform a get operation to retrieve the body of the
+message.
+
+<p>
+The following code presents a function that implements the send side
+of the protocol.  The global variable <tt>EndGet</tt> is the last
+match entry attached to the portal index used for posting long
+messages.  This entry does not match any incoming requests (i.e., the
+memory descriptor rejects all get operations) and is built during
+initialization of the MPI library.  The other global
+variable,<tt>MPI_NI</tt>, is a handle for the network interface used
+by the MPI implementation.
+
+<p>
+
+<blockquote><font size="-1">  extern ptl_handle_me_t EndGet;
+extern ptl_handle_ni_t MPI_NI;
+
+<p>
+void MPIsend( void *buf, ptl_size_t len, void *data, ptl_handle_eq_t eventq,
+                    ptl_process_id target, ptl_match_bits_t match ) 
+
+    ptl_handle_md_t send_handle;
+    ptl_md_t mem_desc;
+    ptl_ack_req_t want_ack = PTL_NOACK_REQ;
+
+<p>
+    mem_desc.start = buf;
+    mem_desc.length = len;
+    mem_desc.threshold = 1;
+    mem_desc.options = PTL_MD_GET_OP;
+    mem_desc.user_ptr = data;
+    mem_desc.eventq = eventq;
+
+<p>
+    if( len &#62;= MPI_LONG_LENGTH ) 
+        ptl_handle_me_t me_handle;
+
+<p>
+        /* add a match entry to the end of the get list */
+        PtlMEInsert( target, match, 0, PTL_UNLINK, PTL_INS_BEFORE, EndGet, </td><td width="150">
+me_handle );
+        PtlMDAttach( me_handle, mem_desc, PTL_UNLINK, NULL );
+
+<p>
+        /* we want an ack for long messages */
+        want_ack = PTL_ACK_REQ;
+    
+
+<p>
+    /* create a memory descriptor and send it */
+    PtlMDBind( MPI_NI, mem_desc, </td><td width="150">
+send_handle );
+    PtlPut( send_handle, want_ack, target, MPI_SEND_PINDEX, MPI_AINDEX, match, 0 );
+
+</font></blockquote>
+
+<p>
+The <em>MPISend</em> function returns as soon as the message has been
+scheduled for transmission.  The event queue argument,
+<tt>eventq</tt>, can be used to determine the disposition of the
+message.  Assuming that <tt>eventq</tt> is not <tt>PTL_EQ_NONE</tt>, a
+<tt>PTL_EVENT_SENT</tt> event will be recorded for each message as the
+message is transmitted.  For small messages, this is the only event
+that will be recorded in <tt>eventq</tt>.  In contrast, long messages
+include an explicit request for an acknowledgement.  If the
+<tt>target</tt> process has posted a matching receive, the
+acknowledgement will be sent as the message is received.  If a
+matching receive has not been posted, the message will be discarded
+and no acknowledgement will be sent.  When the <tt>target</tt> process
+later issues a matching receive, the receive will be translated into a
+get operation and a <tt>PTL_EVENT_GET</tt> event will be recorded in
+<tt>eventq</tt>.
+
+<p>
+Figure&nbsp;<a href="#fig:mpi">6</a> illustrates the organization of a match list for
+receiving MPI messages.  The match list starts with entries that match
+the preposted MPI receives (these entries are not shown in
+Figure&nbsp;<a href="#fig:mpi">6</a>); followed by a match entry that rejects all
+incoming requests, called the <em>RcvMark</em>; followed by two match
+entries that match all incoming requests.  The last two match entries
+are used for unexpected messages, i.e., messages that do not match any
+of the receives that have been posted by the local MPI process.  The
+first of these handles short messages by saving the body of the
+message, while the second handles long messages by discarding the
+message body.  All of the memory descriptors associated with these
+match entries share a common event queue to ensure that unexpected
+messages are processed in arrival order.
+
+<p>
+
+<p>
+<a name="tth_fIg0.6">
+</a> 
+<table align="center" border="0"><tr><td>
+</td><td><table border="0"><tr><td><img src="mpi.png" alt="mpi.png" />
+</td></tr></table><!--vbox-->
+</td><td></td></table><!--hboxt-->
+
+<center>Figure 0.6: Message Reception in MPI</center>
+<a name="fig:mpi">
+</a>
+
+<p>
+When the local MPI process posts an MPI receive, a new match entry is
+inserted before the <em>RcvMark</em> entry and, as such, after all of
+the previously posted receives.  This ensures that preposted receives
+are matched in the order that they were posted (a requirement of MPI).
+Inserting an entry for a preposted receive is not a matter of simply
+inserting a match entry before the <em>RcvMark</em>.  You must first
+check to see if a matching message has arrived before adding the new
+entry to match list.  The trick is to avoid the race condition that
+results from the possibility that a matching message arrives after you
+have searched the match list, but before you have inserted the
+preposted receive.  The function presented in
+
+<p>
+The following code presents a function that avoids this race
+condition.  The code starts by creating a memory descriptor and a
+match entry which is inserted before the <em>RcvMark</em>.  Because the
+memory descriptor's <tt>threshold</tt> is initially set to zero, the
+memory descriptor will not respond to any incoming operations.  After
+inserting the new match entry, the code searches for a matching
+message that has already been received.  If a match is found, the
+memory descriptor and match entry are released and the function
+returns.  Otherwise, the code conditionally updates the
+<tt>threshold</tt> member of the memory descriptor.  The update is
+predicated by the condition that no unexpected messages have arrived
+since the start of the search.
+
+<p>
+
+<blockquote><font size="-1">    extern ptl_handle_eq_t UnexpQueue;
+extern ptl_handle_me_t RcvMark;
+extern ptl_handle_me_t ShortMatch;
+
+<p>
+typedef struct event_list_tag 
+    ptl_event_t           event;
+    struct event_list_tag *next;
+ event_list;
+
+<p>
+extern event_list Rcvd;
+
+<p>
+void AppendRcvd( ptl_event_t event )
+
+    /* append an event onto the Rcvd list */
+
+
+<p>
+int SearchRcvd( void *buf, ptl_size_t len, ptl_process_id_t sender, ptl_match_bits_t match,
+                       ptl_match_bits_t ignore, ptl_event_t *event )
+
+    /* Search the Rcvd event queue, looking for a message that matches the requested message.
+     * If one is found, remove the event from the Rcvd list and return it. */
+
+
+<p>
+typedef enum  RECEIVED, POSTED  receive_state;
+
+<p>
+receive_state CopyMsg( void *buf, ptl_size_t length, ptl_event_t event, ptl_md_t md_buf )
+
+    ptl_md_t md_buf;
+    ptl_handle_me_t me_handle;
+
+<p>
+    if( event.rlength &#62;= MPI_LONG_LENGTH ) 
+        PtlMDBind( MPI_NI, md_buf, </td><td width="150">
+md_handle );
+        PtlGet( event.initiator, MPI_GET_PINDEX, 0, event.match_bits, MPI_AINDEX, md_handle );
+        return POSTED;
+     else 
+        /* copy the message and recycle the buffer */
+        memcpy( buf, event.md_desc.start, len );
+        event.md_desc.threshold = 1;
+        PtlMDAttach( ShortMatch, event.md_desc, PTL_UNLINK, NULL );
+        return RECEIVED;
+    
+
+
+<p>
+receive_state MPIreceive( void *buf, ptl_size_t len, void *MPI_data, ptl_handle_eq_t eventq, 
+                                   ptl_process_id_t sender, ptl_match_bits_t match, ptl_match_bits_t ignore )
+
+    ptl_md_t md_buf;
+    ptl_handle_md_t md_handle;
+    ptl_handle_me_t me_handle;
+    ptl_event_t event;
+
+<p>
+    /* build a memory descriptor for the receive */
+    md_buf.start = buf;
+    md_buf.length = len;
+    md_buf.threshold = 0;     /* temporarily disabled */
+    md_buf.options = PTL_MD_PUT_OP;
+    md_buf.user_ptr = MPI_data;
+    md_buf.eventq = eventq;
+
+<p>
+    /* see if we have already received the message */
+    if( SearchRcvd(buf, len, sender, match, ignore, </td><td width="150">
+event) )
+         return CopyMsg( buf, length, event, md_buf );
+
+<p>
+    /* create the match entry and attach the  memory descriptor */
+    PtlMEInsert(sender, match, ignore, PTL_UNLINK, PTL_INS_BEFORE, RcvMark, </td><td width="150">
+me_handle);
+    PtlMDAttach( me_handle, md_buf, PTL_UNLINK, </td><td width="150">
+md_handle );
+
+<p>
+    md_buf.threshold = 1;
+    do
+        if( PtlEQGet( UnexpQueue, </td><td width="150">
+event ) != PTL_EQ_EMPTY ) 
+            if( MPIMatch(event, match, ignore, sender) ) 
+                PtlMDUnlink( md_handle );  /* don't leave the receive posted */
+                return CopyMsg( buf, len, event, md_buf );
+             else 
+                AppendRcvd( event );
+            
+        
+    while( PtlMDUpdate(md_handle, NULL, </td><td width="150">
+md_buf, unexp_queue) == PTL_NOUPDATE );
+    return POSTED;
+
+</font></blockquote>
+
+<p>
+
+<center><font size="+1"><b>References</b></font>
+</center>
+
+<p>
+
+<h2>Bibliography</h2>
+
+<dl compact="compact"><font size="-1"><dt><a href="#CITECplant" name="Cplant">[1]</a></dt><dd>
+R.&nbsp;Brightwell, D.&nbsp;S. Greenberg, A.&nbsp;B. Maccabe, and R.&nbsp;Riesen.
+ Massively Parallel Computing with Commodity Components.
+ <em>Parallel Computing</em>, To appear, 2000.
+
+<p>
+<dt><a href="#CITEPumaMPI" name="PumaMPI">[2]</a></dt><dd>
+R.&nbsp;Brightwell and L.&nbsp;Shuler.
+ Design and implementation of MPI on Puma portals.
+ In <em>Proceedings of the Second MPI Developer's Conference</em>, pages
+  18-25, July 1996.
+
+<p>
+<dt><a href="#CITEVIA" name="VIA">[3]</a></dt><dd>
+Compaq, Microsoft, and Intel.
+ Virtual Interface Architecture Specification Version 1.0.
+ Technical report, Compaq, Microsoft, and Intel, December 1997.
+
+<p>
+<dt><a href="#CITECraySHMEM" name="CraySHMEM">[4]</a></dt><dd>
+Cray Research, Inc.
+ <em>SHMEM Technical Note for C, SG-2516 2.3</em>, October 1994.
+
+<p>
+<dt><a href="#CITEFM2" name="FM2">[5]</a></dt><dd>
+M.&nbsp;Lauria, S.&nbsp;Pakin, and A.&nbsp;Chien.
+ Efficient Layering for High Speed Communication: Fast
+  Messages 2.x.
+ In <em>Proceedings of the IEEE International Symposium on High
+  Performance Distributed Computing</em>, 1998.
+
+<p>
+<dt><a href="#CITESUNMOS" name="SUNMOS">[6]</a></dt><dd>
+A.&nbsp;B. Maccabe, K.&nbsp;S. McCurley, R.&nbsp;Riesen, and S.&nbsp;R. Wheat.
+ SUNMOS for the Intel Paragon: A brief user's guide.
+ In <em>Proceedings of the Intel Supercomputer Users' Group. 1994
+  Annual North America Users' Conference.</em>, pages 245-251, June 1994.
+
+<p>
+<dt><a href="#CITEMPIstandard" name="MPIstandard">[7]</a></dt><dd>
+Message Passing Interface Forum.
+ MPI: A Message-Passing Interface standard.
+ <em>The International Journal of Supercomputer Applications and High
+  Performance Computing</em>, 8, 1994.
+
+<p>
+<dt><a href="#CITEMPI2" name="MPI2">[8]</a></dt><dd>
+Message Passing Interface Forum.
+ <em>MPI-2: Extensions to the Message-Passing Interface</em>,
+  July 1997.
+ http://www.mpi-forum.org/docs/mpi-20-html/mpi2-report.html.
+
+<p>
+<dt><a href="#CITEGM" name="GM">[9]</a></dt><dd>
+Myricom, Inc.
+ The GM Message Passing System.
+ Technical report, Myricom, Inc., 1997.
+
+<p>
+<dt><a href="#CITETFLOPS" name="TFLOPS">[10]</a></dt><dd>
+Sandia National Laboratories.
+ <em>ASCI Red</em>, 1996.
+ http://www.sandia.gov/ASCI/TFLOP.
+
+<p>
+<dt><a href="#CITEPumaOS" name="PumaOS">[11]</a></dt><dd>
+L.&nbsp;Shuler, C.&nbsp;Jong, R.&nbsp;Riesen, D.&nbsp;van Dresser, A.&nbsp;B. Maccabe, L.&nbsp;A. Fisk, and
+  T.&nbsp;M. Stallcup.
+ The Puma operating system for massively parallel computers.
+ In <em>Proceeding of the 1995 Intel Supercomputer User's Group
+  Conference</em>. Intel Supercomputer User's Group, 1995.
+
+<p>
+<dt><a href="#CITEST" name="ST">[12]</a></dt><dd>
+Task Group of Technical Committee T11.
+ Information Technology - Scheduled Transfer Protocol -
+  Working Draft 2.0.
+ Technical report, Accredited Standards Committee NCITS, July 1998.</font></dl>
+
+<p>
+<hr /><h3>Footnotes:</h3>
+
+<p>
+<a name="tthFtNtAAC"></a><a href="#tthFrefAAC"><sup>2</sup></a>This work was supported by the United States Department
+of Energy under Contract DE-AC04-94AL85000.
+<p>
+<a name="tthFtNtAAB"></a><a href="#tthFrefAAB"><sup>1</sup></a>Memory descriptors can reject operations because
+the threshold has been exceeded or due to insufficient space in the
+memory region, see Section&nbsp;<a href="#sec:md">3.7</a>
+<p>
+<a name="tthFtNtAAC"></a><a href="#tthFrefAAC"><sup>2</sup></a>Tying the memory descriptor to a
+  user-defined value can be useful when multiple memory descriptor
+  share the same event queue or when the memory descriptor needs to be
+  associated with a data structure maintained by the application.  For
+  example, an MPI implementation can set the <tt>user_ptr</tt>
+  argument to the value of an MPI Request.  This direct association
+  allows for processing of memory descriptor's by the MPI
+  implementation without a table lookup or a search for the
+  appropriate MPI Request.
+<p>
+<a name="tthFtNtAAD"></a><a href="#tthFrefAAD"><sup>3</sup></a>In many cases, the handle will be obtained when an
+    event is processed
+<br /><br /><hr /><small>File translated from
+T<sub><font size="-1">E</font></sub>X
+by <a href="http://hutchinson.belmont.ma.us/tth/">
+T<sub><font size="-1">T</font></sub>H</a>,
+version 2.86.<br />On 25 Jan 2001, 16:41.</small>
+</html>

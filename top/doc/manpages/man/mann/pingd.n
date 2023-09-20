@@ -1,0 +1,405 @@
+.if n .ds Q \&"
+.if t .ds Q ``
+.if n .ds U \&"
+.if t .ds U ''
+.TH pingd 1L "09 June 1999" "Cplant" "Cplant Utilities"
+.tr \&
+.nr bi 0
+.nr ll 0
+.nr el 0
+.de Pp
+.ie \\n(ll>0 \{\
+.ie \\n(bi=1 \{\
+.nr bi 0
+.if \\n(t\\n(ll=0 \{.IP \\(bu\}
+.if \\n(t\\n(ll=1 \{.IP \\n+(e\\n(el.\}
+.\}
+.el .sp 
+.\}
+.el \{\
+.ie \\nh=1 \{\
+.LP
+.nr h 0
+.\}
+.el .PP 
+.\}
+..
+.SH NAME
+    
+
+.Pp
+\fBpingd\fP -- 
+The all-purpose interface to the node allocator and compute node
+PCTs.  It displays status of a running parallel application,
+and interrupts or kills your parallel application.  Plus for
+administrators only: reserves nodes,
+kills PCTs, notifies bebopd of death of PCT, changes bebopd level of PBS support
+.SH SYNOPSIS
+    
+
+.Pp
+\fBpingd\fP
+.Pp
+[\fB-fast|-interrupt|-kill|-reset|-gone|-reserve \fIuser-id\fP |-unreserve\fP]
+.Pp
+[\fB-job\fP \fIjob-ID\fP|\fB-pbsjob\fP \fIjob-ID\fP|\fB-mine\fP|\fB-list\fP \fInode-list\fP|\fB-all\fP]
+.Pp
+[\fB-verbose\fP]   [\fB-help|-xtrahelp\fP] 
+.Pp
+[\fB-parse\fP] 
+.Pp
+[\fB-nid\fP \fInode-number\fP \fB-pid\fP \fIportal-id\fP]
+.Pp
+[\fB-NoInquire\fP]   [\fB-summary\fP]
+.Pp
+[\fB-PBSsupport [ on | off ] \fP ]   [ \fB-PBSupdate [ on | off ] \fP ]   [ \fB -PBSinteractive\fP [ \fIn\fP ] ]
+.Pp
+.SH DESCRIPTION
+    
+
+.Pp
+By default, \fBpingd\fP (\*Qping the daemon\*U) contacts 
+a bebopd (the Cplant node allocator daemon)
+and obtains and displays information 
+about the status of compute nodes and the jobs they are running.  
+System administrators can use the \fIkill\fP function of \fBpingd\fP to 
+kill PCTs (the Cplant compute node daemons),
+or the \fIgone\fP function to notify the bebopd that a PCT is dead.
+The \fIreset\fP function allows users to kill their jobs (with a SIGKILL
+to every compute node process)
+and reset the compute nodes hosting their jobs to FREE status.
+The \fIinterrupt\fP function allows users to interrupt their jobs
+with a SIGTERM to every compute node process.
+System administrators can reset or interrupt any compute node.
+.SH OPTIONS
+    
+
+.Pp
+.PP
+.nr ll +1
+.nr t\n(ll 2
+
+.TP
+.I "-all"
+.nr bi 1
+.Pp
+Perform requested operation (like query, reset, interrupt) on all nodes
+in the compute partition.  This is the default.  To limit the operation,
+use \fI-list\fP, \fI-job\fP, \fI-pbsjob\fP or \fI-mine\fP.
+
+
+.TP
+.I "-fast"
+.nr bi 1
+.Pp
+By default, the bebopd queries all compute nodes for their status before
+reporting back to \fBpingd\fP (unless it queried them all \*Qvery recently\*U).  
+For a faster display, \fI-fast\fP
+queries the bebopd for it's most recent update from the compute 
+partition.
+
+
+
+.TP
+.I "-gone"
+.nr bi 1
+.Pp
+It is possible that a PCT can terminate without notifying the 
+bebopd.  Use \fI-gone\fP to notify the bebopd that a PCT has
+disappeared from a node.
+.Pp
+.TP
+.I "-help"
+.nr bi 1
+.TP
+.I "-xtrahelp"
+.nr bi 1
+.Pp
+Display a list of \fBpingd\fP options and how to use them.  \fI-xtrahelp\fP
+provides a more verbose message.
+
+.TP
+.I "-interrupt"
+.nr bi 1
+.Pp
+Send a SIGTERM to the parallel application on each specified node.
+System administrators can interrupt any application.
+Users can only interrupt their own jobs.
+
+.TP
+.I "-job \fIjob-ID\fP"
+.nr bi 1
+.TP
+.I "-pbsjob \fIjob-ID\fP"
+.nr bi 1
+.Pp
+Limit the function to compute nodes running job number \fIjob-ID\fP.
+A PBS (Portable Batch System) job may start several Cplant parallel
+applications.  The job as a whole has a PBS job ID, and each application
+has a Cplant job ID.  Use the \fI-pbsjob\fP option to specify a PBS job
+ID, and use the \fI-job\fP option to specify a single Cplant parallel
+application.
+.Pp
+
+
+.TP
+.I "-kill"
+.nr bi 1
+.Pp
+System administrators can kill PCTs with this option.
+
+.TP
+.I "-list \fInode-list\fP"
+.nr bi 1
+.Pp
+Perform the requested operation on the specified list of nodes.  
+Node specifiers are delimited by commas.  A node specifier is a 
+physical node number or
+a node range.  A node range is specified by two physical 
+node numbers separated
+by one or more dots.  No white space may be included in 
+the \fInode-list\fP.
+Actually, the \fInode-list\fP may be specified without the \fI-list\fP
+option specifier.  If pingd finds something on it's argument line
+without an option specifier
+that can be parsed as a node-list, it will assume it's a node-list.
+
+
+.TP
+.I "-mine"
+.nr bi 1
+.Pp
+Perform function on compute nodes running my jobs only.
+
+.TP
+.I "-nid \fInode-number\fP"
+.nr bi 1
+.TP
+.I "-pid \fIportal-ID\fP"
+.nr bi 1
+.Pp
+These arguments will cause \fBpingd\fP to contact the bebopd on the specified
+node number and at the specified portal ID rather than the bebopd listed
+in the \f(CRcplant-host\fR file.  This option is only for testing
+alternative bebopds and should probably be used only by Cplant developers.
+
+
+.TP
+.I "-NoInquire"
+.nr bi 1
+.Pp
+Normally pingd displays an \*Qare you sure\*U sort of prompt before
+interrupting, resetting or killing nodes.  Use the NoInquire
+option to make pingd skip this step.
+
+.TP
+.I "-parse"
+.nr bi 1
+.Pp
+This option causes pingd to list it's output in an easily parseable format.
+
+.TP
+.I "-PBSsupport [on|off] "
+.nr bi 1
+.TP
+.I "-PBSupdate [on|off] "
+.nr bi 1
+.Pp
+PBS (Portal Batch System) can rely on the Cplant bebopd node allocator
+to tell it how many live compute nodes are in the machine.  This number
+may change if nodes crash or if non-PBS jobs complete sometime after
+PBS has started managing the machine.  The bebopd is running in
+PBSsupport mode if it is keeping track of the number of live compute
+nodes in the machine and policing PBS users to ensure they use no more
+nodes than they were allocated.  The bebopd is running in PBSupdate mode
+if in addition it sends updates to the PBS server whenever the number
+of live compute nodes changes.  These two arguments can be used to
+turn on or off PBSsupport and to turn on or off PBSupdate.
+Since PBSupdate implies PBSsupport, turning on
+PBSupdate automatically turns on PBSsupport, turning off PBSsupport
+automatically turns off PBSupdate.
+
+.TP
+.I "-PBSinteractive \fIn\fP"
+.nr bi 1
+.Pp
+The bebopd can reserve \fIn\fP nodes for interactive use.  PBS will
+not be able to schedule these nodes for batch jobs.  This option sends
+a request to the bebopd to reserve \fIn\fP nodes for interactive use.
+
+.TP
+.I "-reserve \fIuser-ID\fP"
+.nr bi 1
+.Pp
+System adminstrators can reserve a node for a particular user with this
+option.  The argument is either a user name or numeric user ID.
+The bebopd will allow a job running on the node to complete, but
+will refuse to allocate the node to anyone other than the specified user.
+To free the node, use the \fI-unreserve\fP option.  This option should
+only be used to debug troubled nodes.  Taking nodes away can cause
+jobs to fail when jobs are being scheduled by PBS.
+
+.TP
+.I "-reset"
+.nr bi 1
+.Pp
+Reset the selected nodes.  This option kills the application
+process (with SIGKILL), and resets the PCT to available status.  System
+administrators can reset any node.  Users can only reset
+nodes running their jobs.
+
+.TP
+.I "-summary"
+.nr bi 1
+.Pp
+Rather than displaying a line per node, just display the totals.
+
+.TP
+.I "-unreserve"
+.nr bi 1
+.Pp
+Use this option to free a node that has been reserved for a particular
+user.  A job running on the node will not be disturbed.
+
+.TP
+.I "-verbose"
+.nr bi 1
+.Pp
+Display extra information about running jobs.  You will not
+see this information about other people's jobs unless you
+are a very special user.
+.nr ll -1
+.PP
+.Pp
+.SH EXAMPLES
+    
+
+.Pp
+\fBpingd\fP assumes the most restrictive interpretation of which nodes
+are specified.  If you provide a list of node numbers, a job ID, and
+specify \fB-mine\fP, \fBpingd\fP will perform the operation on the
+nodes in the list which are running the job specified, if you own it.
+.Pp
+To list the current status of all nodes in the compute partition:
+.Pp
+.sp
+.ft CR
+.nf 
+.ss 18
+    pingd 
+    
+.ss 12 
+.fi 
+.ft P
+.sp
+.Pp
+To list the status most recently reported to the service partition
+of all nodes in the compute partition (without going out and querying
+the compute parition):
+.Pp
+.sp
+.ft CR
+.nf 
+.ss 18
+    pingd -fast
+    
+.ss 12 
+.fi 
+.ft P
+.sp
+.Pp
+To kill the PCT on node 20:
+.Pp
+.sp
+.ft CR
+.nf 
+.ss 18
+    pingd -kill -l 20
+    
+.ss 12 
+.fi 
+.ft P
+.sp
+.Pp
+To reset the PCTs on nodes 0 through 100 which are running my jobs, either
+of these will work.  (The \fI-l\fP option specifier may be omitted when 
+specifying a node list.)
+.Pp
+.sp
+.ft CR
+.nf 
+.ss 18
+    pingd -reset -l 0..100 -mine
+    pingd -reset 0..100 -mine
+    
+.ss 12 
+.fi 
+.ft P
+.sp
+.Pp
+To display much status information about my jobs:
+.Pp
+.sp
+.ft CR
+.nf 
+.ss 18
+    pingd -m -v
+    
+.ss 12 
+.fi 
+.ft P
+.sp
+.Pp
+To inform the bebopd that the PCTs on nodes 55, 56, 57 and 61 are dead:
+.Pp
+.sp
+.ft CR
+.nf 
+.ss 18
+    pingd -gone -l 55..57,61
+    
+.ss 12 
+.fi 
+.ft P
+.sp
+.SH ERRORS
+    
+
+.Pp
+Some compute nodes may be slow to respond to your request, and \fBpingd\fP
+does not wait for them.  This is not an error.  Run \fBpingd\fP again
+with the \fI-fast\fP option to get the updates which arrived at the bebopd
+(service node daemon)
+after your \fBpingd\fP display.  (Running without \fI-fast\fP would cause the
+bebopd to go out and query all the compute nodes again.)
+.Pp
+.SH FILES
+    
+
+.Pp
+.PP
+.nr ll +1
+.nr t\n(ll 2
+.TP
+.I "/cplant/cplant-host"
+.nr bi 1
+.Pp
+This file identifies the location of a bebopd daemon.
+.TP
+.I "/var/log/cplant"
+.nr bi 1
+.Pp
+This is the log file where Cplant daemons and utilities log
+status.
+.nr ll -1
+.PP
+.SH SEE ALSO
+    
+
+.Pp
+\fBbebopd\fP
+.SH BUGS
+    
+
+.Pp
+Let us know if you locate any (cplant-help@cs.sandia.gov).

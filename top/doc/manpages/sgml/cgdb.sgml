@@ -1,0 +1,58 @@
+<!--
+    $Id: cgdb.sgml,v 1.1 2001/05/04 21:55:30 lafisk Exp $
+-->
+
+<!doctype qwertz system>
+
+<manpage title="cgdb" sectnum="1L" date='"03 May 2001"'
+    footer='"Cplant"' main='"Cplant Utilities"'>
+
+
+<sect1> NAME
+    <p>
+    <bf/cgdb/ &mdash Debug (from the service node) a process of a Cplant parallel application
+    </p>
+
+
+
+<sect1> SYNOPSIS
+    <p>
+    <bf/cgdb -n / <it/nodeNum/
+    </p>
+
+<sect1> DESCRIPTION
+    <p>
+    <bf/cgdb/ allows you to debug a single process of a parallel application.  You run
+    it on the service node and it communicates with the Gnu debugger <bf/gdb/ on
+    the compute node.
+    </p>
+    <p>
+To use this feature, run yod with the <it/-attach/ option.  This
+will display the nodes the application has been allocated and
+will start a debugging session on each compute node.
+yod will prompt you before
+it allows the application processes to procede to user code.
+    </p>
+
+    <p>
+To start a debugging proxy on the service node which can attach
+to the debugger on a compute node, run <bf/cgdb/ with a physical
+node number from the yod display:
+    </p>
+
+    <p><code>
+    cgdb -n 24
+    </code></p>
+
+
+    <p>
+Now you can enter gdb commands to debug the application process.
+    </p>
+
+
+<sect1> SEE ALSO
+    <p>
+    <bf>yod</bf>
+    </p>
+
+</manpage>

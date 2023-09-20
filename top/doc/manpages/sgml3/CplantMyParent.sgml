@@ -1,0 +1,100 @@
+<!--
+  $Id: CplantMyParent.sgml,v 1.1 2001/11/24 23:23:17 lafisk Exp $
+-->
+
+<!doctype qwertz system>
+
+<manpage title="MYPARENT" sectnum="3" date='"20 November 2001"'
+    footer='"CPLANT MANPAGE"' main='"Cplant Runtime Libraries"'>
+
+
+<sect1> NAME
+    <p>
+CplantMyParent, CplantMyParentGrp,
+CplantMySelf, CplantMySelfGrp
+    </p>
+
+
+<sect1> SYNOPSIS
+    <p>
+    <bf/#include &lt;cplant.h>/
+    </p>
+    <p>
+    <bf/jobFamilyInfo *CplantMyParent(void)/
+
+    <bf/jobFamilyInfo *CplantMySelf(void)/
+
+    <bf/jobFamilyInfo *CplantMyParentGrp(int /<it/nMembers/<bf/, int */<it/rankList/<bf/, int /<it/tmout/<bf/)/
+
+    <bf/jobFamilyInfo *CplantMySelfGrp(int /<it/nMembers/<bf/, int */<it/rankList/<bf/, int /<it/tmout/<bf/)/
+
+    </p>
+
+<sect1> DESCRIPTION
+    <p>
+    The function <bf/CplantMyParent/ returns the job handle associated with 
+    the Cplant job that spawned the calling job.
+    This handle is required for querying <bf/yod2/ for status,
+    node map, and termination information.  If the calling job was not created
+    by a call to CplantSpawnJob, then a NULL pointer is returned.
+    </p>
+    <p>
+    The function <bf/CplantMySelf/ returns the job handle associated with my own
+    application.  It is unlikely an application would ever need
+    to query <bf/yod2/ about itself, but perhaps a job would want to
+    broadcast this information to other jobs in it's family.
+    </p>
+    <p>
+    The functions <bf/CplantMyParentGrp/ and <bf/CplantMySelfGrp/ are 
+    collective calls.
+    Every process that participates in the call
+    make the call with the same list of participants.
+    <it/nMembers/ is the number of processes participating in the call,
+    <it/rankList/ is the list of participating process ranks, and <it/tmout/
+    is the number of seconds to wait before judging a collective operation
+    among the pariticpants to be a failure.  In our implementation of this
+    call, the first process in the <it/rankList/ makes the request to <bf/yod2/
+    and broadcasts the results to the others.
+    </p>
+    <p>
+    If <it/nMembers/ is zero, or <it/rankList/ is NULL, then this is taken
+    to mean that all processes in the application are participating.
+    </p>
+    
+
+<sect1> RETURN VALUE
+    <p>
+     Both functions return a NULL pointer on error, and a pointer to
+     a <bf/jobFamilyInfo/ structure on success.  The structure may be
+     freed by the caller when it is no longer needed.
+    </p>
+    <p><tt>
+typedef struct _jobFamilyInfo{    <newline>
+   int job_id;      /* Cplant job id */    <newline>
+   int yodHandle;   /* yod2 needs this */  <newline>
+   int status;      /* bit map of JOB_* values */    <newline>
+   int nprocs ;     /* number of processes*/<newline>
+   int error;       /* normally 0, -1 if an error occurred */<newline>
+   void *callerHandle;  /* caller can use this, we don't */    <newline>
+}<bf/jobFamilyInfo/;    <newline>
+    </tt></p>
+    <p><tt>
+#define JOB_NODE_REQUEST_BUILT  ( 1 << 0) <newline>
+#define JOB_PCT_LIST_ALLOCATED  ( 1 << 1) <newline>
+#define JOB_REQUESTED_TO_LOAD   ( 1 << 2) <newline>
+#define JOB_GOT_OK_TO_LOAD      ( 1 << 3) <newline>
+#define JOB_APP_STARTED         ( 1 << 4) <newline>
+#define JOB_APP_FINISHED        ( 1 << 5) <newline>
+#define JOB_APP_MASS_MURDER     ( 1 << 30) <newline>
+    </tt></p>
+
+<sect1> SEE ALSO
+    <p>
+    <bf/yod2/
+    <bf/CplantFamilyStatus/
+    <bf/CplantFamilyTermination/
+    <bf/CplantFamilyMap/
+    <bf/CplantSpawnJob/
+    </p>
+
+</manpage>

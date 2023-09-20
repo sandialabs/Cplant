@@ -1,0 +1,64 @@
+guidelines for building a release
+---------------------------------
+0) tag the release repositry; do
+
+      % cvs rtag WHATEVER-RELEASE-TAG top-release 
+
+    to tag the tree specified as "top-release"
+    in CVSROOT/modules.
+
+   (or something like this -- we've been tagging
+    partial trees, so familiarize yourself with
+    the correct tag procedure)
+
+1) do "cvs co -r WHATEVER-RELEASE-TAG top-release"
+   to check out everything required in a release
+   "top-release" is the name of a module that is
+   supposed to include everything we want (see
+   $CVSROOT/CVSROOT/modules); despite the name,
+   it should checkout into ./top.
+
+2) in top/release do "make src_release" to build
+   a source release, which probably gets put in
+   CPLANT_TOP/../top-release
+
+3) use THAT source tree to build the Cplant binaries
+   (this is sort of important because sometimes checking
+   out a tagged tree will omit some important part of
+   the directory structure -- yielding a corrupted source
+   tree, i.e. one whose compilation needs to be debugged)
+
+      move the source release dir to CPLANT_TOP, 
+
+      build the mcp (using "cvs co -r WHATEVER-RELEASE-TAG mcp" 
+      on a sparc or x86) 
+
+      build the kernel (follow the README in 
+        top/compute/OS/linux-patches/linux-x.y.z)
+
+      do "Make basic; Make basic install"
+        in CPLANT_TOP to get the "basic" binaries
+
+
+      hopefully, the Makefile in 
+      top/compute/OS/linux-patches/KERNEL_VERSION has been
+      set up to install a kernel in Cplant/alpha-linux/kernels
+      and that patch directory is listed in makefiles/Makefile-basic
+      so that the "Make basic install" above gets the kernel...
+
+      else
+
+      copy the kernel (bootpfile in linux/arch/alpha/boot) to
+      Cplant/alpha-linux/kernels/vmlinux.compute
+
+4) after maybe testing the binaries, use bin_release 
+   target in top/release/makefile to make the binary tar ball
+   -- call it Cplant-x.y.bin.tar.gz
+
+5) tar up the src release as well
+   -- copy the rtsmcp to the src tree's top/compute/OS/Myrinet/MCP;
+      this will make building from the source tree so much easier...
+      
+   -- may want to remove some things from this, like 
+      top/support/cplant which has the nfs root...
+   -- call it Cplant-x.y.src.tar.gz

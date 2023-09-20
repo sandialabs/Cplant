@@ -1,0 +1,37 @@
+    DOT compatible routine.       98/10/26
+
+                                by Kazushige Goto
+					<goto@statabo.rim.or.jp>
+
+Explanation of containing files.
+
+COPYING         : GPL2 licence
+Makefile 
+README          : This file.
+dot.S, zdot.S	: main assembler routine.
+
+** Discriptions **
+
+This package includes dot(sdot, ddot) compatible routine.
+
+** Usage **
+
+<Fortran Version>
+
+It's entirely comatible with ddot.f, sdot.f, zdotu.f, zdotc.f,
+cdotu.f, cdotc.f. Please type "make".
+
+
+** Distributions  **
+
+Based on GPL2.
+
+If you have any suggestions, comments or questions, please let me know.
+
+
+Special thanks to 
+
+Naohiko Shimizu <nshimizu@et.u-tokai.ac.jp>
+               for advising MAF and prefetch strategy.
+
+                                               goto@statabo.rim.or.jp

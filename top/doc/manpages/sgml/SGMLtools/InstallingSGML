@@ -1,0 +1,36 @@
+$Id: InstallingSGML,v 1.1 1999/12/18 00:04:16 jsotto Exp $
+
+We're using the Linux SGML tools with the QWERTS format from
+thomas.gordon@gmd.de. We're also relying on groff and RosettaMan from
+ftp://ftp.cs.berkeley.edu/ucb/people/phelps/tcltk/rman.tar.Z
+
+In addition we slitghtly modified the qwertz DTD and have our own rep
+file (pumaman).
+
+Assuming RosettaMan and groff are installed, here is how to install
+the SGML tools plus our own changes:
+
+
+
+Get ftp://sunsite.unc.edu/pub/Linux/utils/text/sgml-tools-0.99.20.tar.gz
+Do an install:
+    anika -->>./install 
+    Installing SGML-Tools:
+    Where do you want the SGML-Tools binaries?
+    [/usr/local/bin] 
+    Where do you want the SGML-Tools library and support files?
+    [/usr/local/lib/sgml-tools] 
+    Where do you want the SGML-Tools documentation?
+    [/usr/local/doc/sgml-tools] 
+    Where do you want the SGMl-Tools man pages?
+    [/usr/local/man/man1] 
+    Where is perl?
+    [/usr/local/bin/perl] /bin/perl
+    What optimization flags would you like to use?
+    [-O] 
+
+The following files and directory are part of Cplant/top/doc/man/sgml/SGMLtools:
+
+cp qwertz.dtd  /usr/local/lib/sgml-tools/dtd/
+cp -r  qwertz /usr/local/lib/sgml-tools/rep
+cp  format /usr/local/bin

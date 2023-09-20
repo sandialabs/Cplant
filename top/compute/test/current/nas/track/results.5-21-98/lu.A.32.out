@@ -1,0 +1,117 @@
+
+
+ NAS Parallel Benchmarks 2.2 -- LU Benchmark
+
+ Size:  64x 64x 64
+ Iterations: 250
+ Number of processes:    32
+
+ Time step    1
+ Time step   20
+ Time step   40
+ Time step   60
+ Time step   80
+ Time step  100
+ Time step  120
+ Time step  140
+ Time step  160
+ Time step  180
+ Time step  200
+ Time step  220
+ Time step  240
+ Time step  250
+
+ Verification being performed for class A
+ Accuracy setting for epsilon =  0.1000000000000E-07
+ Comparison of RMS-norms of residual
+           1   0.7790210760669E+03 0.7790210760669E+03 0.1371793790200E-13
+           2   0.6340276525969E+02 0.6340276525969E+02 0.4706860147139E-14
+           3   0.1949924972729E+03 0.1949924972729E+03 0.8308203957537E-14
+           4   0.1784530116042E+03 0.1784530116042E+03 0.3185343769198E-15
+           5   0.1838476034946E+04 0.1838476034946E+04 0.1125443251477E-13
+ Comparison of RMS-norms of solution error
+           1   0.2996408568547E+02 0.2996408568547E+02 0.5928286476171E-15
+           2   0.2819457636500E+01 0.2819457636500E+01 0.1118312028922E-13
+           3   0.7347341269878E+01 0.7347341269877E+01 0.7253059742915E-14
+           4   0.6713922568778E+01 0.6713922568778E+01 0.1852046661013E-14
+           5   0.7071531568839E+02 0.7071531568839E+02 0.1065080870493E-13
+ Comparison of surface integral
+               0.2603092560489E+02 0.2603092560489E+02 0.0000000000000E+00
+ Verification Successful
+
+
+ LU Benchmark Completed.
+ Class           =                        A
+ Size            =               64x 64x 64
+ Iterations      =                      250
+ Time in seconds =                   254.01
+ Total processes =                       32
+ Compiled procs  =                       32
+ Mop/s total     =                   469.66
+ Mop/s/process   =                    14.68
+ Operation type  =           floating point
+ Verification    =               SUCCESSFUL
+ Version         =                      2.3
+ Compile date    =              20 May 1998
+
+ Compile options:
+    MPIF77       = /Net/mp/cplant/bin/f77 
+    FLINK        = $(MPIF77)
+    FMPI_LIB     = -L$(MPIPATH) -lmpi 
+    FMPI_INC     = -I$(MPIPATH)/include
+    FFLAGS       = -O3 -align records -align dcommons
+    FLINKFLAGS   = (none)
+    RAND         = (none)
+
+
+ Please send the results of this run to:
+
+ NPB Development Team 
+ Internet: npb@nas.nasa.gov
+ 
+ If email is not available, send this to:
+
+ MS T27A-1
+ NASA Ames Research Center
+ Moffett Field, CA  94035-1000
+
+ Fax: 415-604-3957
+
+
+Contacting node allocation daemon...
+32 nodes are allocated to your job ID 819
+
+   Node name        Rank  Node   PID   Elapsed  Exit Code  Terminating Signal
+------------------- ----  ----  -----  -------  ---------  ------------------
+                       0    18  13798  0:04:18       0       none
+                       1    19  13804  0:04:19       0       none
+                       2    20  13797  0:04:18       0       none
+                       3    21  13801  0:04:18       0       none
+                       4    22  13804  0:04:19       0       none
+                       5    23  13804  0:04:19       0       none
+                       6    24  13797  0:04:19       0       none
+                       7    25  13797  0:04:19       0       none
+                       8    26  13803  0:04:18       0       none
+                       9    28  13792  0:04:18       0       none
+                      10    29  13795  0:04:19       0       none
+                      11    30  13802  0:04:18       0       none
+                      12    32  14109  0:04:18       0       none
+                      13    33  13965  0:04:18       0       none
+                      14    34  13926  0:04:18       0       none
+                      15    35  13918  0:04:18       0       none
+                      16    53  27095  0:04:18       0       none
+                      17    54  27067  0:04:19       0       none
+                      18    55  27066  0:04:18       0       none
+                      19    56  27079  0:04:18       0       none
+                      20    57  27055  0:04:19       0       none
+                      21    58  27067  0:04:18       0       none
+                      22    59  27072  0:04:18       0       none
+                      23    60  27067  0:04:19       0       none
+                      24    61  27046  0:04:18       0       none
+                      25    62  27113  0:04:18       0       none
+                      26    64  27067  0:04:18       0       none
+                      27    65  27031  0:04:18       0       none
+                      28    66  27118  0:04:18       0       none
+                      29    67  27125  0:04:18       0       none
+                      30    68  27134  0:04:18       0       none
+                      31    69  27131  0:04:18       0       none

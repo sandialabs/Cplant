@@ -1,0 +1,65 @@
+ 
+ 
+ NAS Parallel Benchmarks 2.3 -- FT Benchmark
+
+ No input file inputft.data. Using compiled defaults
+ Size                : 256x256x128
+ Iterations          :           6
+ Number of processes :           4
+ Processor array     :       1x  4
+ Layout type         :          1D
+ T =    1     Checksum =    5.046735008193D+02    5.114047905510D+02
+ T =    2     Checksum =    5.059412319734D+02    5.098809666433D+02
+ T =    3     Checksum =    5.069376896287D+02    5.098144042213D+02
+ T =    4     Checksum =    5.077892868474D+02    5.101336130759D+02
+ T =    5     Checksum =    5.085233095391D+02    5.104914655194D+02
+ T =    6     Checksum =    5.091487099959D+02    5.107917842803D+02
+ Result verification successful
+ class = A
+ 
+ 
+ FT Benchmark Completed.
+ Class           =                        A
+ Size            =              256x256x128
+ Iterations      =                        6
+ Time in seconds =                    46.57
+ Total processes =                        4
+ Compiled procs  =                        4
+ Mop/s total     =                   153.24
+ Mop/s/process   =                    38.31
+ Operation type  =           floating point
+ Verification    =               SUCCESSFUL
+ Version         =                      2.3
+ Compile date    =              08 Oct 1998
+ 
+ Compile options:
+    MPIF77       = /Net/mp/cplant/bin/f77 
+    FLINK        = $(MPIF77)
+    FMPI_LIB     = -L$(MPIPATH) -lmpi 
+    FMPI_INC     = -I$(MPIPATH)/include
+    FFLAGS       = -O3 -align records -align dcommons -g
+    FLINKFLAGS   = -v
+    RAND         = randi8
+ 
+ 
+ Please send the results of this run to:
+ 
+ NPB Development Team 
+ Internet: npb@nas.nasa.gov
+ 
+ If email is not available, send this to:
+ 
+ MS T27A-1
+ NASA Ames Research Center
+ Moffett Field, CA  94035-1000
+ 
+ Fax: 415-604-3957
+ 
+ 
+   Node name     Rank  Node   PID   Elapsed  Exit Code  Terminating Signal
+---------------- ----  ----  -----  -------  ---------  ------------------
+SU-003 node-0010    0    26   8470  0:00:56       0       none
+SU-003 node-0006    1    28   8482  0:00:56       0       none
+SU-003 node-0008    2    29   8471  0:00:56       0       none
+SU-003 node-0004    3    31   8487  0:00:55       0       none
+

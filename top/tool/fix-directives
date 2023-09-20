@@ -1,0 +1,53 @@
+#!/usr/bin/perl
+
+#
+# cheesy little perl script to move all preprocessor directives to
+# column 1 to make the DEC preprocessor happy
+#
+
+$file = "";
+$modified = 0;
+while(<>) {
+    if ( /^\s+(#define .*)/ ) {
+        $file .= "$1\n";
+        $modified = 1;
+        next;
+    }
+    if ( /^\s+(#undef.*)/ ) {
+        $file .= "$1\n";
+        $modified = 1;
+        next;
+    }
+    if ( /^\s+(#include.*)/ ) {
+        $file .= "$1\n";
+        $modified = 1;
+        next;
+    }
+    if ( /(#endif).*/ ) {
+        $file .= "$1\n";
+        $modified = 1;
+        next;
+    }
+    if ( /^\s+(#if.*)/ ) {
+        $file .= "$1\n";
+        $modified = 1;
+        next;
+    }
+    if ( /^\s+(#else).*/ ) {
+        $file .= "$1\n";
+        $modified = 1;
+        next;
+    }
+    if ( /^\s+(#elif.*)/ ) {
+        $file .= "$1\n";
+        $modified = 1;
+        next;
+    }
+    $file .= $_;
+}
+if ( $modified == 1 ) {
+    open( TMP, ">/tmp/$$" ) or die "Couldn't open /tmp/$$\n";
+    print TMP $file;
+    close( TMP );
+    system "mv", "/tmp/$$", "$ARGV";
+}

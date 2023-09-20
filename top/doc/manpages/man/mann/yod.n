@@ -1,0 +1,464 @@
+.if n .ds Q \&"
+.if t .ds Q ``
+.if n .ds U \&"
+.if t .ds U ''
+.TH yod 1L "03 May 2001" "Cplant" "Cplant Utilities"
+.tr \&
+.nr bi 0
+.nr ll 0
+.nr el 0
+.de Pp
+.ie \\n(ll>0 \{\
+.ie \\n(bi=1 \{\
+.nr bi 0
+.if \\n(t\\n(ll=0 \{.IP \\(bu\}
+.if \\n(t\\n(ll=1 \{.IP \\n+(e\\n(el.\}
+.\}
+.el .sp 
+.\}
+.el \{\
+.ie \\nh=1 \{\
+.LP
+.nr h 0
+.\}
+.el .PP 
+.\}
+..
+.SH NAME
+    
+
+.Pp
+\fByod\fP -- Load a Cplant parallel application
+.SH SYNOPSIS
+    
+
+.Pp
+\fByod\fP {\fIyod-options\fP} 
+\fBprogram-path-name\fP {\fIprogram-arguments\fP} 
+.Pp
+OR
+.Pp
+\fByod\fP {\fIyod-options\fP} \fBload-file-name\fP
+.Pp
+YOD-OPTIONS:
+.Pp
+[\fB-alloc\fP] [\fB-attach\fP] [\fB-bt\fP ][\fB-D\fP] [\fB-d\fP \fIinfo-type\fP] [\fB-file\fP \fIfile-name\fP] 
+.Pp
+[\fB-help | -vhelp\fP] [\fB-interactive | -batch\fP][\fB-kill\fP ] [\fB-list\fP \fInode-list\fP ]
+.Pp
+[\fB-Log\fP] [\fB-nid\fP \fInode-number\fP \fB-pid\fP \fIportal-id\fP][\fB-NOBUF\fP] [\fB-quiet\fP] [\fB-show\fP][\fB-sleep\fP \fIwhere\fP]
+.Pp
+[\fB-strace\fP \fIpath-name\fP] [\fB-straceoptions\fP \fIoption-list\fP] [\fB-stracenodes\fP \fIrank-list\fP]
+.Pp
+[\fB-sz\fP \fInodes\fP] [\fB-timing\fP] [\fB-nice\fP]
+.SH DESCRIPTION
+    
+
+.Pp
+\fByod\fP is a utility that loads a parallel application onto
+a set of compute nodes.  File operations performed by the
+compute node processes (if not directed to a parallel IO facility) 
+are transparently forwarded to yod 
+which executes the operations and returns the results to the
+application.
+\fByod\fP exits when each member of the parallel application
+has exited.
+.Pp
+Here is a typical use of \fByod\fP.  It loads \fBmyCode\fP on
+64 nodes, and passes the command line argument \fB-i input.dat\fP
+to each process of the parallel program.
+.Pp
+\f(CRyod -sz 64 myCode -i input.dat\fR
+.Pp
+The \fIprogram-arguments\fP, along with your environment, will 
+be sent along to the compute node processes.  The standard input 
+of yod is the standard input of the compute node processes.  The 
+standard input is not duplicated, so if node 0 reads some bytes from
+standard input, the next read of standard input from any node in
+the parallel application will get the next bytes in the stream.
+.Pp
+It is possible to send a SIGUSR1 or SIGUSR2 to a parallel
+application by sending the signal to \fByod\fP.  \fByod\fP will
+forward the signal to the user application processes.
+(Type \fIkill -s SIGUSR1 yod-pid\fP on the node running
+\fByod\fP to send the application processes a SIGUSR1.)
+.Pp
+Interrupting \fByod\fP with \f(CRcontrol-c\fR causes it to interrupt
+the application processes with a SIGTERM.  \fByod\fP will await
+completion messages from the compute nodes.  If \fByod\fP
+seems stuck, interrupt with \f(CRcontrol-c\fR again.  This will
+cause \fByod\fP to interrupt the application processes with a
+SIGKILL.  If \fByod\fP still seems stuck, interrupt with
+\f(CRcontrol-c\fR a third time.  \fByod\fP will simply reset the
+compute nodes and exit.
+.Pp
+An alternative to killing a job through \fByod\fP is to run
+\fIpingd -reset -mine\fP to reset the compute nodes hosting
+your application.  Your application processes will
+be sent a SIGKILL, and the compute nodes released for other users.
+You may use the command \fIpingd -interrupt -mine\fP to send a SIGTERM
+to all of your parallel applications.  See the \fBpingd\fP man page
+for other ways to specify nodes or jobs for the command to
+act upon.
+.Pp
+When loading a single executable file onto the compute partition,
+list the \fBexecutable path name\fP followed by your program
+arguments on the \fByod\fP command line.  To load more than one
+executable file, or to specify different command line arguments
+to different processes, (heterogeneous load) specify the command lines
+in process rank order in a load file.  List the \fBload file name\fP
+as the argument to \fByod\fP.
+.SH LOAD FILE FORMAT
+    
+
+.Pp
+Your load file is a text file you create with your favorite text
+editor.  It has two kinds of entries: comments and application
+members.  Comments are lines on which the first text that appears 
+is a pound sign (\fB#\fP).  These are ignored by \fByod\fP.  The other
+type of entry lists a member of the parallel application and has
+this format:
+.Pp
+{\fIyod-options\fP}
+\fBprogram-path-name\fP {\fIprogram-arguments\fP}
+.Pp
+The only yod options accepted in a load file are \fB-sz\fP and
+\fB-list\fP.  
+.Pp
+Example:
+.Pp
+\f(CRyod -l 100..200 myLoadFile\fR
+.Pp
+The contents of \fImyLoadFile\fP are listed here:
+.Pp
+\f(CR#
+.br
+# load file to run my computation and parallel vis server
+.br
+#
+.br
+-sz 2 -l 500,501 my-vis-code bufsize=2048
+.br
+-sz 64 my-computational-code
+.br\fR
+.Pp
+In this example, the executable file \fImy-vis-code\fP will be loaded
+on nodes 500 and 501, will be passed the argument \fIbufsize=2048\fP,
+and will be ranks 0 and 1 in the parallel application.  The executable
+file \fImy-computational-code\fP will be loaded on 64 free nodes found in
+the node number list 100 through 200.  These processes will have ranks
+2 through 65 in the parallel application.  MPI users note that the
+66 processes described will populate a single MPI_COMM_WORLD on application
+start up.
+.Pp
+If a load file is provided, any size argument given on the \fByod\fP
+command line is ignored.
+If there is no node list given in the load file for a member, then 
+the node list given on the yod command line will be used.  If in
+addition there is no node list given on the yod command line, then
+the requested nodes will be allocated from anywhere among the 
+general collection of free nodes.  If there is no size argument
+provided in the load file, but a node list is provided, it will be
+assumed that you want all the nodes in the node list.  If there
+is no size argument provided in the load file and also no node list,
+it will be assumed that you want one node from anywhere.
+.SH YOD OPTIONS
+    
+
+.Pp
+.PP
+.nr ll +1
+.nr t\n(ll 2
+
+.TP
+.I "-alloc"
+.nr bi 1
+.Pp
+Choosing \fI-alloc\fP was useful for compute node debugging
+before the availability of \fBcgdb\fP or \fBTotalview\fP.  
+It displays the nodes
+on which your application has been started and waits for you to press
+a key before allowing the processes in your parallel application
+to procede out of system code and into user code.  You 
+could at this point log in to
+a compute node and attach a debugger to your application to
+catch it before it procedes to \fImain\fP.
+Since users are discouraged from logging into compute nodes,
+it would be better for you to use \fI-attach\fP and \fBcgdb\fP.
+Also see the \fI-bt\fP option of yod.
+
+.TP
+.I "-attach"
+.nr bi 1
+.Pp
+This option is essentially the same as \fI-alloc\fP.  It is intended
+to hold the application processes once they have started executing
+at an instruction prior to user code (prior to \fImain\fP).  You can
+at this point start \fBcgdb\fP to attach a debugger to a process.  See
+the \fBcgdb\fP man page for more help on debugging compute node processes.
+.Pp
+.TP
+.I "-batch"
+.nr bi 1
+.Pp
+This option informs \fByod\fP that it is not being run 
+interactively.  In this case, \fByod\fP will not wait for user
+responses in certain circumstances.  For example, if one of your
+application processes terminates abnormally (with a non-zero exit
+code or as the result of a signal), \fByod\fP will automatically
+kill your parallel application for you.  Normally your application
+is not killed if some processes are still running.
+The default is that you are not running in \fIbatch\fP mode.
+See \fI-interactive\fP.
+
+.TP
+.I "-bt"
+.nr bi 1
+.Pp
+This option will cause \fByod\fP to display a stack trace for
+user processes that terminate abnormally.
+\fByod\fP normally displays a one-line completion message for each process in your
+parallel application, listing the exit code or terminating
+signal if any.  If the completion message indicates that your
+application process terminated with a
+signal and you wish to investigate, you may rebuild your application
+with debugging symbols and re-run it with the \fI-bt\fP option of
+\fByod\fP.  The PCT will then attach a debugger to your process,
+collect the stack trace when it faults, and send the stack
+trace to \fByod\fP for display.
+
+
+.TP
+.I "-D"
+.nr bi 1
+.Pp
+Turn on debugging of the application load.  The steps in 
+the load protocol are displayed as the application load progresses. 
+Application process file IO requests are displayed as \fByod\fP
+receives them.
+
+.TP
+.I "-file \fIfile-name\fP"
+.nr bi 1
+.Pp
+When all processes in the parallel application have completed,
+\fByod\fP displays a one line completion message for each process.
+This message lists the wall-clock time elapsed from start to
+finish for the process, and the exit code and terminating
+signal, if any, for the process.  By default the listing goes
+to stdout, but may be redirected to a file with this option.
+
+.TP
+.I "-help"
+.nr bi 1
+.TP
+.I "-vhelp"
+.nr bi 1
+.Pp
+\fI-help\fP option displays a usage message for \fByod\fP, \fI-vhelp\fP
+displays a more verbose message.
+
+.TP
+.I "-interactive"
+.nr bi 1
+.Pp
+This option informs \fByod\fP that it is being run interactively
+by a living user.  This is the default mode.  If \fByod\fP is
+being run by a script, be certain to specify \fB-batch\fP on the
+command line.  One difference between interactive mode and
+batch mode is that if the load fails on one node, interactive 
+mode waits for the user to interrupt \fByod\fP with control-c
+before cancelling the load on all allocated nodes.  Batch mode
+goes ahead and cancels the load.
+
+.TP
+.I "-kill"
+.nr bi 1
+.Pp
+When \fByod\fP is run in interactive mode (the default) and a process
+of a parallel application terminates abnormally, \fByod\fP displays the
+fact that the process terminated but does not kill the other
+processes in the job.  The user may choose to abort the job by
+terminating \fByod\fP with control-C.
+.Pp
+If the user wishes \fByod\fP to automatically kill the application when
+one or more processes terminates abnormally, then use the \fI-kill\fP
+option to yod.
+
+.TP
+.I "-list \fInode-list\fP"
+.nr bi 1
+.Pp
+If a \fInode-list\fP is provided on the \fByod\fP command line, then
+the nodes requested will be allocated out of this list.  If 
+\f(CR-sz\fR \fIn\fP is specified as well, then \fIn\fP nodes will be allocated
+out of the list.  If there does not exist \fIn\fP free nodes in the list,
+\fByod\fP will display an error message.  If no \f(CR-sz\fR option is
+specified, \fByod\fP will assume you want all the nodes in the
+\fInode-list\fP.
+.Pp
+A \fInode-list\fP is a list of node specifiers separated by commas.
+A node specifier is a physical node number or
+a node range.  A node range is specified by two physical
+node numbers separated
+by one or more dots.  No white space may be included in
+the \fInode-list\fP.  Example: \f(CR-l 25..35,112..140,160,165\fR
+ 
+.TP
+.I "-Log"
+.nr bi 1
+.Pp
+This option causes the compute node application load protocol 
+steps to be logged to \f(CR/var/log/cplant\fR on the compute node.
+It is intended for use by Cplant system debuggers.
+
+.TP
+.I "-nice"
+.nr bi 1
+.Pp
+This option runs your job in a low priority mode.  If a regular
+priority job requests nodes, your job may be killed to make
+way for it.  Your job will be signalled with a SIGTERM, and 5 minutes
+later with a SIGKILL, if necessary.
+
+.TP
+.I "-NOBUF"
+.nr bi 1
+.Pp
+\fByod\fP displays it's own messages and also text printed by the parallel
+application processes while they are running.  Normally this
+combination of buffered (yod's status messages) and unbuffered
+(application output and yod's error messages) messages appear
+sensibly on the tty that started yod.  But if \fByod\fP was started
+by an rsh from a remote node, the output appears garbled.  The
+\fI-NOBUF\fP option solves this problem by making all \fByod\fP output unbuffered.
+
+.TP
+.I "-nid \fInode-number\fP"
+.nr bi 1
+.TP
+.I "-pid \fIportal-ID\fP"
+.nr bi 1
+.Pp
+These arguments will cause \fByod\fP to contact the bebopd on the specified
+node number and at the specified portal ID rather than the bebopd listed 
+in the \f(CRcplant-host\fR file.  This option is only for testing
+alternative bebopds and should be used only by Cplant developers.
+ 
+.TP
+.I "-quiet"
+.nr bi 1
+.Pp
+\fByod\fP, like this man page, is quite verbose.  It lists many status and
+error messages as it loads and runs a parallel application.  If you wish to have
+these messages suppressed, run yod with the \fI-quiet\fP option.
+ 
+.TP
+.I "-show"
+.nr bi 1
+.Pp
+Cplant parallel applications are encoded with a version string.  \fByod\fP will
+not load an application encoded with the wrong version string (unless you
+run \fByod\fP with the secret \fI-xxx\fP option).  The \fI-show\fP option lists
+the correct version string and the version string found in your executable.
+
+.TP
+.I "-sleep \fIwhere\fP"
+.nr bi 1
+.Pp
+Cplant system debuggers may want to attach a debugger to a Cplant application
+before it is in user code.  This option provides 4 different points at which a
+the processes can be held for 60 seconds.  The options are \fI-sleep 1\fP 
+(right after the fork), \fI-sleep 2\fP (just before the exec), \fI-sleep 3\fP
+(right after entering system startup code), \fI-sleep 4\fP (just before
+proceeding to \fImain\fP).
+
+.TP
+.I "-strace \fIpath-name\fP"
+.nr bi 1
+.Pp
+Yet another debugging tool.  \fIpath-name\fP should be a directory which
+is mounted writable on the compute node.  This option will cause the PCT
+to run the application process under strace which will list all
+system calls (and their arguments) made by the application process.  By
+default, only the rank 0 process is traced.  The strace output goes to
+a file in directory \fIpath-name\fP.  The file name contains the Cplant job ID
+and the rank of the process being traced.
+
+.TP
+.I "-straceoptions \fIoption-list\fP"
+.nr bi 1
+.Pp
+The PCT will invoke strace with the options you specify in the quoted
+string \fIoption-list\fP.   
+You must use the \fI-strace\fP option with this option.
+
+.TP
+.I "-stracenodes \fIrank-list\fP"
+.nr bi 1
+.Pp
+The PCT will invoke \fIstrace\fP on the processes with the ranks given in the
+\fIrank-list\fP.  The format for the \fIrank-list\fP is the same as the format
+for a node list.  By default, strace is invoked only on the rank 0 process.
+You must use the \fI-strace\fP option with this option.
+
+.TP
+.I "-sz \fInodes\fP"
+.nr bi 1
+.Pp
+The number of compute nodes required to run the parallel
+application.  One member (process) of the application will
+run on each node.  The default if no node list is specified
+is \f(CR-sz 1\fR.  The default if a node list is specified is
+the number of nodes in the node list.
+
+.TP
+.I "-timing"
+.nr bi 1
+.Pp
+Interested in how long the different stages of application
+load are taking?  The \fI-timing\fP option times them and displays
+the results in seconds.  (If our name was \fBmpirun\fP instead
+of \fByod\fP we would display it in minutes!)
+.nr ll -1
+.PP
+.Pp
+.SH RETURN VALUES
+       
+
+.Pp
+\fByod\fP returns 0 if the parallel application terminated normally, 
+1 if the application ran and terminated abnormally, and 2 if the application
+load failed and the application never started.
+Abnormal termination occurs if one or more of the
+processes of parallel application exited with a non-zero exit code, or
+was terminated by a signal.
+.SH ENVIRONMENT VARIABLES
+    
+
+.Pp
+Environment variables that affect \fByod's\fP behavior are described here.
+.Pp
+Occasionally a load will fail because a compute node allocated to your parallel
+application is not working.  \fByod\fP will try to obtain a new set of nodes and
+load again.  It will try up to three times.  If you want to decrease or increase
+the number of retries, set the value of the environment variable \fBYODRETRYCOUNT\fP
+to the number of times yod should retry the load.
+.Pp
+If you do not specify the full path of the executable name, \fByod\fP will search first
+for the executable in the current working directory.  If it is not found, \fByod\fP
+will use the \fBPATH\fP variable in your environment to search for the executable.
+.Pp
+When \fByod\fP is executed from a PBS job script, there are certain variables defined
+that are required by the runtime system.  If you do something sneaky in your PBS job
+script like rsh to another service node and run yod there, be sure to set these
+environment variables in the new shell to the same value they have in the
+original shell: \fBPBS_ENVIRONMENT\fP, \fBPBS_BATCH\fP, \fBPBS_JOBID\fP, \fBPBS_NNODES\fP.
+.SH SEE ALSO
+    
+
+.Pp
+\fBpingd\fP
+\fBPCT\fP
+\fBbebopd\fP
+\fBcgdb\fP

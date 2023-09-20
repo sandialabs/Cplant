@@ -1,0 +1,38 @@
+
+Welcome to Cplant Runtime Release Version 2.0.1.10!
+Release Date: Nov 5, 2002 
+
+Here are some highlights of 2.0 changes since our last 1.0 public release:
+ - Configurable heuristic allocation daemon (ie- we use it to cause
+   the allocator to select the best-fit, most interconnect-compact set
+   of available nodes per job)
+ - Steamlined and efficient scalable job load protocol
+ - Dramatic robustness increases in system daemons and network protocols
+ - Multiple-server scalable I/O proxy daemon (ENFS)
+ - Support for Alpha, x86, IA64 architectures running 2.2 and 2.4
+   Linux kernels
+ - Support for TotalView debugger and VampirTrace profiler
+ - Support for OpenPBS 2.2 and 2.3
+
+See doc/release_notes/2_0 for more detailed release notes.
+See top/build_install_guide.ps to get started.
+
+#############################################################################
+#
+#     This Cplant(TM) source code is the property of Sandia National
+#     Laboratories.
+#
+#     This Cplant(TM) source code is copyrighted by Sandia National
+#     Laboratories.
+#
+#     The redistribution of this Cplant(TM) source code is subject to the
+#     terms of the GNU Lesser General Public License
+#     (see cit/LGPL or http://www.gnu.org/licenses/lgpl.html)
+#
+#     Cplant(TM) Copyright 1998, 1999, 2000, 2001, 2002 Sandia Corporation. 
+#     Under the terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+#     license for use of this work by or on behalf of the US Government.
+#     Export of this program may require a license from the United States
+#     Government.
+#
+#############################################################################

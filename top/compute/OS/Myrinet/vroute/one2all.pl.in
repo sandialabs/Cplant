@@ -1,0 +1,71 @@
+#! /usr/bin/perl
+
+  # one2all.pl
+  # verify routes from one node
+  # to "all" other nodes
+  # run on a SERVICE as a foreground process
+  # usage: one2.all.pl node-id
+
+  # valid nodes are determined by doing "pingd"
+
+  $file_loc= "/tmp/routing";
+
+  $cplant_path = "CPLANT_PATH";
+
+  ########################################################################
+
+  if ( $ARGV[0] eq "") {
+    print("usage: one2all.pl node-id\n");
+    exit 0;
+  }
+
+  $node = $ARGV[0]; 
+
+ #----------------------------------------------------------------------
+ #                            get started
+ #----------------------------------------------------------------------
+
+  $failures = 0;
+  $successes = 0;
+
+  $service = `hostname`;
+  chop($service);
+
+  $msg  = "one2all.pl (low-level myrinet diagnostic) starting\n";
+  $msg .= "on node $service\n\n";
+
+  # get pingd output, and use it to 
+  # determine valid set of nodes for a one-to-all test 
+
+  $pingd = `$cplant_path/sbin/pingd`;
+  @lines = split(/\n/, $pingd);
+
+  foreach $i (@lines) {
+    $_ = $i;
+    if ( /SU/ && !/node/ ) {
+      @words = split();
+      $nid0 = $words[0];
+      $sustr = $words[2];
+      $nodestr = $words[3];
+      @fields = split(/-/, $sustr);
+      $sunum = int($fields[1]);
+      @fields = split(/-/, $nodestr);
+      $nodenum = int($fields[1]);
+      $hname = "c-$nodenum.SU-$sunum";
+      print("doing test with $hname...\n");
+
+      $result = `$cplant_path/sbin/req $node $nid0`;
+      if ( $result =~ /FAILED/) { 
+        $failures++;
+      }
+      if ( $result =~ /SUCCEEDED/) { 
+        $successes++;
+      }
+      print("$result");
+    }
+  }
+
+  $msg  = "one2all.pl (low-level myrinet diagnostic) completing\n";
+  $msg .= "it looks like there were $failures failures and\n";
+  $msg .= "$successes successes recorded.\n";
+  print("$msg");

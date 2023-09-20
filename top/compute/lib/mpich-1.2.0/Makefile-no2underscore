@@ -1,0 +1,5 @@
+# $Id: Makefile-no2underscore,v 1.2 2002/02/07 20:56:13 jbogden Exp $
+
+CFLAGS  +=  -DFORTRANUNDERSCORE
+FFLAGS  += -assume no2underscores
+

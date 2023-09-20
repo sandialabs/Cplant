@@ -1,0 +1,35 @@
+When building applications for Cplant on a Compaq OSF machine,
+bear in mind that OSF version 4 and OSF version 5 are not 
+compatible.  I wouldn't recommend mixing libraries from the
+two systems.
+
+The stat buffer in version 4 is 80 bytes in size.  The stat buffer
+in version 5 is 160 bytes in size.  In addition, unless
+__TMP_V40_OBJ_COMPAT is defined at compile time, definitions
+in <sys/stat.h> redefine all references to fstat(), lstat() 
+and stat() to references to __F64_fstat(), __F64_lstat(), and
+__F64_stat() (the versions that handle the big stat buffer).  
+Defining __TMP_V40_OBJ_COMPAT builds code that uses the 80 byte 
+stat buffer and omits the __F64_* versions of the code.
+
+We have to build our libraries and Cplant apps with __TMP_V40_OBJ_COMPAT.
+If we don't, our fstat() gets named __F64_fstat().  When we link
+applications, they link in Compaq libraries that apparently are
+broken because they reference fstat().  (So they forgot to include
+<sys/stat.h> in some of their code to uniformly use the __F64_* functions.)
+So when they link in libc.a, the module containing fstat() is loaded,
+and this module also contains __fstat() which we have defined and
+so we get a link error.  Also, we have the wrong fstat() linked into
+the code now.  
+
+Because of this error in the Compaq libraries, we don't use the
+__F64_* functions.  But many routines in the Compaq libraries do
+use these, so we also need to define the __F64_* routines (they're
+in Fstat.c) so the Compaq library routines will use these.  They
+take a 160 byte stat buffer, call the cplant routine with
+a 80 byte stat buffer, fix up the 160 byte buffer that was passed
+in and return.
+
+Note that in sys/mount.h the fstatfs function is still
+renamed _F64_fstatfs() and the buffer is a new larger version.  Hope
+this doesn't cause us trouble.  Doesn't seem to.

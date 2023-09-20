@@ -1,0 +1,67 @@
+<!--
+    $Id: PtlNIInit.sgml,v 1.1 2001/01/10 21:42:54 rbbrigh Exp $
+-->
+
+<!doctype qwertz system>
+
+<manpage title="PtlNIInit" sectnum="3" date='"04 Jan 2001"'
+    footer='"Portals 3.0"' main='"Portals 3.0 Library"'>
+
+<sect1> NAME
+    <p>
+    <bf/PtlNIInit/ &mdash Initialize a network interface
+
+<sect1> SYNOPSIS
+    <p>
+     #include "p30.h"
+
+     int PtlNIInit( ptl_interface_t interface, ptl_pt_index_t ptl_size,
+                    ptl_ac_index_t acl_size, ptl_handle_ni_t* handle );
+
+<sect1> PARAMETERS
+    <p>
+    <descrip>
+    <tag /interface/
+    Identifies the network interface to be initialized
+    <tag /ptl_size/
+    Specifies the number of entries in the portal table for this interface
+    <tag /acl_size/
+    Specifies the size of the access control list for this interface
+    <tag /handle/
+    On successful return, this location will hold a handle for the interface.
+    </descrip>
+
+<sect1> DESCRIPTION
+    <p>
+    <bf /PtlNIInit/ initializes a network interface for use by the Portals
+    library.
+
+<sect1> RETURN VALUES
+    <p>
+    <descrip>
+    <tag /PTL_OK/
+    Indicates success
+    <tag /PTL_NOINIT/
+    Indicates that the Portals API has not been successfully initialized
+    <tag /PTL_INIT_DUP/
+    Indicates a duplicate initialization of <bf /interface/
+    <tag /PTL_INIT_INV/
+    Indicates that <bf /interface/ is not a valid network interface
+    <tag /PTL_NOSPACE/
+    Indicates that there is insufficient memory to initialize the interface
+    <tag /PTL_INV_PSIZE/
+    Indicates that <bf /ptl_size/ is invalid
+    <tag /PTL_INV_ASIZE/
+    Indicates that <bf /acl_size/ is invalid
+    <tag /PTL_SEGV/
+    Indicates that <bf /handle/ is not a legal address
+    </descrip>
+    </p>
+
+<sect1> SEE ALSO
+    <p>
+    <bf /PtlNIBarrier(3)/, <bf /PtlNIDist(3)/, <bf /PtlNIFini(3)/,
+    <bf /PtlNIHandle(3)/, <bf /PtlNIStatus(3)/<newline>
+    <bf /Portals 3.0 Message Passing Interface document/
+
+</manpage>

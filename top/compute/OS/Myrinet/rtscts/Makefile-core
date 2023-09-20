@@ -1,0 +1,137 @@
+#
+# $Id$
+#
+# NOTE: compiling the RTSCTS module for the Ethernet configuration
+#       requires a subset of the source files
+
+include ../../../../Makefile-common
+
+CONF_FILE = ../../linux/include/linux/autoconf.h
+
+CONFIG_SMP = $(shell $(CPLANT_TOP)/config/smp_check.pl $(CONF_FILE))
+
+ifeq ($(CONFIG_SMP),yes)
+CFLAGS += -D__SMP__
+endif
+
+ifeq ($(CPLANT_ARCH),ia64)
+CFLAGS  += -Wno-trigraphs -fomit-frame-pointer -fno-strict-aliasing \
+           -fno-common -falign-functions=32 \
+           -ffixed-r13 \
+           -mfixed-range=f10-f15,f32-f127
+endif
+
+ifeq ($(CPLANT_ARCH),alpha)
+PLTFM      = -Ddec_$(OS)
+CFLAGS    += -ffixed-8 -mno-fp-regs 
+endif
+
+ifeq ($(CPLANT_ARCH),i386)
+PLTFM      = -Dintel_$(OS)
+endif
+
+ifeq ($(KERNEL_ADDR_CACHE),yes)
+DEFINES += -DKERNEL_ADDR_CACHE
+endif
+ 
+ifeq ($(RTSCTS_OVER_ETHERNET),yes)
+DEFINES += -DRTSCTS_OVER_ETHERNET
+endif
+
+ifeq ($(RTSCTS_ERROR_CORRECTION),yes)
+DEFINES += -DDO_TIMEOUT_PROTOCOL
+endif
+
+ifeq ($(EXTENDED_P3_RTSCTS),yes)
+DEFINES += -DEXTENDED_P3_RTSCTS
+endif
+
+CFLAGS    += -Wstrict-prototypes -O2 $(PLTFM) -D__KERNEL__ -pipe -DMODULE
+INCLUDES  += -I../../../../include -I../../linux/include -I../include -I../MCP
+INCLUDES  += -I../util -I../../../../include/sys -I../../../../include/portals
+DEFINES   += -DLINUX_PORTALS -DUSE_PROC_FS -DPRINT_LEVEL=-1
+DEFINES   += -DBUFDEBUG # enables /proc/cplant/[rcvbuf,sndbuf]
+DEFINES   += -DPKTHDR_CLEAR
+DEFINES   += -DNEW_P3_RESEND # enables the stay-on-the-queue P3 resend method
+DEFINES   += -DP3_PING # enables P3 ping funcionality
+
+# The following options are only for debugging or performance testing or
+# whatever, but NOT FOR PRODUCTION.
+# DEFINES   += -DNO_PROTO_DEBUG # turn off all protocol log debug overhead
+# DEFINES   += -DNO_STATS # turn off all non error stats - NOT FOR PRODUCTION!
+# DEFINES   += -DNO_ERROR_STATS # turn off all error related stats - NOT FOR PRODUCTION!
+
+# miscellaneous options
+# DEFINES   += -DREQUEST_RESENDS # Not tested. Don't turn it on!
+# DEFINES   += -DDROP_PKT_TEST
+# DEFINES   += -DDROP_P3_SEQ_NUM_TEST
+# DEFINES   += -DCORRUPT_P3_SEND_TEST
+# DEFINES   += -DKEEP_TRACK
+# DEFINES   += -DMSGCKSUM
+
+CC	   = gcc
+LD         = ld
+LDFLAGS    = -r -s -dc -L../lib
+MODULE     = rtscts.mod
+MODULE_ETH = rtscts_eth.mod
+
+CFLAGS    += $(INCLUDES) $(INCLUDEDIRS) $(DEFINES)
+
+ETH_EXCLUDES = Pkt_handler.c init.c mlanai.c myri.c
+CSOURCES1_ALL = $(shell ls *.c)
+CSOURCES_ALL = $(filter-out versions.c, $(CSOURCES1_ALL))
+CSOURCES_ETH = $(filter-out versions.c $(ETH_EXCLUDES), $(CSOURCES_ALL))
+
+COBJECTS_ALL = $(CSOURCES_ALL:.c=.o)
+COBJECTS_ALL += versions.o
+COBJECTS_ALL += myriPut.o
+
+ETH_EXCLUDE_OBJECTS = $(ETH_EXCLUDES:.c=.o)
+ETH_EXCLUDE_OBJECTS += myriPut.o
+COBJECTS_ETH = $(filter-out $(ETH_EXCLUDE_OBJECTS), $(COBJECTS_ALL))
+
+LANAI_LIB = -lLanaiDevice
+
+INSTALLDIR     = $(moduledir)
+INSTALLTARGETS = $(MODULE) $(MODULE_ETH)
+
+.PRECIOUS: %.o
+
+.PHONY:	install uninstall cp
+
+all: $(MODULE)
+
+RTSCTS_p3.o: RTSCTS_p3.c RTSCTS_self.h
+	$(CC) $(CFLAGS) -c RTSCTS_p3.c -o $@
+
+myriPut.o:      ../lib/myriPut.c
+	$(CC) $(CFLAGS) -c $< -o $@
+
+versions.o:	versions.c
+	$(CC) -Wall -c $< -o $@
+
+versions.c:	$(CSOURCES_ALL) *.h ../../../../config/id_string.$(CPLANT_ARCH)
+	grep -h "\$\I\d\: " $(CSOURCES_ALL) *.h | ../../../../config/id_string.$(CPLANT_ARCH)
+
+../../../../config/id_string.$(CPLANT_ARCH):	../../../../config/id_string.c
+	$(CC) -Wall $< -o $@
+
+# Print the version information to be encoded in the module
+printv:
+	grep -h "\$\I\d\: " $(CSOURCES_ALL) *.h | ../../../../config/print_id_string.$(CPLANT_ARCH)
+
+$(MODULE): $(COBJECTS_ALL)
+	$(LD) $(LDFLAGS) -o $@ $^ $(LANAI_LIB)
+
+$(MODULE_ETH): $(COBJECTS_ETH)
+	$(LD) $(LDFLAGS) -o $@ $^
+
+install uninstall cp:
+	cp rtscts_eth.mod $(INSTALLDIR)
+	cp rtscts.mod $(INSTALLDIR)
+
+clean:
+	"rm" -f $(COBJECTS_ALL)
+
+realclean: clean
+	"rm" -f $(MODULE) $(MODULE_ETH) versions.o versions.c

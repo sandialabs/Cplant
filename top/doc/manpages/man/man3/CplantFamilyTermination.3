@@ -1,0 +1,91 @@
+.if n .ds Q \&"
+.if t .ds Q ``
+.if n .ds U \&"
+.if t .ds U ''
+.TH FAMILYTERMINATION 3 "20 November 2001" "CPLANT MANPAGE" "Cplant Runtime Libraries"
+.tr \&
+.nr bi 0
+.nr ll 0
+.nr el 0
+.de Pp
+.ie \\n(ll>0 \{\
+.ie \\n(bi=1 \{\
+.nr bi 0
+.if \\n(t\\n(ll=0 \{.IP \\(bu\}
+.if \\n(t\\n(ll=1 \{.IP \\n+(e\\n(el.\}
+.\}
+.el .sp 
+.\}
+.el \{\
+.ie \\nh=1 \{\
+.LP
+.nr h 0
+.\}
+.el .PP 
+.\}
+..
+.SH NAME
+    
+
+.Pp
+CplantFamilyTermination, CplantFamilyTerminationGrp
+.SH SYNOPSIS
+    
+
+.Pp
+\fB#include <cplant.h>\fP
+.Pp
+\fBint CplantFamilyTermination(jobFamilyInfo *\fP\fIjob\fP\fB, int *\fP\fIexitCode\fP\fB, int *\fP\fItermSig\fP\fB, int *\fP\fIterminator\fP\fB, int *\fP\fIdone\fP\fB, int \fP\fIlen\fP\fB)\fP
+.Pp
+\fBint CplantFamilyTerminationGrp(jobFamilyInfo *\fP\fIjob\fP\fB, int *\fP\fIexitCode\fP\fB, int *\fP\fItermSig\fP\fB, int *\fP\fIterminator\fP\fB, int *\fP\fIdone\fP\fB, int \fP\fIlen\fP\fB, int \fP\fInMembers\fP\fB, int *\fP\fIrankList\fP\fB, int \fP\fItmout\fP\fB)\fP
+.SH DESCRIPTION
+    
+
+.Pp
+The function \fBCplantFamilyTermination\fP returns termination information
+about the specified \fIjob\fP.  \fIjob\fP is a 
+handle returned by \fBCplantSpawnJob\fP, \fBCplantMyParent\fP
+or \fBCplantMySelf\fP.  
+.Pp
+If \fIdone\fP is not NULL, it is taken to point to an array of size \fIlen\fP.
+\fIdone[p]\fP is set to 1 if the process 
+with rank \fIp\fP in the application has terminated, and 0
+if it has not.
+.Pp
+If \fIexitCode\fP is not NULL, it is taken to point to an array of size
+\fIlen\fP.  \fIexitCode[p]\fP is set to exit code of the 
+rank \fIp\fP process.
+If \fItermSig\fP is not NULL, it is taken to point to an array of size
+\fIlen\fP and  \fItermSig[p]\fP is set to the terminating signal,
+if any, of the rank \fIp\fP process.
+If \fIterminator\fP is not NULL, it is taken to point to an array of size
+\fIlen\fP and  \fIterminator[p]\fP is set to one of 
+\fBPCT_JOB_OWNER\fP or \fBPCT_ADMINISTRATOR\fP respectively 
+if the process was aborted
+by the job's owner or by a system administrator.
+.Pp
+The function \fBCplantFamilyTerminationGrp\fP is a collective call.
+Every process that participates in the
+request must make the call with the same list of participants.
+\fInMembers\fP is the number of processes participating in the call,
+\fIrankList\fP is the list of participating process ranks, and \fItmout\fP
+is the number of seconds to wait before judging a collective operation
+among the pariticpants to be a failure.  In our implementation of this
+call, the first process in the \fIrankList\fP makes the request to \fByod2\fP
+and broadcasts the results to the others.
+.Pp
+If \fInMembers\fP is zero, or \fIrankList\fP is NULL, then this is taken
+to mean that all processes in the application are participating.
+.SH RETURN VALUE
+    
+
+.Pp
+Both functions return -1 on error, and 0 on success.  
+.SH SEE ALSO
+    
+
+.Pp
+\fByod2\fP
+\fBCplantSpawnJob\fP
+\fBCplantMyParent\fP
+\fBCplantMySelf\fP

@@ -1,0 +1,37 @@
+    COPY compatible routine.       98/11/15
+
+                                by Kazushige Goto
+					<goto@statabo.rim.or.jp>
+
+Explanation of containing files.
+
+COPYING         : GPL2 licence
+Makefile 
+README          : This file.
+copy.S		: main assembler routine.
+
+** Discriptions **
+
+This package includes copy(dcopy, scopy, zcopy, ccopy) compatible routine.
+
+** Usage **
+
+<Fortran Version>
+
+It's entirely comatible with scopy.f, dcopy.f, zcopy.f, ccopy.f.
+Please type "make".
+
+
+** Distributions  **
+
+Based on GPL2.
+
+If you have any suggestions, comments or questions, please let me know.
+
+
+Special thanks to 
+
+Naohiko Shimizu <nshimizu@et.u-tokai.ac.jp>
+               for advising MAF and prefetch strategy.
+
+                                               goto@statabo.rim.or.jp

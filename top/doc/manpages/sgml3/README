@@ -1,0 +1,30 @@
+The man page sources are the *.sgml files.  They produce *.3 man
+pages. Many of them describe more than one function.  In order 
+for "man someFunction" to find the man page for "someFunction" 
+if the file it's in is not "someFunction.3", we need a
+file "someFunction.3" which sources the file it's defined in.
+
+So... If the NAME section of your sgml file names more than one function,
+create a man page for each function (after the first) that sources 
+that file.  Name the sgml file for the first function in the NAME section.
+
+For example, CplantInterjobBarrier.sgml describes all these functions:
+
+  CplantInterjobBarrier
+  CplantInterjobBarrierGrp 
+  CplantBarrierStatus
+  CplantBarrierStatusGrp
+
+So we have three files called 
+
+  CplantInterjobBarrierGrp.3
+  CplantBarrierStatus.3
+  CplantBarrierStatusGrp.3
+
+that each contain the single line:
+
+  .so man3/CplantInterjobBarrier.3
+
+
+It would be nice to write a script that is invoked by the 
+makefile and produces these automatically from the .sgml files.

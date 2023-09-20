@@ -1,0 +1,2 @@
+FLAGS="-non_shared -D__alpha__ -D__STDC__ -DLINUX_PORTALS -D__TMP_V40_OBJ_COMPAT"
+

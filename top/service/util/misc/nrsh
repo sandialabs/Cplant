@@ -1,0 +1,82 @@
+#!/usr/bin/perl
+#
+# nrsh - a quick script to ease navigation of a cplant cluster by NodeId
+#
+# $Id: nrsh,v 1.1 2002/01/02 23:48:05 jbogden Exp $
+
+
+# set the location of the map file
+$cplant_map = "/cplant/etc/cplant-map";	# usually here
+unless (-e $cplant_map) {
+    # but is here on sss1-0
+    $tmp = "/cplant/vm/ross-release1.9/nfs-cplant/etc/cplant-map";
+    die "Cannot locate $cplant_map or $tmp" unless -e $tmp;
+    $cplant_map = $tmp;
+}
+
+# parse @ARGV
+if (scalar @ARGV == 2) {
+    if ($ARGV[0] eq "-n" && $ARGV[1]=~/\d+/) {    # ie- `nrsh -n NodeId`
+	$no_rsh  = 1;
+	$nid = $ARGV[1];
+    }
+    elsif ($ARGV[1] eq "-n" && $ARGV[0]=~/\d+/) { # ie- `nrsh NodeId -n`
+	$no_rsh  = 1;
+	$nid = $ARGV[0];
+    }
+    elsif ($ARGV[1] eq "-c" && $ARGV[0]=~/\d+/) { # ie- `nrsh NodeId -c`
+	$no_rsh  = 1;
+        $infra = 1;
+	$nid = $ARGV[0];
+    }
+    elsif ($ARGV[0] eq "-c" && $ARGV[1]=~/\d+/) { # ie- `nrsh NodeId -c`
+	$no_rsh  = 1;
+        $infra = 1;
+	$nid = $ARGV[1];
+    }
+    elsif ($ARGV[0]=~/\d+/) {
+        # assume that a nide + command is being passed
+        $nid = shift @ARGV;
+    }
+    else { &usage; }
+}
+elsif ($ARGV[0]=~/\d+/) { 			  # ie- `nrsh NodeId`
+    $nid = shift @ARGV;
+}
+else { &usage; }     # ie- `nrsh -h` or `nrsh -help` or anything else
+
+
+# do NodeID->hostname conversion
+@hosts = `cat $cplant_map` or die;	# grok map file
+#($host) = $hosts[$nid] =~ /"(\S+)"/;	# lookup node name
+($host) = $hosts[$nid] =~ /(\S+)/;	# lookup node name
+if ($infra) {
+    # this is different with cplant-map on zermatt
+    #$host = "node." . $host;		# append node to it
+    $host =~ s/if-0/node/;
+}
+# don't need this with cplant-map on zermatt
+#else {
+#    $host = "if-0." . $host;		# append if-0 to it
+#}
+
+# do something with conversion result
+if ($no_rsh) {			
+#    print STDERR "NodeID $nid is $host\n";	# say it
+    print STDOUT "$host\n";	# say it
+}
+else {
+    $cmd = "rsh $host @ARGV";
+    print STDERR "Running `$cmd`...\n";
+    exec $cmd;					# rsh to it
+}
+
+# print usage
+sub usage {
+    print "USAGE:  $0 [-n] NodeID\n";
+    print "    Performs NodeID->hostname conversion and rsh-es to NodeID.\n";
+    print "    If -n is given, just prints conversion and exits.\n";
+    print "    If -c is given, prints conversion suitable for infrastructure tools.\n";
+    print "    (Hostname appears on line number NodeID of $cplant_map.)\n";
+    exit;
+}

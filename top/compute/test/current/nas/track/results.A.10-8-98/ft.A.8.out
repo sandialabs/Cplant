@@ -1,0 +1,73 @@
+
+
+ NAS Parallel Benchmarks 2.3 -- FT Benchmark
+
+ No input file inputft.data. Using compiled defaults
+ Size                : 256x256x128
+ Iterations          :           6
+ Number of processes :           8
+ Processor array     :       1x  8
+ Layout type         :          1D
+ T =    1     Checksum =    5.046735008193D+02    5.114047905510D+02
+ T =    2     Checksum =    5.059412319734D+02    5.098809666433D+02
+ T =    3     Checksum =    5.069376896287D+02    5.098144042213D+02
+ T =    4     Checksum =    5.077892868474D+02    5.101336130759D+02
+ T =    5     Checksum =    5.085233095391D+02    5.104914655194D+02
+ T =    6     Checksum =    5.091487099959D+02    5.107917842803D+02
+ Result verification successful
+ class = A
+
+
+ FT Benchmark Completed.
+ Class           =                        A
+ Size            =              256x256x128
+ Iterations      =                        6
+ Time in seconds =                    22.81
+ Total processes =                        8
+ Compiled procs  =                        8
+ Mop/s total     =                   312.87
+ Mop/s/process   =                    39.11
+ Operation type  =           floating point
+ Verification    =               SUCCESSFUL
+ Version         =                      2.3
+ Compile date    =              08 Oct 1998
+
+ Compile options:
+    MPIF77       = /Net/mp/cplant/bin/f77 
+    FLINK        = $(MPIF77)
+    FMPI_LIB     = -L$(MPIPATH) -lmpi 
+    FMPI_INC     = -I$(MPIPATH)/include
+    FFLAGS       = -O3 -align records -align dcommons -g
+    FLINKFLAGS   = -v
+    RAND         = randi8
+
+
+ Please send the results of this run to:
+
+ NPB Development Team 
+ Internet: npb@nas.nasa.gov
+ 
+ If email is not available, send this to:
+
+ MS T27A-1
+ NASA Ames Research Center
+ Moffett Field, CA  94035-1000
+
+ Fax: 415-604-3957
+
+
+Contacting node allocation daemon...
+8 nodes are allocated to your job ID 148
+Compute partition synchronized
+Application processes begin user code.
+
+   Node name     Rank  Node   PID   Elapsed  Exit Code  Terminating Signal
+---------------- ----  ----  -----  -------  ---------  ------------------
+SU-003 node-0010    0    26   8480  0:00:29       0       none
+SU-003 node-0006    1    28   8492  0:00:29       0       none
+SU-003 node-0008    2    29   8481  0:00:29       0       none
+SU-003 node-0004    3    31   8497  0:00:30       0       none
+SU-002 node-0001    4    32   8917  0:00:30       0       none
+SU-002 node-0003    5    33   8689  0:00:30       0       none
+SU-002 node-0005    6    34   8743  0:00:30       0       none
+SU-002 node-0007    7    35   8669  0:00:30       0       none

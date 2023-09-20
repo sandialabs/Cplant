@@ -1,0 +1,47 @@
+<!--
+  $Id: CplantNodeRemaining.sgml,v 1.1 2001/11/24 23:23:17 lafisk Exp $
+-->
+
+<!doctype qwertz system>
+
+<manpage title="NODESREMAINING" sectnum="3" date='"20 November 2001"'
+    footer='"CPLANT MANPAGE"' main='"Cplant Runtime Libraries"'>
+
+
+<sect1> NAME
+    <p>
+CplantNodesRemaining
+    </p>
+
+
+<sect1> SYNOPSIS
+    <p>
+    <bf/#include &lt;cplant.h>/
+    </p>
+    <bf/int CplantNodesRemaining(void)/
+    </p>
+
+<sect1> DESCRIPTION
+    <p>
+    The function <bf/CplantNodesRemaining/ only makes sense for
+    PBS jobs.  It returns a count of the number of nodes allocated by
+    PBS to the job, less the number of nodes in use by applications
+    in the same family as the calling job.  A <it/family/ of jobs is
+    all jobs started by a single Cplant application and it's descendants.
+    Note that if your PBS script ran more than one invocation of
+    <bf/yod/ or <bf/yod2/, the count is incomplete, as it does not
+    include nodes in use by these other invocations.
+    </p> 
+
+<sect1> RETURN VALUE
+    <p>
+    This functions return -1 on error, and 0 on success.  
+    </p>
+
+<sect1> SEE ALSO
+    <p>
+    <bf/yod2/
+    <bf/yod/
+    </p>
+
+</manpage>

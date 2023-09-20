@@ -1,0 +1,22 @@
+.TH GET-PING 1 "Cplant Myrinet Utilities" "Cplant" \" -*- nroff -*-
+.SH NAME
+.B get-ping 
+\- utility (for verifying myrinet routes on Cplant)
+.SH SYNOPSIS
+.B get-ping 
+\ sender-id
+
+.SH DESCRIPTION
+.B get-ping
+is a 1-way ping utility for myrinet on Cplant. It is run 
+on a compute node in order to check on the arrival of a myrinet
+PING message from a specified node.
+It takes as argument, the node id of the sender.
+.B get-ping is normally used in conjunction with 
+.B do-ping on the sender node. 
+.B get-ping 
+relies on the Cplant rtscts myrinet driver/module running on the
+machines in question.
+
+.SH SEE ALSO
+do-ping(1) (a 1-way ping util, for sending a PING msg)

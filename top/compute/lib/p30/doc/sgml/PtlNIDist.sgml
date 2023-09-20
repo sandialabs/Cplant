@@ -1,0 +1,62 @@
+<!--
+    $Id: PtlNIDist.sgml,v 1.1 2001/01/10 21:42:54 rbbrigh Exp $
+-->
+
+<!doctype qwertz system>
+
+<manpage title="PtlNIDist" sectnum="3" date='"04 Jan 2001"'
+    footer='"Portals 3.0"' main='"Portals 3.0 Library"'>
+
+<sect1> NAME
+    <p>
+    <bf/PtlNIDist/ &mdash Calculate network distance
+
+<sect1> SYNOPSIS
+    <p>
+     #include "p30.h"
+
+     int PtlNIDist( ptl_handle_ni_t interface, ptl_process_id_t process,
+                    double* distance );
+
+<sect1> PARAMETERS
+    <p>
+     <descrip>
+     <tag /interface/
+     A handle for the communication interface to use
+     <tag /process/
+     An identifier for the process whose distance is being requested
+     <tag /distance/
+     On successful return, this location will hold the distance to the
+     remote process.
+     </descrip>
+
+<sect1> DESCRIPTION
+    <p>
+    <bf /PtlNIDist/ returns the distance to another process using the
+    specified interface.  Distances are only defined relative to an interface.
+    Distance comparisons between different interfaces on the same node may be
+    meaningless.
+
+<sect1> RETURN VALUES
+    <p>
+    <descrip>
+    <tag /PTL_OK/
+    Indicates success
+    <tag /PTL_NOINIT/
+    Indicates that the Portals API has not been successfully initialized
+    <tag /PTL_INV_NI/
+    Indicates that <bf /interface/ is not a valid network interface handle
+    <tag /PTL_INV_PROC/
+    Indicates that <bf /process/ is not a valid process identifier
+    <tag /PTL_SEGV/
+    Indicates that <bf /distance/ is not a legal address
+    </descrip>
+
+<sect1> SEE ALSO
+    <p>
+    <bf /PtlNIBarrier(3)/, <bf /PtlNIFini(3)/, <bf /PtlNIHandle(3)/,
+    <bf /PtlNIInit(3)/, <bf /PtlNIStatus(3)/<newline>
+    <bf /Portals 3.0 Message Passing Interface document/
+
+
+</manpage>

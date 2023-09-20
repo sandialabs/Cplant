@@ -1,0 +1,11 @@
+if [ $# -lt 1 ]; then
+	echo 'Usage: loop_enfs_tests dir'
+	exit 1
+fi
+
+export PATH=.:$PATH
+
+while true
+do
+	sh enfs_tests $1 || exit
+done

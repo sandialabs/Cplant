@@ -1,0 +1,45 @@
+$clienthost service-0.sandia.gov
+$clienthost service-3.sandia.gov
+$clienthost service-4.sandia.gov
+$clienthost service-5.sandia.gov
+$clienthost service-6.sandia.gov
+$clienthost service-7.sandia.gov
+$clienthost service-8.sandia.gov
+$clienthost service-9.sandia.gov
+#
+$logevent 0x1fff
+#
+# this tells mom to use plain old cp, rather
+# tha rcp, to get users stdout/stderr files into
+# the directories from which they submitted the job
+#
+$usecp service-3:/etc/home /etc/home
+$usecp service-4:/etc/home /etc/home
+$usecp service-5:/etc/home /etc/home
+$usecp service-6:/etc/home /etc/home
+$usecp service-7:/etc/home /etc/home
+$usecp service-8:/etc/home /etc/home
+$usecp service-9:/etc/home /etc/home
+$usecp service-3.sandia.gov:/etc/home /etc/home
+$usecp service-4.sandia.gov:/etc/home /etc/home
+$usecp service-5.sandia.gov:/etc/home /etc/home
+$usecp service-6.sandia.gov:/etc/home /etc/home
+$usecp service-7.sandia.gov:/etc/home /etc/home
+$usecp service-8.sandia.gov:/etc/home /etc/home
+$usecp service-9.sandia.gov:/etc/home /etc/home
+#
+# The number of seconds grace period.  Jobs that
+# exceed their allotted time by this grace period
+# will be killed.
+#
+# A zero value here indicates that jobs will be
+# killed as soon as the mom realizes they are over
+# their alloted wall clock time.
+#
+# A negative value here indicates that jobs should
+# never be killed by the mom.
+#
+# Default is "don't kill jobs that go over walltime limit".
+#
+$cplant_grace 300
+

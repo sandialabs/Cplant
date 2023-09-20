@@ -1,0 +1,71 @@
+#! /bin/sh
+#
+# $Id: head_p3.in,v 1.1 2001/06/28 22:21:30 pumatst Exp $
+#
+
+#
+# CPLANT_PATH - Base directory for startup files, include files, and libraries
+# 
+CPLANT_PATH=${CPLANT_PATH-/scratch/jrstear/west/20110/top}
+
+INCLUDE_DIR="\
+    -I$CPLANT_PATH/include \
+    -I$CPLANT_PATH/include/sys \
+    -I$CPLANT_PATH/include/portals \
+    -I$CPLANT_PATH/include/IO \
+    -I$CPLANT_PATH/include/load \
+    -I$CPLANT_PATH/compute/OS/linux/include \
+    -I$CPLANT_PATH/compute/lib/mpich-1.2.0/include \
+    "
+
+LIB_DIR="\
+    -L$CPLANT_PATH/compute/lib/IO/alpha-linux \
+    -L$CPLANT_PATH/lib/comm/alpha-linux \
+    -L$CPLANT_PATH/lib/puma/alpha-linux \
+    -L$CPLANT_PATH/compute/lib/apps/alpha-linux \
+    -L$CPLANT_PATH/compute/lib/p30/lib/alpha-linux \
+    -L$CPLANT_PATH/compute/lib/mpich-1.2.0/alpha-linux \
+    " 
+
+STARTUP_DIR="$CPLANT_PATH/lib/start/alpha-linux"
+     
+FLAGS="-non_shared -D__alpha__ -D__STDC__ -DLINUX_PORTALS -D__TMP_V40_OBJ_COMPAT"
+
+#dont change this list w/o 1st testing changes on ALL the compilers (gnu, compaq,OSF...)
+CPLANT_LIBS="-lsrvr -lpuma -lgrp_io -lpuma -lenfs -lsrvr -lp30api -lp30myr -lp30lib"
+
+DoLink=1
+ServiceNode=0
+# link? service node compile?
+for arg in "$@" ; do
+    case "$arg" in 
+        -c)
+        DoLink=0
+        break
+        ;;
+        -service)
+        ServiceNode=1
+        shift
+        break
+        ;;
+    esac
+done
+
+if [ $ServiceNode = 1 ] ; then
+/usr/bin/ccc $FLAGS \
+    $*
+elif [ $DoLink = 1 ] ; then 
+/usr/bin/ccc -std0 $FLAGS -fast \
+        $INCLUDE_DIR \
+        $STARTUP_DIR/startup.o \
+        $* \
+        $LIB_DIR \
+        $CPLANT_LIBS
+else
+/usr/bin/ccc -std0 $FLAGS -fast \
+        $INCLUDE_DIR \
+        $*
+fi
+
+
+exit $?

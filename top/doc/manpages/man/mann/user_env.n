@@ -1,0 +1,57 @@
+.if n .ds Q \&"
+.if t .ds Q ``
+.if n .ds U \&"
+.if t .ds U ''
+.TH user_env 1M "28 August 2002" "Cplant" "Cplant System Manager's Manual"
+.tr \&
+.nr bi 0
+.nr ll 0
+.nr el 0
+.de Pp
+.ie \\n(ll>0 \{\
+.ie \\n(bi=1 \{\
+.nr bi 0
+.if \\n(t\\n(ll=0 \{.IP \\(bu\}
+.if \\n(t\\n(ll=1 \{.IP \\n+(e\\n(el.\}
+.\}
+.el .sp 
+.\}
+.el \{\
+.ie \\nh=1 \{\
+.LP
+.nr h 0
+.\}
+.el .PP 
+.\}
+..
+.SH NAME
+    
+
+.Pp
+\fBuser_env\fP -- Cplant user_environment startup script
+.SH SYNOPSIS
+    
+
+.Pp
+\fBuser_env\fP start|stop|restart bebopd|pct|yod
+.SH DESCRIPTION
+
+.Pp
+\fBuser_env\fP is the script in the init.d/ directory which is used
+to start or stop cplant daemon processes on a node.  If yod is
+given, the script sets up some links appropriate for yod
+submission, and exits.  If pct is given, a pct process is started.
+If bebopd is given, it starts up bebopd.  If bebopd is given, the
+script looks for a line in etc/cfg with \*Q bebopd_arguments \*U
+appearing before a colon, what appears after the colon is a
+verbatim list of arguments to give to bebopd.  If such a line does
+not exist, \fBuser_env\fP simply runs \*Qbebopd -d\*U.  In this way the
+bebopd arguments are saved in the cfg file rather than this script
+(although it is a bit of a hack!).
+.Pp
+.SH SEE ALSO
+    
+
+.Pp
+\fBcfg\fP, \fBcplant\fP,
+Guide to building and installing Cplant

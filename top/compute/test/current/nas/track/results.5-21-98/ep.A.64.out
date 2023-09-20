@@ -1,0 +1,132 @@
+
+ NAS Parallel Benchmarks 2.3 -- EP Benchmark
+
+ Number of random numbers generated:    536870912  
+ Number of active processes:                   64
+
+EP Benchmark Results:
+
+CPU Time =    2.5732
+N = 2^   28
+No. Gaussian Pairs =     210832767.
+Sums =    -4.295875165631733D+03   -1.580732573678565D+04
+Counts:
+  0      98257395.
+  1      93827014.
+  2      17611549.
+  3       1110028.
+  4         26536.
+  5           245.
+  6             0.
+  7             0.
+  8             0.
+  9             0.
+
+
+ EP Benchmark Completed.
+ Class           =                        A
+ Size            =                536870912  
+ Iterations      =                        0
+ Time in seconds =                     2.57
+ Total processes =                       64
+ Compiled procs  =                       64
+ Mop/s total     =                   208.64
+ Mop/s/process   =                     3.26
+ Operation type  = Random numbers generated
+ Verification    =               SUCCESSFUL
+ Version         =                      2.3
+ Compile date    =              21 May 1998
+
+ Compile options:
+    MPIF77       = /Net/mp/cplant/bin/f77 
+    FLINK        = $(MPIF77)
+    FMPI_LIB     = -L$(MPIPATH) -lmpi 
+    FMPI_INC     = -I$(MPIPATH)/include
+    FFLAGS       = -O3 -align records -align dcommons
+    FLINKFLAGS   = (none)
+    RAND         = randi8
+
+
+ Please send the results of this run to:
+
+ NPB Development Team 
+ Internet: npb@nas.nasa.gov
+ 
+ If email is not available, send this to:
+
+ MS T27A-1
+ NASA Ames Research Center
+ Moffett Field, CA  94035-1000
+
+ Fax: 415-604-3957
+
+
+Contacting node allocation daemon...
+64 nodes are allocated to your job ID 819
+
+   Node name        Rank  Node   PID   Elapsed  Exit Code  Terminating Signal
+------------------- ----  ----  -----  -------  ---------  ------------------
+                       0    18  14396  0:00:06       0       none
+                       1    19  14399  0:00:06       0       none
+                       2    20  14391  0:00:06       0       none
+                       3    21  14395  0:00:05       0       none
+                       4    22  14394  0:00:06       0       none
+                       5    23  14397  0:00:05       0       none
+                       6    24  14390  0:00:05       0       none
+                       7    25  14390  0:00:05       0       none
+                       8    26  14396  0:00:06       0       none
+                       9    28  14384  0:00:05       0       none
+                      10    29  14387  0:00:05       0       none
+                      11    30  14394  0:00:05       0       none
+                      12    32  14720  0:00:06       0       none
+                      13    33  14561  0:00:05       0       none
+                      14    34  14529  0:00:06       0       none
+                      15    35  14521  0:00:05       0       none
+                      16    36  14656  0:00:05       0       none
+                      17    37  14476  0:00:06       0       none
+                      18    38  14443  0:00:06       0       none
+                      19    39  14496  0:00:05       0       none
+                      20    40  14219  0:00:06       0       none
+                      21    41  14234  0:00:05       0       none
+                      22    42  14213  0:00:06       0       none
+                      23    43  14207  0:00:05       0       none
+                      24    44  14259  0:00:05       0       none
+                      25    45  14202  0:00:06       0       none
+                      26    46  14209  0:00:06       0       none
+                      27    48  27763  0:00:06       0       none
+                      28    49  27682  0:00:06       0       none
+                      29    50  27690  0:00:06       0       none
+                      30    51  27668  0:00:05       0       none
+                      31    52  27660  0:00:06       0       none
+                      32    53  27684  0:00:06       0       none
+                      33    54  27655  0:00:05       0       none
+                      34    55  27654  0:00:06       0       none
+                      35    56  27667  0:00:05       0       none
+                      36    57  27643  0:00:06       0       none
+                      37    58  27655  0:00:05       0       none
+                      38    59  27660  0:00:05       0       none
+                      39    60  27655  0:00:05       0       none
+                      40    61  27634  0:00:05       0       none
+                      41    62  27701  0:00:05       0       none
+                      42    64  27655  0:00:06       0       none
+                      43    65  27619  0:00:06       0       none
+                      44    66  27706  0:00:05       0       none
+                      45    67  27713  0:00:05       0       none
+                      46    68  27722  0:00:05       0       none
+                      47    69  27719  0:00:05       0       none
+                      48    70  27737  0:00:05       0       none
+                      49    71  27712  0:00:06       0       none
+                      50    72  27693  0:00:05       0       none
+                      51    73  27680  0:00:06       0       none
+                      52    74  27691  0:00:06       0       none
+                      53    75  27691  0:00:06       0       none
+                      54    76  27691  0:00:06       0       none
+                      55    77  27688  0:00:05       0       none
+                      56    78  27593  0:00:05       0       none
+                      57    80  27640  0:00:06       0       none
+                      58    81  27694  0:00:05       0       none
+                      59    82  27688  0:00:05       0       none
+                      60    83  27679  0:00:05       0       none
+                      61    84  27681  0:00:05       0       none
+                      62    85  27693  0:00:05       0       none
+                      63    86  27690  0:00:05       0       none

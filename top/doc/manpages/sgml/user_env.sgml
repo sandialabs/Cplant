@@ -1,0 +1,40 @@
+<!--
+    $Id: user_env.sgml,v 1.1.2.2 2002/08/28 21:41:41 jrstear Exp $
+-->
+
+<!doctype qwertz system>
+
+<manpage title="user_env" sectnum="1M" date='"28 August 2002"'
+    footer='"Cplant"' main='"Cplant System Manager&quot;s Manual"'>
+
+
+<sect1> NAME
+    <p>
+    <bf/user_env/ &mdash Cplant user_environment startup script
+    </p>
+
+<sect1> SYNOPSIS
+    <p>
+    <bf/user_env/ start|stop|restart bebopd|pct|yod
+    </p>
+
+<sect1> DESCRIPTION<p>
+    <bf/user_env/ is the script in the init.d/ directory which is used
+    to start or stop cplant daemon processes on a node.  If yod is
+    given, the script sets up some links appropriate for yod
+    submission, and exits.  If pct is given, a pct process is started.
+    If bebopd is given, it starts up bebopd.  If bebopd is given, the
+    script looks for a line in etc/cfg with " bebopd_arguments "
+    appearing before a colon, what appears after the colon is a
+    verbatim list of arguments to give to bebopd.  If such a line does
+    not exist, <bf/user_env/ simply runs "bebopd -d".  In this way the
+    bebopd arguments are saved in the cfg file rather than this script
+    (although it is a bit of a hack!).
+    
+<sect1> SEE ALSO
+    <p>
+    <bf>cfg</bf>, <bf>cplant</bf>,
+    Guide to building and installing Cplant
+    </p>
+
+</manpage>

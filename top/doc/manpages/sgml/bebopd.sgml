@@ -1,0 +1,230 @@
+<!--
+    $Id: bebopd.sgml,v 1.2.4.1 2002/08/28 21:38:52 jrstear Exp $
+-->
+
+<!doctype qwertz system>
+
+<manpage title="bebopd" sectnum="8L" date='"04 May 2001"'
+    footer='"Cplant"' main='"Cplant Utilities"'>
+
+
+<sect1> NAME
+    <p>
+    <bf/bebopd/ &mdash Cplant node allocation daemon
+    </p>
+
+
+
+<sect1> SYNOPSIS
+    <p>
+    <bf/bebopd/ &lsqb;<bf/-D/&rsqb
+        &emsp;
+        &lsqb;<bf/-S/ &lsqb;1&verbar;0&rsqb;&rsqb
+        &emsp;
+        &lsqb;<bf/-L/ &lsqb;1&verbar;0&rsqb;&rsqb
+        &emsp;
+	&lsqb;<bf/-daemon/&rsqb
+	</p>
+	<p>
+	&lsqb;<bf/-alternative/&rsqb
+        &emsp;
+	&lsqb;<bf/-r <it/optional-file-name//&rsqb
+        &emsp;
+	&lsqb;<bf/-help/&rsqb
+	</p>
+	<p>
+	&lsqb;<bf/-PBSsupport/&rsqb
+        &emsp;
+	&lsqb;<bf/-PBSupdate/&rsqb
+        &emsp;
+	&lsqb;<bf/-PBSlist <it/node,list//&rsqb
+    </p>
+
+<sect1> DESCRIPTION
+    <p>
+    The <bf/bebopd/ daemon runs in the service partition.  It is the
+    point in the Cplant where knowledge of compute node status resides.
+    It has the following interfaces:
+
+    <p>
+    <descrip>
+    <tag/PCTs/
+    <p> 
+      The <bf/bebopd/ receives messages
+       from the compute node PCTs when they start and end, and when an
+       application terminates.  If the 
+       <bf/bebopd/ is restarted,
+       it contacts the PCTs to identify itself to them.  The <bf/bebopd/
+       sends status queries as needed to the PCTs and maintains the
+       responses.
+    </p> 
+    <tag/yod/
+    <p> 
+    The <bf/bebopd/ accepts yod requests on behalf of 
+    users wishing to run a parallel
+    application.  The <bf/bebopd/ attempts to allocate to the job 
+    the requested nodes, and assigns a numeric job ID to the application.
+    </p> 
+    <tag/pingd/
+    <p> 
+    It also accepts pingd requests for updates from the compute partition,
+    and returns pingd a list of compute node status information.  It
+    accepts requests from pingd to send a SIGTERM
+    or a SIGKILL to an application, kill PCTs, or to
+    note that a PCT it thought was out there is gone.  The bebopd may also
+    receive requests from pingd to turn on or off PBSsupport or PBSupdate,
+    or to change the number of nodes reserved for interactive (i.e. non-PBS) use.
+    </p>
+
+    <tag/PBS server/
+    <p>
+    When the bebopd is run in PBSupdate mode, it updates the PBS server
+    whenever the number of live compute nodes changes.  That is, it
+    uses the PBS qmgr client to keep the resources_available.size and
+    resources_max.size attributes of the PBS server accurate.
+    </p>
+
+    </descrip>
+
+    <p>
+    The <bf/bebopd/ as designed today exists as a single process on one
+    node of the service partition.  The plan
+    is to run <bf/bebopd/ as a distributed service across the service partition,
+    both in the interest of fault tolerance and to improve response
+    time to yod and pingd users.
+    </p>
+
+<sect1> OPTIONS
+    <p>
+    <descrip>
+
+    <tag/-alternative/
+	<p>
+	Every portals process has a portal ID.  It is this ID that the
+	portals module uses when dispatching received messages to processes.
+	For testing purposes we may want to
+	run another bebopd on the same node. 
+	This argument causes the <bf/bebopd/ to request an unused portal ID from the
+	portals module.  The bebopd will display it's alternative portal ID on 
+        startup.
+	</p>
+
+    <tag/-D/
+	<p>
+	This option causes the <bf/bebopd/ to output information about
+	what it is doing.  Repeating the <it/-D/ option on the command
+	line increases the amount of information.
+	</p>
+
+    <tag/-S &lsqb;0&verbar;1&rsqb
+        <p>
+        The <bf/bebopd/ outputs warnings and errors, and, if the
+        <it/-D/ option is used, status information.
+        The <it/0/ switch turns off all output from the <bf/bebopd/ to stderr.
+        The <it/1/ switch turns it on.  By default, the <bf/bebopd/ <it/does not/
+        write to stderr.
+        </p>
+ 
+    <tag/-L &lsqb;0&verbar;1&rsqb
+        <p>
+        The <bf/bebopd/ outputs warnings and errors, and, if the
+        <it/-D/ option is used, status information.
+        The <it/0/ switch turns off all output from the <bf/bebopd/ to the
+        log file.
+        The <it/1/ switch turns it on.  By default, the <bf/bebopd/ <it/does/
+        write to log file.
+        </p>
+
+
+    <tag/-r <it/optional-file-name//
+	<p>
+	This option specifies that the <bf/bebopd/ is being restarted.
+	The <bf/bebopd/ always saves a file (<tt/saved_pct_list/ in the
+	same directory as the bebopd registry file)
+	containing a list of active
+	PCTs when it exits.  When <bf/bebopd/ restarts, it reads in
+	this file and contacts the PCTs for their status.  If an
+	<it/optional-file-name/ is given, the bebopd will look there
+	for the PCT list instead of in the <tt/saved_pct_list/ file.
+	</p>
+
+    <tag/-help/
+        <p>
+	This option displays the list of bebopd options.
+	</p>
+
+    <tag/-daemon/
+        <p>
+	This option runs the bebopd in the background.  The default is to
+	run the bebopd as a foreground process.
+	</p>
+
+    <tag/-PBSsupport/
+    <tag/-PBSupdate/
+	<p>
+PBS (Portal Batch System) on Cplant requires support from the bebopd.
+The bebopd is running in
+PBSsupport mode if it is keeping track of the number of live compute
+nodes in the machine and policing PBS users to ensure they use no more
+nodes than they were allocated.  The bebopd is running in PBSupdate mode
+if in addition it sends updates to the PBS server whenever the number
+of live compute nodes changes.  These two arguments can be used to
+turn on PBSsupport or to turn on PBSupdate.
+Since PBSupdate implies PBSsupport, turning on
+PBSupdate automatically turns on PBSsupport.
+	</p>
+
+    <tag/-PBSlist <it/node,list//
+	<p>
+The bebopd can reserve \fInumNodes\fP nodes for interactive use.  PBS will
+not be able to schedule these nodes for batch jobs.  Specify the list
+of interactive nodes here (ie- 23,45..78,99).
+	</p>
+
+    </descrip>
+
+<sect1> ERRORS
+    <p>
+    Errors and warnings are logged to /var/log/cplant on the node hosting
+    the bebopd.
+    </p>
+	
+<sect1> SIGNALS
+    <p>
+On receiving a SIGUSR1 or SIGUSR2, the bebopd will write to the log file
+it's identifying information and what routine it is in.
+On receiving a SIGHUP, the bebopd will close and reopen it's log file,
+list identifying information to the log file, and re-read the site file.
+    </p>
+
+<sect1> FILES
+    <p><descrip>
+    <tag>/etc/local/saved_pct_list</tag>
+        <p>
+         This file lists all PCTs that were active when the last
+	 <bf/bebopd/ terminated.  
+    <tag>/etc/local/site</tag>
+        <p>
+         This file defines site specific information that may be required
+         by the <bf/bebopd/.
+    <tag>/var/log/cplant</tag>
+        <p>
+         This is the log file where Cplant daemons and utilities log
+         status.
+    </descrip>
+
+ 
+<sect1> SEE ALSO
+    <p>
+    <bf>pingd</bf>
+    <bf>yod</bf>
+    <bf>pct</bf>
+    <bf>site</bf>
+    </p>
+
+<sect1> BUGS
+    <p>
+    Let us know if you locate any (cplant-help@cs.sandia.gov).
+    </p>
+
+</manpage>

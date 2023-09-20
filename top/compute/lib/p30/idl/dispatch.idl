@@ -1,0 +1,16 @@
+/*
+ * dispatch_table.c
+ *
+ * Automatically generated from the api.h file by idl
+ *
+ */
+#include <lib-p30.h>
+#include <p30/lib-dispatch.h>
+
+
+dispatch_table_t dispatch_table[] = {
+%%
+	/* ${index} */	{do_${func_name}, "${func_name}"},
+%%
+	/*    */	{0, ""}
+};

@@ -1,0 +1,77 @@
+98/11/08 : add PMCTR information of sgemm.
+
+98/11/07 : add information about PMCTR, if you're interested in my
+           routine, please check this document.
+           Error Handling changed(using xerbla)
+
+98/10/27 : interface problem was fixed(maybe)
+           typo in gemm_k.S was fixed.
+
+98/09/27 : Access of C matrix has benn changed.
+           Now we can get 815MFlops!!
+           According to RPCC, dgemm runs 840MFlops.
+           According to Performance Counter(PMCTR),
+           there are no difference between dgemm and sgemm in 
+           most inner routine.
+           I think most of optimization are finished.
+
+98/09/15 : The access of inner matrix array(sb) has been changed.
+           The prefetch estimation was changed.
+           According to RPCC, dgemm runs 819MFlops, sgemm runs 974MFlops.
+
+98/09/14 : sgemm routine's bug was fixed.
+           The access of inner matrix array(sa) has been changed.
+           The way of loading value was changed.
+           According to RPCC, dgemm runs 800MFlops, sgemm runs 950MFlops.
+
+98/09/01 : sgemm routine is available!
+           It runs about 920MFlops!!
+
+98/08/27 : Stack handling has been changed
+
+98/06/07 : Now works C version
+
+98/06/06 : Merged FORTRAN version and C version.
+	   I'm trying to work on WIN/NT but fail.
+
+98/05/18 : Handling of GP is not correct.  Fixed.
+           Thanks for Taro Okamoto <taro@geo.titech.ac.jp>
+
+98/04/14 : Technical document is updated.
+           Prefetch addresses are modified.
+           Now, it reaches 780MFlops!!  800MFlops is coming soon.
+           Even Transposed routine, it shows 750MFlops constantly.
+
+98/04/13 : I found stack should be aligned for 256kB
+           Wow, it shows 767MFlops on 1000x1000!!
+
+98/04/12 : Changed block size.  about 720 to 730MFlops.
+
+98/04/05 : Dec's as problem was solved.
+           Handling stacks was changed.
+           I think my routine is almost finished.
+
+98/04/03 : integer register $18 is confused with $17. fixed.
+           Robert Williams tells me something wrong 
+           on Digital UNIX.  I think this is stack problem.
+           stack handling has changed.
+           Block Size has changed(Improved TxT speed).
+           This routine's ability is 731MFlops(1000x1000)
+
+98/04/02 : new assembler routine is available.  This time,
+           I took a new algorithm, and Transposed routine
+           is also available.
+           This routine's ability is 715MFlops(1000x1000).
+
+98/03/21 : unaligned assembler Non-Non routine is available.
+           This routine's ability is 650MFlops(1000 x 1000).
+
+           append check program.  please type "make check2"
+
+98/03/20 : From: Robert Williams <bob@bob.usuf2.usuhs.mil>
+           He tells me about unaligned routine's bug.
+
+98/03/19 : unaligned Non-Non routine(C) is available.
+
+98/03/01 : aligned assembler Non-Non routine is available.
+           This routine's avility is 715MFlops(1000x1000).

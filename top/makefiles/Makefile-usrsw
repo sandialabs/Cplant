@@ -1,0 +1,15 @@
+#
+include ../Makefile-common
+
+SUBDIRS = ../lib \
+          ../compute/lib \
+          ../compute/tool \
+          ../compute/test/current/general \
+          ../compute/test/current/mpi/simple \
+          ../compute/test/current/mpi/perf/pingpong \
+          ../compute/test/current/nas \
+          ../compute/test/current/mplinpack
+all:
+
+%:
+	$(do-subdirs)

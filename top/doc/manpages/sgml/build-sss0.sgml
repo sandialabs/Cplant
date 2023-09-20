@@ -1,0 +1,65 @@
+<!--
+    $Id: build-sss0.sgml,v 1.1 1999/12/18 00:04:46 jsotto Exp $
+-->
+
+<!doctype qwertz system>
+
+<manpage title="build-sss0" sectnum="1M" date='"08 January 1999"'
+    footer='"Cplant"' main='"Cplant System Manager&quot;s Manual"'>
+
+
+<sect1> NAME
+    <p>
+    <bf/build-sss0/ &mdash install LINUX on a system support station level 0
+	(SSS0)  
+    </p>
+
+
+
+<sect1> SYNOPSIS
+    <p>
+    <bf/build-sss0 -c cab_num -p cab_pos -d disk/ 
+    </p>
+
+<sect1> DESCRIPTION
+    <p>
+    <bf/boot-sss0/ installs LINUX on an SSS0. <bf/cab_num/ is the number of the 
+    system support cabinet in which the CPU resides. <bf/cab_pos/ is the 
+    position of the CPU within the cabinet. Numbers are zero based. <bf/disk/
+    defines the type of harddisk. Valid disk types are <bf/hda/ and <bf/sda/. 
+    <bf/build-sss0/ adds an entry to <bf/sss0-config/ and then calls
+    <bf/install-os/. It also adds a route to /etc/sysconfig/static-routes 
+    which defines a route to the SSS0's second ethernet card. After LINUX is
+    installed <bf/udpate-sss0, udpate-sbin and update-ct/ are called to install
+    cplant tools.
+    </p>
+
+<sect1> NOTES
+    <p>
+    The LINUX distribution which is installed on the SSS0 is copied from
+    <bf/nfs-root-alpha/. 
+    </p> 
+
+<sect1> LIMITATIONS
+    <p>
+    This script assumes 8 SSS0's to a cabinet. 
+    The sss0 must have already been discovered.
+    </p>
+
+<sect1> AUTHOR
+    <p>
+    Michael Levenhagen
+    </p>
+
+
+<sect1> SEE ALSO
+    <p>
+    <bf>update-sss0</bf>,
+    <bf>update-sbin</bf>,
+    <bf>update-ct</bf>,
+    <bf>install-os</bf>,
+    <bf>/cplant/sss0-config</bf>
+    <bf>/cplant/nfs-root-alpha</bf>
+    <bf>/etc/sysconfig/static-routes</bf>
+    </p>
+</manpage>

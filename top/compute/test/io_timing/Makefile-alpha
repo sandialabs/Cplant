@@ -1,0 +1,63 @@
+#
+# $Id: Makefile-alpha,v 1.3 1999/01/29 23:05:03 jpvandy Exp $
+#
+ 
+include ../../../../Makefile-common
+
+CC = $(CPCC)
+FC = $(CPF77)
+
+SOURCES = $(shell ls ../*.c )
+OBJS    = $(notdir $(SOURCES:.c=.o))
+EXECS   = $(OBJS:.o=)
+DEPS    = $(OBJS:.o=.d)
+
+vpath %.c ..
+vpath %.o $(CPLANT_TOP)/lib/start/$(CPLANT_ARCH)-$(OS):\
+	$(CPLANT_TOP)/IO/util/sfyod/sfyod_support.o
+vpath %.a $(CPLANT_TOP)/lib/comm/$(CPLANT_ARCH)-$(OS):\
+	$(CPLANT_TOP)/lib/puma/$(CPLANT_ARCH)-$(OS):\
+	$(CPLANT_TOP)/compute/lib/apps/$(CPLANT_ARCH)-$(OS):\
+	$(CPLANT_TOP)/compute/lib/IO/$(CPLANT_ARCH)-$(OS):\
+	$(CPLANT_TOP)/IO/util/sfyod/wmdlib/$(CPLANT_ARCH)-$(OS)
+
+LIBS    = libpuma.a libsrvr.a libsfyod.a libwmd.a
+
+WMDINC  = $(CPLANT_TOP)/IO/util/sfyod/wmdlib/h
+WMDDIR  = $(CPLANT_TOP)/IO/util/sfyod/wmdlib/$(CPLANT_ARCH)-$(OS)
+WMDLIB  = wmd
+
+INCLUDEDIRS = -I$(CPLANT_TOP)/include\
+              -I$(CPLANT_TOP)/include/sys\
+              -I$(CPLANT_TOP)/include/portals\
+              -I$(CPLANT_TOP)/include/IO\
+              -I$(CPLANT_TOP)/include/load\
+              -I$(CPLANT_TOP)/include/srvr\
+              -I$(CPLANT_TOP)/compute/OS/linux/include\
+			  -I$(WMDINC)
+
+INSTALLDIR     = $(sbindir)
+INSTALLTARGETS = $(EXECS)
+
+all: $(EXECS)
+
+ifeq ($(MAKE_DEPS),yes)
+include $(DEPS)
+endif
+
+$(OBJS): %.o : %.c
+	$(CC) -c -I$(WMDINC) $(WARNINGS) $<
+
+$(EXECS): % : %.o $(LIBS)
+	$(CC) -o $@ $< -L$(WMDDIR) -l$(WMDLIB)
+
+dep: $(DEPS)
+
+install uninstall: $(INSTALLTARGETS)
+	@$($@)
+
+clean:
+	-rm -f $(EXECS) $(OBJS) $(DEPS)
+
+print:
+	@echo $(TOPSOURCES)

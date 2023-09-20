@@ -1,0 +1,17 @@
+$Id: README.dir_struct,v 1.2 1997/08/27 04:33:52 rolf Exp $
+
+    This directory contains include files that are used by programs in
+    all partitions. For example portal data structures are defined here,
+    since the definition has to be known by the kernels, as well as
+    programs in the service partition that make use of portals.
+
+    To keep clutter down, we create subdirectories for specific
+    functions.
+
+    +---/top
+    |   +---/include
+    |   |   +---/sys
+    |   |   +---/IO
+    |   |   +---/load
+    |   |   +---/portals
+

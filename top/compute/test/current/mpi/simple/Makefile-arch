@@ -1,0 +1,51 @@
+#
+# $Id: Makefile-arch,v 1.1 2001/10/29 22:47:56 pumatst Exp $
+#
+
+include ../../../../../../Makefile-common
+
+CC             = $(CPCC)
+FC             = $(CPF77)
+
+MPPCSOURCES    = $(shell ls ../*.c) 
+MPPCOBJECTS    = $(notdir $(MPPCSOURCES:.c=.o))
+MPPCEXECS      = $(notdir $(MPPCSOURCES:.c=))
+
+MPPFSOURCES    = $(shell ls ../*.f)
+MPPFOBJECTS    = $(notdir $(MPPFSOURCES:.f=.o))
+MPPFEXECS      = $(notdir $(MPPFSOURCES:.f=))
+
+vpath %.c ..
+vpath %.a $(CPLANT_TOP)/lib/comm/$(CPLANT_ARCH)-$(OS):$(CPLANT_TOP)/lib/puma/$(CPLANT_ARCH)-$(OS)\
+          $(CPLANT_TOP)/compute/lib/apps/$(CPLANT_ARCH)-$(OS)
+
+ifeq ($(OS),osf)
+EXECS          = $(MPPCEXECS) $(MPPFEXECS)
+else
+EXECS          = $(MPPCEXECS) $(MPPFEXECS)
+endif
+
+INSTALLDIR     = $(testdir)
+INSTALLTARGETS = $(EXECS)
+
+all: $(EXECS)
+
+$(MPPCOBJECTS): %.o : ../%.c
+	$(CC) -c $<
+
+$(MPPFOBJECTS): %.o : ../%.f
+	$(FC) -c $<
+
+% : ../%.c
+	$(CC) -o $* ../$*.c -lmpi
+
+% : ../%.f
+	$(FC) -o $* ../$*.f -lmpi
+
+install uninstall: $(INSTALLTARGETS)
+	@$($@)
+
+clean:
+	-rm -f $(EXECS) $(MPPCOBJECTS) $(MPPFOBJECTS)
+
+

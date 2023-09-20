@@ -1,0 +1,13 @@
+if [ $# -lt 1 ]; then
+	echo 'Usage: enfs_tests dir'
+	exit 1
+fi
+
+export PATH=.:$PATH
+export NFSTESTDIR=$1
+
+for i in '-b' '-g' '-s'
+do
+echo $i
+	sh runtests $i -t || exit
+done

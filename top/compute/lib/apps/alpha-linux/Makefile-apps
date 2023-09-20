@@ -1,0 +1,138 @@
+#
+# $Id: Makefile-apps,v 1.6.4.1 2002/05/16 18:22:57 rklundt Exp $
+#
+
+LIBIOSOURCES = access.c \
+               binval.c \
+               chdir.c \
+               chmod.c \
+               chown.c \
+               close.c \
+               dup.c \
+               Fstat.c \
+               fcntl.c \
+               fstatfs.c \
+               fsync.c \
+               ftruncate.c \
+               getcwd.c \
+               getdirentries.c \
+               gethostname.c \
+               ioctl.c \
+               isatty.c \
+               link.c \
+               lseek.c \
+               lstat.c \
+               mkdir.c \
+	       mmap.c \
+               nodekill.c \
+               open.c \
+               open_catalog.c \
+               read.c \
+               rename.c \
+               rmdir.c \
+               shrink_path.c \
+               stat.c \
+               statfs.c \
+               symlink.c \
+               sync.c \
+               truncate.c \
+               ttyname.c \
+               uname.c \
+               unlink.c \
+               umask.c \
+               write.c \
+               protocol_switch.c \
+               yod_io_fns.c \
+               dummy_io_fns.c
+
+ifeq ($(OS),osf)
+LIBIOSOURCES += flock.c
+endif
+
+ifeq ($(OS),linux)
+LIBIOSOURCES += llseek.c
+endif
+
+LIBIOOBJECTS = $(LIBIOSOURCES:.c=.o)
+
+#
+# historically, we created a libc without the
+# object files containing the functions we
+# redefine.  This was because of linkage problems
+# when libc.a appeared on the link line.  Better
+# structured libraries and the
+# link_these_in_now_please array in startup.c
+# render libgrp_c.a library unneccesary.
+#
+LIBCOBJECTS  = rename.o \
+               uname.o \
+               umask.o \
+               chmod.o \
+               mkdir.o \
+               open.o \
+	       close.o \
+               read.o \
+               write.o \
+               lseek.o \
+	       fcntl.o \
+               access.o \
+               dup.o \
+               dup2.o \
+               creat.o \
+               chdir.o \
+               getcwd.o \
+               getwd.o \
+               chown.o \
+               ttyname.o \
+               isatty.o \
+               link.o \
+               symlink.o \
+               unlink.o \
+               rmdir.o \
+               gethostname.o \
+               fsync.o \
+               sync.o \
+               truncate.o \
+               ftruncate.o \
+               fstatfs.o \
+               statfs.o \
+               flock.o \
+               chroot.o \
+               gethostid.o \
+               sethostid.o \
+               pipe.o \
+               doprnt.o \
+               ots_div_alpha.o \
+               flockfile.o
+
+ifeq ($(OS),linux)
+LIBCOBJECTS += readlink.o \
+               fxstat.o \
+               xstat.o \
+               lxstat.o \
+               getdents.o \
+               ttyname_r.o \
+               xmknod.o \
+               open_catalog.o
+endif
+
+ifeq ($(OS),osf)
+LIBCOBJECTS += fstat.o \
+	       mmap.o \
+               exc_failure.o
+
+LIBUFOROBJECTS = for_u_access.o \
+                 for_u_chdir.o \
+                 for_u_chmod.o \
+                 for_u_fstat.o \
+                 for_u_flush.o \
+                 for_u_getcwd.o \
+                 for_u_isatty.o \
+                 for_u_link.o \
+                 for_u_lstat.o \
+                 for_u_rename.o \
+                 for_u_stat.o \
+                 for_u_unlink.o \
+                 for_u_umask.o
+endif
+

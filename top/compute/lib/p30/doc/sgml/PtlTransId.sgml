@@ -1,0 +1,72 @@
+<!--
+    $Id: PtlTransId.sgml,v 1.1 2001/01/10 21:42:54 rbbrigh Exp $
+-->
+
+<!doctype qwertz system>
+
+<manpage title="PtlTransId" sectnum="3" date='"04 Jan 2001"'
+    footer='"Portals 3.0"' main='"Portals 3.0 Library"'>
+
+<sect1> NAME
+    <p>
+    <bf/PtlTransId/ &mdash Translate the id of the current process
+
+<sect1> SYNOPSIS
+    <p>
+     #include "p30.h"
+
+     int PtlTransId( ptl_process_id_t* id );
+
+<sect1> PARAMETERS
+    <p>
+     <descrip>
+     <tag /id/
+     On successful return, this location will hold the id for the calling
+     expressed as both a <bf /PTL_ADDR_NID/ type and a <bf /PTL_ADDR_GID/
+     type.
+     </descrip>
+
+<sect1> DESCRIPTION
+    <p>
+    Processes that use the Portals API, can be identified using a node id
+    and process id.  Every node in the computing system has a unique node
+    identifier and every process running on a node has a unique process
+    identifier.  As such, any process in the computing system can be
+    identified by its node id and process id.  Processes can also be
+    identified using a group id and rank id.  When a portals job is
+    loaded, it is given a unique group identifier. In addition, each
+    process in the job is assigned a unique rank id starting at zero.
+
+    The Portals API defines a type, <bf /ptl_process_id_t/ for
+    representing process ids using either or both of the schemes.
+    <bf /PtlTransId/ translates addresses between the two schemes.
+    <bf /ptl_process_id_t/ is defined as:
+<code>
+typedef enum { PTL_ADDR_NID, PTL_ADDR_GID, PTL_ADDR_BOTH } ptl_addr_kind_t;
+
+typedef struct {
+    ptl_addr_kind_t addr_kind;   /* kind of address pair */
+    ptl_id_t        nid, pid;    /* node id, process id  */
+    ptl_id_t        gid, rid;    /* group id, rank id    */
+} ptl_process_id_t;
+</code>
+
+<sect1> RETURN VALUES
+    <p>
+    <descrip>
+    <tag /PTL_OK/
+    Indicates success
+    <tag /PTL_NOINIT/
+    Indicates that the Portals API has not been successfully initialized
+    <tag /PTL_SEGV/
+    Indicates that \texttt{id} is not a legal address
+    <tag /PTL_ADDR_UNKNOWN/
+    Indicates that the address could not be translated.
+    </descrip>
+
+<sect1> SEE ALSO
+    <p>
+    <bf /PtlGetId(3)/<newline>
+    <bf /Portals 3.0 Message Passing Interface document/
+
+</manpage>

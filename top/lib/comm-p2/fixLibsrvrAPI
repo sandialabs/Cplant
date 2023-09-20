@@ -1,0 +1,43 @@
+#!/usr/bin/perl
+#/Net/local/bin/perl
+
+#
+#  This will convert libsrvr.a users (all .c and .h files in the
+#  current directory) to use the new api.  After converting source
+#  files, you may need to make 3 additional changes by hand.
+#
+# 1.  The script changed all CHAMELEONs to "unsigned long".  Search 
+#        the source file for "unsigned long".  If it's defining a
+#        CHAMELEON, change the code to treat match bits as unsigned
+#        long.  You can use the UNMKCHAMELEON macro if you want to.
+#
+# 2.  Search for "srvr_get_next_control_msg", and insert a 
+#        SRVR_CLEAR_HANDLE just before it to clear the handle you 
+#        pass it.
+#
+# 3.  Search for all references to fields in the control_msg_handle
+#        structure.  Use the accessor macros in srvr_comm_ctl.h instead,
+#        since the actual fields differ between P2 and P3 implementations.
+#        
+#
+
+$changes = $0.".file";
+
+foreach $source (`ls *.[ch]`){
+#foreach $source (`ls *.texi`){
+      chop $source;
+      $sav = $source.".orig";
+      system("cp $source $sav");
+
+      $cmd = "sed -f $changes $sav > $source";
+
+      system($cmd);
+
+     if (`diff $sav $source`) {
+        print "$source was CHANGED\n";
+     }
+     else {
+         print "$source unchanged\n"; 
+	 unlink($sav);
+     }     
+}

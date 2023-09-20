@@ -1,0 +1,43 @@
+#
+include ../Makefile-common
+
+
+ 
+###################### fix compute/tools ####################
+
+
+COMPUTELIB = ../compute/lib/apps ../compute/lib/p30
+
+ifeq ($(OS),linux)
+SUBDIRS = ../lib \
+          $(COMPUTELIB) \
+          ../compute/lib/support \
+          ../compute/OS/portals/p3mod \
+          ../compute/OS/cTask \
+          ../compute/OS/addrCache \
+          ../compute/OS/ptRXTX \
+          ../compute/OS/Myrinet/lib ../compute/OS/Myrinet/rtscts \
+          ../compute/OS/Myrinet/module \
+          ../compute/OS/Myrinet/util ../compute/OS/Myrinet/MCP \
+          ../compute/OS/Myrinet/vroute ../compute/OS/Myrinet/routes \
+          ../compute/OS/Myrinet/eeprom \
+          ../compute/OS/Myrinet/info \
+          ../support/portals \
+          ../support/cTask \
+          ../support/addrCache \
+          ../support/ptRXTX \
+          ../service/util ../compute/util \
+          ../IO/util/fyod \
+          ../compute/tool \
+          ../compute/test/current/general \
+          ../service/lib/job/ \
+          ../service/test/ \
+          ../service/util/misc/ \
+          ../scripts \
+	  ../doc/manpages
+endif
+
+all:
+
+%:
+	$(do-subdirs)

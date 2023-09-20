@@ -1,0 +1,76 @@
+<!--
+  $Id: CplantPBSQueue.sgml,v 1.1 2001/11/24 23:23:17 lafisk Exp $
+-->
+
+<!doctype qwertz system>
+
+<manpage title="CPLANTPBSQUEUE" sectnum="3" date='"20 November 2001"'
+    footer='"CPLANT MANPAGE"' main='"Cplant Runtime Libraries"'>
+
+
+<sect1> NAME
+    <p>
+    CplantPBSQueue, CplantPBSqstat, CplantPBSqueues, CplantPBSserver
+    </p>
+
+
+<sect1> SYNOPSIS
+    <p>
+    <bf/#include &lt;cplant.h>/
+    </p>
+    <p>
+    <bf/int CplantPBSQueue(char */<it/queue-name/ <bf/, char **/ <it/queue-info/ <bf/)/   <newline>
+    <bf/int CplantPBSqstat(qstat_entry **/ <it/qstat-info/ <bf/)/   <newline>
+    <bf/int CplantPBSqueues(char ***/ <it/queue-list/ <bf/)/   <newline>
+    <bf/int CplantPBSserver(server_info */ <it/sinfo/ <bf/)/   <newline>
+    </p>
+
+<sect1> DESCRIPTION
+    <p>
+    The function <bf/CplantPBSQueue/ returns the results of the command
+    <bf/qmgr -c &dquot;list queue /<it/queue_name/<bf/&dquot;/.  It
+    allocates storage for the result and sets <it/queue-info/ to the location.
+    This storage should be freed when the caller is done with it.
+    </p>
+    <p>
+    The function <bf/CplantPBSqstat/ returns the results of the command
+    <bf/qstat -a/.  It allocates an array having one array element for each
+    line in the qstat display.  
+    This <it/qstat-info/ array should be freed when the caller is done with it.
+    </p>
+
+    <p><tt>
+#define EXITING "E" <newline>
+#define HELD "H" <newline>
+#define QUEUED "Q" <newline>
+#define RUNNING "R" <newline>
+#define MOVED "T" <newline>
+#define WAITING_EXEC "W" <newline>
+    </tt></p>
+
+    <p><tt>
+typedef struct {    /* Information from qstat */  <newline>
+
+int job_id;         /* PBS job ID */  <newline>
+char *username;  <newline>
+char *queue;  <newline>
+char *jobname;  <newline>
+int sessID;         /* Session ID */  <newline>
+int q_time;         /* Time in queue */  <newline>
+int req_nodes;      /* number of nodes requested */  <newline>
+int req_time;    /* Amount of time requested */  <newline>
+char status;        /* Status of job, i.e. queued, running etc. */  <newline>
+int elapsed_time;   /* Elapsed time */  <newline>
+/* int core; */     /* amount of 'core' nodes requested */  <newline>
+} <bf/qstat_entry/;  <newline>
+
+    </tt></p>
+
+<sect1> ERRORS
+<sect1> BUGS 
+
+<sect1> SEE ALSO
+    <p>
+    </p>
+
+</manpage>

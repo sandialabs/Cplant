@@ -1,0 +1,318 @@
+<!--
+    $Id: pingd.sgml,v 1.4 2001/06/25 20:26:35 lafisk Exp $
+-->
+
+<!doctype qwertz system>
+
+<manpage title="pingd" sectnum="1L" date='"09 June 1999"'
+    footer='"Cplant"' main='"Cplant Utilities"'>
+
+
+<sect1> NAME
+    <p>
+    <bf/pingd/ &mdash 
+The all-purpose interface to the node allocator and compute node
+PCTs.  It displays status of a running parallel application,
+and interrupts or kills your parallel application.  Plus for
+administrators only: reserves nodes,
+kills PCTs, notifies bebopd of death of PCT, changes bebopd level of PBS support
+    </p>
+
+
+
+<sect1> SYNOPSIS
+    <p>
+    <bf/pingd/
+</p>
+<p>
+	&lsqb;<bf/-fast&verbar;-interrupt&verbar;-kill&verbar;-reset&verbar;-gone&verbar;-reserve <it/user-id/ &verbar;-unreserve/&rsqb;
+</p>
+<p>
+	&lsqb;<bf/-job/ <it/job-ID/&verbar<bf/-pbsjob/ <it/job-ID/&verbar;<bf/-mine/&verbar;<bf/-list/ <it/node-list/&verbar;<bf/-all/&rsqb;
+</p>
+<p>
+	&lsqb;<bf/-verbose/&rsqb &emsp &lsqb;<bf/-help&verbar;-xtrahelp/&rsqb 
+</p>
+<p>
+	&lsqb;<bf/-parse/&rsqb 
+</p>
+<p>
+        &lsqb;<bf/-nid/ <it/node-number/ <bf/-pid/ <it/portal-id/&rsqb
+</p>
+<p>
+	&lsqb;<bf/-NoInquire/&rsqb &emsp &lsqb;<bf/-summary/&rsqb
+</p>
+<p>
+	&lsqb;<bf/-PBSsupport &lsqb; on &verbar off &rsqb / &rsqb &emsp &lsqb; <bf/-PBSupdate &lsqb; on &verbar off &rsqb / &rsqb &emsp &lsqb; <bf/ -PBSinteractive/ &lsqb; <it/n/ &rsqb &rsqb
+
+    </p>
+
+<sect1> DESCRIPTION
+    <p>
+    By default, <bf/pingd/ ("ping the daemon") contacts 
+    a bebopd (the Cplant node allocator daemon)
+    and obtains and displays information 
+    about the status of compute nodes and the jobs they are running.  
+    System administrators can use the <it/kill/ function of <bf/pingd/ to 
+    kill PCTs (the Cplant compute node daemons),
+    or the <it/gone/ function to notify the bebopd that a PCT is dead.
+The <it/reset/ function allows users to kill their jobs (with a SIGKILL
+to every compute node process)
+and reset the compute nodes hosting their jobs to FREE status.
+The <it/interrupt/ function allows users to interrupt their jobs
+with a SIGTERM to every compute node process.
+System administrators can reset or interrupt any compute node.
+    </p>
+
+<sect1> OPTIONS
+    <p>
+    <descrip>
+
+    <tag/-all/
+	<p>
+	Perform requested operation (like query, reset, interrupt) on all nodes
+        in the compute partition.  This is the default.  To limit the operation,
+	use <it/-list/, <it/-job/, <it/-pbsjob/ or <it/-mine/.
+	</p>
+
+
+    <tag/-fast/
+	<p>
+	By default, the bebopd queries all compute nodes for their status before
+	reporting back to <bf/pingd/ (unless it queried them all "very recently").  
+	For a faster display, <it/-fast/
+	queries the bebopd for it's most recent update from the compute 
+        partition.
+	</p>
+
+
+
+    <tag/-gone/
+	<p>
+        It is possible that a PCT can terminate without notifying the 
+	bebopd.  Use <it/-gone/ to notify the bebopd that a PCT has
+	disappeared from a node.
+
+    <tag/-help/
+    <tag/-xtrahelp/
+	<p>
+        Display a list of <bf/pingd/ options and how to use them.  <it/-xtrahelp/
+        provides a more verbose message.
+	</p>
+
+    <tag/-interrupt/
+	<p>
+Send a SIGTERM to the parallel application on each specified node.
+System administrators can interrupt any application.
+Users can only interrupt their own jobs.
+	</p>
+
+    <tag/-job <it/job-ID//
+    <tag/-pbsjob <it/job-ID//
+	<p>
+	Limit the function to compute nodes running job number <it/job-ID/.
+A PBS (Portable Batch System) job may start several Cplant parallel
+applications.  The job as a whole has a PBS job ID, and each application
+has a Cplant job ID.  Use the <it/-pbsjob/ option to specify a PBS job
+ID, and use the <it/-job/ option to specify a single Cplant parallel
+application.
+
+	</p>
+
+    <tag/-kill/
+	<p>
+	System administrators can kill PCTs with this option.
+	</p>
+
+    <tag/-list <it/node-list//
+	<p>
+	Perform the requested operation on the specified list of nodes.  
+        Node specifiers are delimited by commas.  A node specifier is a 
+        physical node number or
+	a node range.  A node range is specified by two physical 
+        node numbers separated
+	by one or more dots.  No white space may be included in 
+        the <it/node-list/.
+	Actually, the <it/node-list/ may be specified without the <it/-list/
+        option specifier.  If pingd finds something on it's argument line
+	without an option specifier
+	that can be parsed as a node-list, it will assume it's a node-list.
+	</p>
+
+
+    <tag/-mine/
+	<p>
+	Perform function on compute nodes running my jobs only.
+	</p>
+
+    <tag/-nid <it/node-number//
+    <tag/-pid <it/portal-ID//
+        <p>
+        These arguments will cause <bf/pingd/ to contact the bebopd on the specified
+        node number and at the specified portal ID rather than the bebopd listed
+        in the <tt/cplant-host/ file.  This option is only for testing
+        alternative bebopds and should probably be used only by Cplant developers.
+        </p>
+
+
+    <tag/-NoInquire/
+	<p>
+Normally pingd displays an "are you sure" sort of prompt before
+interrupting, resetting or killing nodes.  Use the NoInquire
+option to make pingd skip this step.
+	</p>
+
+    <tag/-parse/
+	<p>
+	This option causes pingd to list it's output in an easily parseable format.
+	</p>
+
+    <tag/-PBSsupport &lsqb;on&verbar;off&rsqb /
+    <tag/-PBSupdate &lsqb;on&verbar;off&rsqb /
+        <p>
+PBS (Portal Batch System) can rely on the Cplant bebopd node allocator
+to tell it how many live compute nodes are in the machine.  This number
+may change if nodes crash or if non-PBS jobs complete sometime after
+PBS has started managing the machine.  The bebopd is running in
+PBSsupport mode if it is keeping track of the number of live compute
+nodes in the machine and policing PBS users to ensure they use no more
+nodes than they were allocated.  The bebopd is running in PBSupdate mode
+if in addition it sends updates to the PBS server whenever the number
+of live compute nodes changes.  These two arguments can be used to
+turn on or off PBSsupport and to turn on or off PBSupdate.
+Since PBSupdate implies PBSsupport, turning on
+PBSupdate automatically turns on PBSsupport, turning off PBSsupport
+automatically turns off PBSupdate.
+	</p>
+
+     <tag/-PBSinteractive <it/n//
+        <p>
+The bebopd can reserve <it/n/ nodes for interactive use.  PBS will
+not be able to schedule these nodes for batch jobs.  This option sends
+a request to the bebopd to reserve <it/n/ nodes for interactive use.
+	</p>
+
+    <tag/-reserve <it/user-ID//
+	<p>
+System adminstrators can reserve a node for a particular user with this
+    option.  The argument is either a user name or numeric user ID.
+    The bebopd will allow a job running on the node to complete, but
+    will refuse to allocate the node to anyone other than the specified user.
+    To free the node, use the <it/-unreserve/ option.  This option should
+    only be used to debug troubled nodes.  Taking nodes away can cause
+    jobs to fail when jobs are being scheduled by PBS.
+	</p>
+
+    <tag/-reset/
+	<p>
+	Reset the selected nodes.  This option kills the application
+	process (with SIGKILL), and resets the PCT to available status.  System
+	administrators can reset any node.  Users can only reset
+	nodes running their jobs.
+	</p>
+
+    <tag/-summary/
+        <p>
+Rather than displaying a line per node, just display the totals.
+        </p>
+
+    <tag/-unreserve/
+	<p>
+Use this option to free a node that has been reserved for a particular
+user.  A job running on the node will not be disturbed.
+	</p>
+
+    <tag/-verbose/
+	<p>
+	Display extra information about running jobs.  You will not
+	see this information about other people's jobs unless you
+	are a very special user.
+	</p>
+
+    </descrip>
+
+<sect1> EXAMPLES
+    <p>
+     <bf/pingd/ assumes the most restrictive interpretation of which nodes
+     are specified.  If you provide a list of node numbers, a job ID, and
+     specify <bf/-mine/, <bf/pingd/ will perform the operation on the
+     nodes in the list which are running the job specified, if you own it.
+    </p>
+    <p>
+    To list the current status of all nodes in the compute partition:
+    </p>
+    <p><code>
+    pingd 
+    </code></p>
+
+    <p>
+    To list the status most recently reported to the service partition
+    of all nodes in the compute partition (without going out and querying
+    the compute parition):
+    </p>
+    <p><code>
+    pingd -fast
+    </code></p>
+
+    <p>
+    To kill the PCT on node 20:
+    </p>
+    <p><code>
+    pingd -kill -l 20
+    </code></p>
+
+    <p>
+    To reset the PCTs on nodes 0 through 100 which are running my jobs, either
+    of these will work.  (The <it/-l/ option specifier may be omitted when 
+    specifying a node list.)
+    </p>
+    <p><code>
+    pingd -reset -l 0..100 -mine
+    pingd -reset 0..100 -mine
+    </code></p>
+
+    <p>
+    To display much status information about my jobs:
+    </p>
+    <p><code>
+    pingd -m -v
+    </code></p>
+
+    <p>
+    To inform the bebopd that the PCTs on nodes 55, 56, 57 and 61 are dead:
+    </p>
+    <p><code>
+    pingd -gone -l 55..57,61
+    </code></p>
+
+<sect1> ERRORS
+    <p>
+    Some compute nodes may be slow to respond to your request, and <bf/pingd/
+    does not wait for them.  This is not an error.  Run <bf/pingd/ again
+    with the <it/-fast/ option to get the updates which arrived at the bebopd
+    (service node daemon)
+    after your <bf/pingd/ display.  (Running without <it/-fast/ would cause the
+    bebopd to go out and query all the compute nodes again.)
+
+<sect1> FILES
+    <p><descrip>
+    <tag>/cplant/cplant-host</tag>
+        <p>
+         This file identifies the location of a bebopd daemon.
+   <tag>/var/log/cplant</tag>
+        <p>
+         This is the log file where Cplant daemons and utilities log
+         status.
+    </descrip></p>
+ 
+<sect1> SEE ALSO
+    <p>
+    <bf>bebopd</bf>
+    </p>
+   
+<sect1> BUGS
+    <p>
+    Let us know if you locate any (cplant-help@cs.sandia.gov).
+    </p>
+
+</manpage>

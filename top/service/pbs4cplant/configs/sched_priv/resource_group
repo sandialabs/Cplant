@@ -1,0 +1,188 @@
+#         Portable Batch System (PBS) Software License
+# 
+# Copyright (c) 1999, MRJ Technology Solutions.
+# All rights reserved.
+# 
+# Acknowledgment
+# as a joint project between the Numerical Aerospace Simulation (NAS) Systems
+# Division of NASA Ames Research Center and the National Energy Research
+# Supercomputer Center (NERSC) of Lawrence Livermore National Laboratory.
+# 
+# Redistribution of the Portable Batch System Software and use in source
+# and binary forms, with or without modification, are permitted provided
+# that the following conditions are met:
+# 
+# - Redistributions of source code must retain the above copyright and
+#   acknowledgment notices, this list of conditions and the following
+#   disclaimer.
+# 
+# - Redistributions in binary form must reproduce the above copyright and 
+#   acknowledgment notices, this list of conditions and the following
+#   disclaimer in the documentation and/or other materials provided with the
+#   distribution.
+# 
+# - All advertising materials mentioning features or use of this software must
+#   display the following acknowledgment:
+# 
+#   This product includes software developed by NASA Ames Research Center,
+#   Lawrence Livermore National Laboratory, and MRJ Technology Solutions.
+# 
+#         DISCLAIMER OF WARRANTY
+# 
+# THIS SOFTWARE IS PROVIDED BY MRJ TECHNOLOGY SOLUTIONS ("MRJ") "AS IS" WITHOUT 
+# WARRANTY OF ANY KIND, AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING,
+# BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
+# FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT ARE EXPRESSLY DISCLAIMED.
+# 
+# IN NO EVENT, UNLESS REQUIRED BY APPLICABLE LAW, SHALL MRJ, NASA, NOR
+# THE U.S. GOVERNMENT BE LIABLE FOR ANY DIRECT DAMAGES WHATSOEVER,
+# NOR ANY INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+# OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+# OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE
+# USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# 
+# This license will be governed by the laws of the Commonwealth of Virginia,
+# without reference to its choice of law rules.
+
+mjleven     1289     root     10
+lafisk     22606     root     10
+rbbrigh     23035     root     10
+gmcgir     28534     root     10
+jhlaros     21462     root     10
+jpnoe     1109     root     10
+mjhanna     1078     root     10
+whvande     1028     root     10
+eaengqu     12184     root     10
+spgoudy     1212     root     10
+rkbyers     1011     root     10
+jsotto     3079     root     10
+rolf     11545     root     10
+wmdavid     4921     root     10
+jpvandy     1767     root     10
+lward     16056     root     10
+gmachin     1094     root     10
+pchen     26800     root     10
+globus     30412     root     10
+jaang     1951     root     10
+mlbarna     2219     root     10
+dwbarne     1268     root     10
+rebenne     1597     root     10
+eabouch     2533     root     10
+jpbrenk     1227     root     10
+racole     11893     root     10
+wpcolli     21654     root     10
+dbdavis     2978     root     10
+ljfrink     18832     root     10
+rgjert     29831     root     10
+alhale     2421     root     10
+glhenni     16202     root     10
+mwholzr     23939     root     10
+lgice     23299     root     10
+jdkotul     1255     root     10
+plmcall     1480     root     10
+hxm     7755     root     10
+ccober     18229     root     10
+tjotaha     27125     root     10
+dpannel     23658     root     10
+jlpayne     1575     root     10
+sjplimp     1719     root     10
+rjpryor     1603     root     10
+ndpundi     25066     root     10
+whrahe     1090     root     10
+gmreese     1533     root     10
+pasacki     1101     root     10
+jaschut     1095     root     10
+mpsears     1180     root     10
+dnshirl     1651     root     10
+gdsjaar     1248     root     10
+msteve     22546     root     10
+phstolt     17385     root     10
+rmsumme     4462     root     10
+jltenne     1666     root     10
+rstumin     14863     root     10
+bartv     23648     root     10
+jdweinh     28321     root     10
+dacrawf     11243     root     10
+dmday     22933     root     10
+pedesja     16314     root     10
+agsalin     21544     root     10
+cddean     1219     root     10
+mseldre     12461     root     10
+hphjalm     1519     root     10
+kkelsey     8667     root     10
+namodin     15508     root     10
+jibeiri     5109     root     10
+dnsands     29362     root     10
+mroth     25953     root     10
+mbboslo     4442     root     10
+diegert     1405     root     10
+ejgottl     21783     root     10
+desmall     12780     root     10
+wrjohns     22666     root     10
+kleung     29838     root     10
+afwrigh     20023     root     10
+athomps     29846     root     10
+maburke     27398     root     10
+hefang     1238     root     10
+mdrinto     29800     root     10
+wryoung     27396     root     10
+mkbhard     10365     root     10
+dlchand     26585     root     10
+jrweath     1375     root     10
+scarrol     1833     root     10
+bdschim     20963     root     10
+kddevin     12717     root     10
+trguili     8315     root     10
+mjclaus     3538     root     10
+ralippe     16732     root     10
+wyckoff     22780     root     10
+decarro     9486     root     10
+rppawlo     28662     root     10
+srsubia     28764     root     10
+jjohnst     28889     root     10
+jesturt     22867     root     10
+khpiers     21690     root     10
+wlbarth     29226     root     10
+rwstotz     13405     root     10
+gdvalde     1166     root     10
+drgardn     1278     root     10
+jherbec     17717     root     10
+redavis     2546     root     10
+ebaldon     1075     root     10
+vlewis     2002     root     10
+bhaimes     3554     root     10
+alhodge     2864     root     10
+rehogan     1203     root     10
+kaduthi     4034     root     10
+cporour     3520     root     10
+jmlineb     2992     root     10
+lgmarti     1406     root     10
+marmart     16171     root     10
+eebende     4863     root     10
+bjones     4865     root     10
+eaburro     15500     root     10
+jsjones     8626     root     10
+hpbiven     7876     root     10
+lhernan     2365     root     10
+mpbohn     2605     root     10
+paklein     13095     root     10
+rrdrake     12912     root     10
+cjroy     17615     root     10
+mkwong     2481     root     10
+pjcross		13645	root	10
+aagiunt		28664	root	10
+rpjense		17633	root	10
+dmteter		1967	root	10
+mcaldw		22720	root	10
+smorgan		5799	root	10
+pwharri		2960	root	10
+ytlin		1755	root	10
+sdwix		5202	root	10
+rlvande		1399	root 	10
+mechand		23285	root	10
+npsymon		20960	root	10
+tmsmith		15124	root	10
+kstanle		11425	root	10
+ebwebb		17641	root	10

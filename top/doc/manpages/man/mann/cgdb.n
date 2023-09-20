@@ -1,0 +1,71 @@
+.if n .ds Q \&"
+.if t .ds Q ``
+.if n .ds U \&"
+.if t .ds U ''
+.TH cgdb 1L "03 May 2001" "Cplant" "Cplant Utilities"
+.tr \&
+.nr bi 0
+.nr ll 0
+.nr el 0
+.de Pp
+.ie \\n(ll>0 \{\
+.ie \\n(bi=1 \{\
+.nr bi 0
+.if \\n(t\\n(ll=0 \{.IP \\(bu\}
+.if \\n(t\\n(ll=1 \{.IP \\n+(e\\n(el.\}
+.\}
+.el .sp 
+.\}
+.el \{\
+.ie \\nh=1 \{\
+.LP
+.nr h 0
+.\}
+.el .PP 
+.\}
+..
+.SH NAME
+    
+
+.Pp
+\fBcgdb\fP -- Debug (from the service node) a process of a Cplant parallel application
+.SH SYNOPSIS
+    
+
+.Pp
+\fBcgdb -n \fP \fInodeNum\fP
+.SH DESCRIPTION
+    
+
+.Pp
+\fBcgdb\fP allows you to debug a single process of a parallel application.  You run
+it on the service node and it communicates with the Gnu debugger \fBgdb\fP on
+the compute node.
+.Pp
+To use this feature, run yod with the \fI-attach\fP option.  This
+will display the nodes the application has been allocated and
+will start a debugging session on each compute node.
+yod will prompt you before
+it allows the application processes to procede to user code.
+.Pp
+To start a debugging proxy on the service node which can attach
+to the debugger on a compute node, run \fBcgdb\fP with a physical
+node number from the yod display:
+.Pp
+.sp
+.ft CR
+.nf 
+.ss 18
+    cgdb -n 24
+    
+.ss 12 
+.fi 
+.ft P
+.sp
+.Pp
+Now you can enter gdb commands to debug the application process.
+.SH SEE ALSO
+    
+
+.Pp
+\fByod\fP

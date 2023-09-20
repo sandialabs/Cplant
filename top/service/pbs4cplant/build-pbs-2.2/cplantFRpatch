@@ -1,0 +1,390 @@
+diff -Naurw origsrc/src/include/pbs_config.h.in patched/src/include/pbs_config.h.in
+--- origsrc/src/include/pbs_config.h.in	Tue Nov 16 21:57:04 1999
++++ patched/src/include/pbs_config.h.in	Thu Mar 29 18:47:58 2001
+@@ -155,4 +155,41 @@
+ /* Define if you have the socket library (-lsocket).  */
+ #undef HAVE_LIBSOCKET
+ 
++#ifdef CPLANT_NONBLOCKING_CONNECTIONS
++
++#include <unistd.h>
++#include <sys/types.h>
++#include <errno.h>
++
++static inline ssize_t
++write_nonblocking_socket(int fd, void *buf, ssize_t count)
++{
++ssize_t wrc;
++ 
++    while ( (wrc = write(fd, buf, count)) < 0){
++ 
++        if (errno == EAGAIN) continue;
++ 
++    };
++ 
++    return wrc;
++}
++static inline ssize_t
++read_nonblocking_socket(int fd, void *buf, ssize_t count)
++{
++ssize_t rrc;
++ 
++    while ( (rrc = read(fd, buf, count)) < 0){
++ 
++        if (errno == EAGAIN) continue;
++ 
++    } ;
++ 
++    return rrc;
++}
++
++#define write(a,b,c) write_nonblocking_socket(a,b,c)
++#define read(a,b,c) read_nonblocking_socket(a,b,c)
++
++#endif
+ #endif /* _PBS_CONFIG_H_ */
+diff -Naurw origsrc/src/include/pbs_nodes.h patched/src/include/pbs_nodes.h
+--- origsrc/src/include/pbs_nodes.h	Thu Nov  4 23:10:53 1999
++++ patched/src/include/pbs_nodes.h	Thu Mar 29 18:47:58 2001
+@@ -103,6 +103,9 @@
+ 	unsigned short	 	 nd_state;
+ 	unsigned short	 	 nd_ntype;	/* node type */
+ 	short			 nd_order;	/* order of user's request */
++#ifdef CPLANT_NONBLOCKING_CONNECTIONS
++        time_t                   nd_warnbad;
++#endif
+ };
+ 	
+ 
+@@ -174,6 +177,12 @@
+ extern	struct tree_t	 *streams;
+ 
+ extern	int	update_nodes_file A_(());
++
++#ifdef CPLANT_NONBLOCKING_CONNECTIONS
++void bad_node_warning(pbs_net_t addr);
++int addr_ok(pbs_net_t addr);
++
++#endif
+ 
+ #ifdef BATCH_REQUEST_H
+ extern	void	initialize_pbssubn A_((struct pbsnode *, struct pbssubn*, struct prop*));
+diff -Naurw origsrc/src/lib/Libnet/net_client.c patched/src/lib/Libnet/net_client.c
+--- origsrc/src/lib/Libnet/net_client.c	Fri Apr 16 19:09:56 1999
++++ patched/src/lib/Libnet/net_client.c	Thu Mar 29 18:47:58 2001
+@@ -76,6 +76,51 @@
+  * rather than look it up each time.
+  */
+ 
++
++#ifdef CPLANT_NONBLOCKING_CONNECTIONS
++#include <unistd.h>
++#include <fcntl.h>
++#include <sys/time.h>
++static int flags;
++
++/*
++** wait for connect to complete.  We use non-blocking sockets,
++** so have to wait for completion this way.
++*/
++static int
++await_connect(int timeout, int sockd)
++{
++fd_set fs;
++int n, val, len, rc;
++struct timeval tv;
++
++    tv.tv_sec = (long)timeout;
++    tv.tv_usec = 0;
++
++    FD_ZERO (&fs);
++    FD_SET(sockd, &fs);
++
++    n = select(FD_SETSIZE, (fd_set *)0, &fs, (fd_set *)0, &tv);
++
++    if (n != 1){
++        return -1;
++    }
++ 
++    len = sizeof(int);
++
++    rc = getsockopt( sockd, SOL_SOCKET, SO_ERROR, &val, &len);
++
++    if ( (rc==0) && (val==0)){
++       return 0;
++    }
++    else{
++       errno=val;
++       return -1;
++    }
++}
++
++#endif
++
+ int client_to_svr(hostaddr, port, local_port)
+ 	pbs_net_t	hostaddr;	/* Internet addr  of host */
+ 	unsigned int    port;		/* port to which to connect */
+@@ -99,6 +144,13 @@
+ 		return (PBS_NET_RC_RETRY);
+ 	}
+ 
++#ifdef CPLANT_NONBLOCKING_CONNECTIONS
++        flags = fcntl(sock, F_GETFL);
++        flags |= O_NONBLOCK;
++        fcntl(sock, F_SETFL, flags);
++#endif
++
++
+ 	/*	If local privilege port requested, bind to one	*/
+ 	/*	Must be root privileged to do this		*/
+ 
+@@ -124,6 +176,7 @@
+ 	remote.sin_addr.s_addr = htonl(hostaddr);
+ 	remote.sin_port = htons((unsigned short)port);
+ 	remote.sin_family = AF_INET;
++
+ 	if (connect(sock, (struct sockaddr *)&remote, sizeof(remote)) < 0) {
+ 		switch (errno) {
+ 		    case EINTR:
+@@ -132,6 +185,19 @@
+ 		    case ECONNREFUSED:
+ 			close(sock);
+ 			return (PBS_NET_RC_RETRY);
++
++#ifdef CPLANT_NONBLOCKING_CONNECTIONS
++		    case EINPROGRESS:   
++                   
++                        if (await_connect(5, sock) == 0){ 
++                            return(sock);
++                        }
++                        else{
++			    close(sock);
++			    return (PBS_NET_RC_RETRY);
++                        }
++#endif
++
+ 		    default:
+ 			close(sock);
+ 			return (PBS_NET_RC_FATAL);
+diff -Naurw origsrc/src/server/node_func.c patched/src/server/node_func.c
+--- origsrc/src/server/node_func.c	Fri Nov 19 00:20:01 1999
++++ patched/src/server/node_func.c	Thu Mar 29 18:48:30 2001
+@@ -125,7 +125,75 @@
+  * create_pbs_node -	create basic node structure for adding a node
+  */
+ 
++#ifdef CPLANT_NONBLOCKING_CONNECTIONS
+ 
++#include <work_task.h>
++extern void ping_nodes(struct work_task *ptask);
++
++void
++bad_node_warning(pbs_net_t addr)
++{
++int i;
++time_t now,last;
++
++    for(i=0; i<svr_totnodes; i++ ) {
++	if(pbsndlist[i]->nd_addrs[0] == addr){
++
++            now = time(NULL);
++            last = pbsndlist[i]->nd_warnbad;
++ 
++            if (last && (now - last < 3600)) return;
++
++            /*
++            ** once per hour, log a warning that we can't reach the node, and
++            ** ping_nodes to check and reset the node's state.
++            */
++
++            sprintf(log_buffer,"!!! unable to contact node %s !!!",pbsndlist[i]->nd_name);
++
++            log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, "WARNING", log_buffer);
++
++            (void)set_task(WORK_Timed, now+5, ping_nodes, NULL);
++ 
++            pbsndlist[i]->nd_warnbad = now;
++
++            break;
++        }
++    }
++    return;
++}
++/*
++** returns 1 if node is OK, 0 if node is down.
++*/
++int
++addr_ok(pbs_net_t addr)
++{
++int i, status;
++
++    status = 0;
++
++    if (!svr_totnodes || (pbsndlist == (struct pbsnode **)NULL)){
++        return 0;
++    }
++
++    for(i=0; i<svr_totnodes; i++ ) {
++        if(pbsndlist[i]->nd_state & (INUSE_OFFLINE|INUSE_DELETED))
++               continue;
++	if(pbsndlist[i]->nd_addrs[0] == addr){
++
++            if (pbsndlist[i]->nd_state & 
++                (INUSE_DOWN|INUSE_OFFLINE|INUSE_DELETED|INUSE_UNKNOWN)){
++
++                status = 0;
++            }
++            else{
++                status = 1;
++            }
++        }
++    }
++    return status;
++}
++#endif
+ 
+ /*
+  * find_nodehbyname() - find a node host by its name
+@@ -377,6 +445,9 @@
+ 	pnode->nd_first	  = init_prop(pnode->nd_name);
+ 	pnode->nd_last	  = pnode->nd_first;
+ 	pnode->nd_nprops  = 0;
++#ifdef CPLANT_NONBLOCKING_CONNECTIONS
++        pnode->nd_warnbad = 0;
++#endif
+ }
+ 
+ /*
+diff -Naurw origsrc/src/server/node_manager.c patched/src/server/node_manager.c
+--- origsrc/src/server/node_manager.c	Wed Feb  9 19:01:20 2000
++++ patched/src/server/node_manager.c	Thu Mar 29 18:47:58 2001
+@@ -325,10 +325,12 @@
+ 		if (np->nd_state & (INUSE_DELETED|INUSE_OFFLINE))
+ 		    continue;
+ 
++#ifndef CPLANT_SERVICE_NODE
+ 		if (np->nd_state & (INUSE_JOB|INUSE_JOBSHARE)) {
+ 		   if (!(np->nd_state & INUSE_NEEDS_HELLO_PING))
+ 			continue;
+ 		}
++#endif
+ 
+ 		if (np->nd_stream < 0) {
+ 			np->nd_stream = rpp_open(np->nd_name, pbs_rm_port);
+@@ -348,8 +350,17 @@
+ 			com = IS_NULL;
+ 
+ 		DBPRT(("%s: ping %s\n", id, np->nd_name))
++
++#ifdef CPLANT_SERVICE_NODE
++        /*
++        ** In our environment, nodes are down until proven otherwise
++        */
++        com = IS_HELLO;
++        np->nd_state |= INUSE_DOWN;
++#else
+ 		if (np->nd_state & INUSE_NEEDS_HELLO_PING)
+ 		    com = IS_HELLO;
++#endif
+ 
+ 		ret = is_compose(np->nd_stream, com);
+ 		if (ret == DIS_SUCCESS) {
+@@ -375,7 +386,16 @@
+ 		if (server_init_type == RECOV_HOT)
+ 			i = 15;		/* rapid ping rate while hot restart */
+ 		else
++
++#ifdef CPLANT_SERVICE_NODE
++            /*
++            ** We want to ping more frequently.  
++            */
++            i = 120;
++#else
+ 			i = 300;	/* relaxed ping rate for normal run  */
++#endif
++
+ 		(void)set_task(WORK_Timed, time_now+i, ping_nodes, NULL);
+ 	}
+ }
+diff -Naurw origsrc/src/server/run_sched.c patched/src/server/run_sched.c
+--- origsrc/src/server/run_sched.c	Fri Apr 16 19:41:19 1999
++++ patched/src/server/run_sched.c	Thu Mar 29 18:47:58 2001
+@@ -93,9 +93,20 @@
+ 
+ 	/* connect to the Scheduler */
+ 
++#if 0
++        if (!addr_ok(pbs_scheduler_addr)){
++            pbs_errno = EHOSTDOWN;
++            return -1;
++        }
++#endif
++
+ 	sock = client_to_svr(pbs_scheduler_addr, pbs_scheduler_port, 1);
+ 
+ 	if (sock < 0) {
++
++#if 0
++                bad_node_warning(pbs_scheduler_addr);
++#endif
+ 		log_err(errno, myid, msg_sched_nocall);
+ 		return (-1);
+ 	}
+diff -Naurw origsrc/src/server/svr_connect.c patched/src/server/svr_connect.c
+--- origsrc/src/server/svr_connect.c	Mon Jan 10 18:29:02 2000
++++ patched/src/server/svr_connect.c	Thu Mar 29 18:47:58 2001
+@@ -73,6 +73,7 @@
+ #include <pbs_config.h>   /* the master config generated by configure */
+ 
+ #include <sys/types.h>
++#include <errno.h>
+ #include "libpbs.h"
+ #include "server_limits.h"
+ #include "net_connect.h"
+@@ -107,8 +108,19 @@
+ 
+ 	/* obtain the connection to the other server */
+ 
++#ifdef CPLANT_NONBLOCKING_CONNECTIONS
++        if (!addr_ok(hostaddr)){
++            pbs_errno = EHOSTDOWN;
++            return (PBS_NET_RC_RETRY);
++        }
++#endif
++
+ 	sock = client_to_svr(hostaddr, port, 1);
+ 	if (sock < 0) {
++
++#ifdef CPLANT_NONBLOCKING_CONNECTIONS
++                bad_node_warning(hostaddr);  /* let's log this, run ping_nodes */
++#endif
+ 		pbs_errno = errno;
+ 		return (sock);	/* PBS_NET_RC_RETRY or PBS_NET_RC_FATAL */
+ 	}
+diff -Naurw origsrc/src/resmom/mom_inter.c patched/src/resmom/mom_inter.c
+--- origsrc/src/resmom/mom_inter.c      Thu Oct 25 15:51:09 2001
++++ patched/src/resmom/mom_inter.c      Thu Oct 25 16:09:58 2001
+@@ -308,7 +308,23 @@
+ {
+        pbs_net_t hostaddr;
+
++#ifdef CPLANT_NONBLOCKING_CONNECTIONS
++        int sock;
++        int flags;
++#endif
++
++
+        if ((hostaddr = get_hostaddr(hostname)) == (pbs_net_t)0)
+                return (-1);
++
++#ifdef CPLANT_NONBLOCKING_CONNECTIONS
++       sock = client_to_svr(hostaddr, (unsigned int)port, 0);
++        flags = fcntl(sock, F_GETFL);
++        flags ^= O_NONBLOCK;
++        fcntl(sock, F_SETFL, flags);
++
++        return(sock);
++#else
+        return (client_to_svr(hostaddr, (unsigned int)port, 0));
++#endif
+ }

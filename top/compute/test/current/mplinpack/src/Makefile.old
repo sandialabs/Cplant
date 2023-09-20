@@ -1,0 +1,136 @@
+#
+#  CBLAS implies c version of the basic math libraries are availible
+#
+ECHO           = /usr/bin/echo
+
+TESTDIR        = $(HOME)/cplant/perf/mplinpack/src
+
+MPLINPACK_DIR  = $(TESTDIR)/code
+MPLIN_INCLUDE  = $(MPLINPACK_DIR)/include
+MPLIN_SOURCE   = $(MPLINPACK_DIR)/sources
+
+#
+# blas library was built from generic Fortran source processed with f2c
+# and compiled with cc.  They require libf2c.a.
+#
+# alpha-optimized blas library would be nice
+#
+DGEMM_LIB      = -L$(TESTDIR)/gemm-981108
+AXPY_LIB       = -L$(TESTDIR)/axpy-981114
+COPY_LIB       = -L$(TESTDIR)/copy-981115
+DOT_LIB        = -L$(TESTDIR)/dot-981120
+BLAS_LIBS_LOC  = $(DGEMM_LIB) $(AXPY_LIB) $(COPY_LIB) $(DOT_LIB)
+BLAS_LIBS      = -lgemm -laxpy -lcopy -ldot -ldxml
+
+#
+# Fortran libraries
+#
+FLIBS          = -lfor -lFutil
+
+#
+# mpi library
+#
+MPI_LIB        = -lmpi
+
+#
+#
+LIB_LIST       = $(BLAS_LIBS_LOC) $(BLAS_LIBS) $(FLIBS) $(MPI_LIB)  -lm 
+
+#
+# BLAS_LONG_INTS: blas functions declare arguments as long*,
+# and long is 8 bytes, so passing in int* causes havoc
+#
+# POINTERS_64_BITS: malloc'ing arrays of DATA_TYPE blew up if
+#       array was not 8 byte aligned
+#
+INCLUDES       = -I$(MPLIN_INCLUDE)
+
+DEFINES        = -DCPLANT  
+CFLAGS         = -v -DPOINTERS_64_BITS  -DMPI $(INCLUDES) -DLINUX_PORTALS
+
+SOURCES        = solve.c init.c time.c malloc.c pcomm.c factor.c mat.c
+
+SOURCES_1      = Cgemmtst.c Ctime.c
+
+DOBJECTS       = $(SOURCES:.c=.o)
+
+DOBJECTS_1     = $(SOURCES_1:.c=.o)
+
+CC             = cc
+
+CPICC          = /Net/mp/cplant/bin/cc
+
+COMPILE.c      = $(CPICC) $(CFLAGS) $(DEFINES)  -c
+
+#
+# complex version
+#
+ZOBJECTS=$(addprefix complex/, $(OBJECTS))
+
+Zmat:  $(SOURCES)
+	cd complex ; make all
+	$(CPICC) -o Zmat $(ZOBJECTS) $(LIB_LIST)
+
+#
+# plain double precision version
+#
+ 
+mat:   $(DOBJECTS)  
+	$(CPICC) $(CFLAGS) -v -o mat $(DOBJECTS) $(LIB_LIST)
+
+test_gemm: $(DOBJECTS_1)
+	$(CPICC) -o test_gemm $(DOBJECTS_1) $(DGEMM_LIBN) $(LIB_LIST) 
+#
+# plain double precision version - with optimized dgemm
+#
+ 
+Omat:  $(SOURCES)
+	cd real; make all
+	$(CPICC) -o Omat $(DOBJECTS) $(DGEMM_LIB) $(LIB_LIST)
+ 
+#
+# IO to tty
+#
+BINTOP=/home/u/lafisk/Cplant/top/bin
+
+OmatIO:  $(SOURCES)
+	cd real; make all
+	gcc -static -DLINUX_PORTALS -L$(BINTOP) \
+		-o OmatIO $(BINTOP)/startup.o \
+		$(DOBJECTS) $(DGEMM_LIB) $(LIB_LIST) \
+		-lsrvr -lpuma
+ 
+#
+# we have an alpha-optimized dgemm function, plain double precision
+#
+OPTLEVEL=-O2
+
+.c.o:
+	@$(ECHO)
+	@$(ECHO) "Compiling Source File -- " $<
+	@$(ECHO) "---------------------"
+	$(COMPILE.c)  $<
+	@$(ECHO)
+
+
+mat-opt-dgemm: mat.o $(OBJECTS)
+	$(CPICC) $(DEFINES) $(INCLUDES) -o mat-opt-dgemm-d \
+	 mat.o $(OBJECTS) $(DGEMM_LIB) $(LIB_LIST)
+
+clean:
+	rm -f *.o */*.o mat
+
+realclean: clean
+
+#
+# regular io - printfs out to tty, etc.
+#
+ 
+PUMALIB=-L$(CPLANT_TOP)/bin 
+ 
+STARTFILES=/usr/lib/crt1.o /usr/lib/crti.o /usr/lib/crtbegin.o
+ENDFILES=/usr/lib/crtend.o /usr/lib/crtn.o
+ 
+mat_noio: mat.o $(OBJECTS)
+	$(CC) $(CFLAGS) -static -o mat_noio $(STARTUP) \
+	mat.o $(OBJECTS) $(LIB_LIST) $(PUMALIB) -lpuma

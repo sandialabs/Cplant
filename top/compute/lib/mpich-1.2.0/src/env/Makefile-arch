@@ -1,0 +1,68 @@
+#
+# $Id: Makefile-arch,v 1.4.2.1 2002/05/22 15:15:00 galagun Exp $
+#
+
+include ../../../../../../Makefile-common
+ 
+CFLAGS  +=  -DHAVE_MPICHCONF_H -DMPID_DEVICE_CODE
+
+ifeq ($(OS),osf)
+CFLAGS  +=  -DFORTRANUNDERSCORE
+endif
+
+ifeq ($(OS),linux)
+ifeq ($(NO2UNDERSCORE),yes)
+  include ../../../Makefile-no2underscore
+endif
+ifeq ($(NO2UNDERSCORE),no)
+  CFLAGS  +=  -DFORTRANDOUBLEUNDERSCORE
+endif
+ifndef NO2UNDERSCORE
+  CFLAGS  +=  -DFORTRANDOUBLEUNDERSCORE
+endif
+ifeq ($(PMPI),yes)
+  CFLAGS  +=  -DMPI_BUILD_PROFILING
+endif
+endif
+ 
+INCLUDEDIRS += -I../ -I../../../build/cplant/p30/include -I../../../include \
+               -I../../../src/util -I../../../mpid/$(MPI_P3_ADI) -I../../coll \
+               -I../../../../p30/include
+
+FSOURCES = farg.f initfcmn.f initfdte.f
+
+CSOURCES = abort.c debugutil.c init.c initthread.c initutil.c \
+           finalize.c fstrutils.c initialize.c errorstring.c initdte.c \
+           getpname.c errcreate.c errset.c errget.c errfree.c errclass.c \
+           wtime.c wtick.c nerrmsg.c getversion.c msgqdllloc.c
+
+WSOURCES = initializef.c abortf.c initf.c finalizef.c errorstringf.c \
+           getpnamef.c errcreatef.c errsetf.c errgetf.c errfreef.c errclassf.c \
+           wtimef.c wtickf.c getversionf.c
+
+FOBJECTS = $(FSOURCES:.f=.o)
+
+COBJECTS = $(CSOURCES:.c=.o)
+
+WOBJECTS = $(WSOURCES:.c=.o)
+
+ALLOBJECTS   = $(COBJECTS) $(WOBJECTS) $(FOBJECTS)
+
+LIBDIR   = ../../../$(CPLANT_ARCH)-$(OS)
+LIB      = $(LIBDIR)/libmpi.a
+ 
+all: $(LIB)
+ 
+$(LIB): $(LIBDIR) $(LIB)($(COBJECTS)) $(LIB)($(WOBJECTS)) $(LIB)($(FOBJECTS))
+ 
+$(LIBDIR):
+	@-mkdir $(LIBDIR)
+ 
+$(COBJECTS) $(WOBJECTS): %.o : ../%.c
+	$(CC) $(CFLAGS) $(INCLUDEDIRS) -c $<
+
+$(FOBJECTS): %.o : ../%.f
+	$(F77) $(FFLAGS) $(INCLUDEDIRS) -c $<
+
+clean:
+	@rm -f $(ALLOBJECTS)

@@ -1,0 +1,152 @@
+
+Cplant Software Release 0.2
+---------------------------
+
+This release of Cplant software makes significant steps toward
+providing a more stable system.  Application load is more reliable and
+tests have demonstrated the ability to consistently load applications
+all available 350 nodes.  Application message passing is also more
+reliable, and several communication intensive benchmark codes have
+been able to run successfully on 256 nodes (the largest power of two).
+This release of software was used to achieve 125.2 GFLOPS on the
+MPLINPACK benchmark running on 350 Cplant nodes.  This performance
+mark would have ranked Cplant in 53rd place on the June 1999 Top 500
+list had the results been obtained in time for consideration.
+Demonstration of this level of performance on a significant number of
+nodes make Cplant unmatched in the world of Linux clusters.
+
+The public URL for Cplant is http://www.cs.sandia.gov.  For information
+on using the machine, the internal URL is http://sc.sandia.gov.
+
+Highlights
+----------
+
+- Increased message passing reliability
+- Increased application load reliability
+- New showmesh tool for scalable compute node status information
+- Backtrace for faulting processes
+- Support for executables that don't fit in RAM disk
+- Compile environment changed to support release updates
+- Exit value of yod indicates success/failure of the application
+- Increased fault tolerance of the runtime environment
+
+Bug Fixes
+---------
+
+- Unreliable message passing
+  o MPI communication errors (hung nodes, data corruption)
+  o Application load errors (unsuccessful loads, hung nodes)
+
+- Unreliable job loading
+
+- Uncommunicative PCT
+
+- Limitation on number of open files
+
+- stat(), fstat() problem fixed
+
+- Multiply defined symbols with C++ compiler
+
+
+System Software Developer Tests
+-------------------------------
+
+- NAS Parallel Benchmarks version 2.3 Class B up to 324 nodes
+- MPLinpack benchmark on 350 nodes
+- Application tests on 128 nodes
+
+Application Tests
+-----------------
+
+- MPI Communication tests
+  o Parallel "Hello, world"
+  o Ping pong
+  o Repeated broadcast
+  o Sparse matrix-vector multiply
+  o Molecular dynamics exchange
+
+- Application libraries
+  o BLAS
+  o LAPACK
+  o SCALAPACK
+  o Aztec
+
+- Applications
+  o MP-Quest
+  o Tramonto
+ 
+
+Changes Since Release 0.1
+-------------------------
+- Regression tests
+- Fix to yod to handle process death in the middle of an I/O operation
+  gracefully
+- Yod -help fix
+- PCT ignores load msg when it's already running a process
+- Global log file for yod jobs
+- Documentation on how to build a Cplant
+- Documentation on the configuration management system
+- Support for executables which don't fit in RAM disk
+- Administrator's guide to load utitlites and daemons
+- Cplant web pages added to repository
+- Pingd doesn't need a '-l' flag
+- Portal process ids
+- No portal-specific system calls
+- Bebopd yields after a polling cycle
+- Portal process cleanup enhanced
+- Documentation on how to map myrinet
+- Bebopd rereads site file on SIGHUP
+- Yod's exit value now indicates success/failure of the app
+- Fixed stat() error
+- Fixed cwd problem
+- Improved error reporting in ptldebug
+- Reorganization of the PCT for debugging
+- Myrinet route verification tool
+- Myrinet route verification tool documentation
+- Configuration tool support for AS1200
+- Server library times out instead of blocking
+- Increased number of buffers in rtscts module
+- New, scalable showmesh tool for cluster status
+
+Overview of Cplant Software
+---------------------------
+- High-performance messages passing system
+  This includes an MPI library that takes advantage of the Portals
+  library ported from the Tflops Puma system. Also included is a
+  device driver and interface card control program that lets
+  Portals use the Myrinet network.
+
+- Cross-compile environment
+  A set of scripts that runs under DEC Unix and allows a user to
+  build Fortran and C programs using the advanced DEC tools.  The
+  resulting binaries can then be run under Linux on Cplant.
+
+- I/O libraries and utilities
+  These libraries replace the common stdio libraries and route I/O
+  through Portals to the user console or the user's home file
+  system. Together with the yod utility they also propagate
+  signals to all processes of an application.
+
+- User environment
+  There is a parallel job launcher called yod. It works in
+  conjunction with a daemon (bebopd) and compute node threads
+  (PCT) to allocate nodes, control jobs, and collect information
+  about them. There is also a utility that shows what node are
+  currently allocated and who is using them.
+
+- Support environment
+  Utilities to boot and power cycle individual nodes or the whole
+  system are part of this release. There are also tools to setup
+  virtual Cplants to divide a machine into portions for
+  development and testing. Other utilities include scripts to
+  distribute and update system software on a Cplant. There are also
+  tools to gather information about the hardware in a Cplant and
+  maintain a database that serves as an information resource for
+  other utilities, such as the boot tool.
+
+- Documentation
+  There are several man pages and other short documents describing
+  parts of the system. There is also a WEB page that provides an
+  overview and gives pointers to additional documentation, such as
+  talk slides and a FAQ.
+

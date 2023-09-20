@@ -1,0 +1,50 @@
+#!/bin/bash 
+#$Id: user_env,v 1.1.2.2 2002/09/12 23:15:16 jrstear Exp $
+
+PATH=$PATH:/sbin:$CPLANT_PATH/bin:$CPLANT_PATH/sbin
+VMNAME=`cat $CPLANT_PATH/etc/vmname`
+
+case "$1" in
+    start) 
+
+	# historical /etc/local dir...
+	if [ ! -d /var/tmp/$VMNAME ] ; then 
+	    mkdir /var/tmp/$VMNAME
+	    chmod 777 /var/tmp/$VMNAME
+	fi
+	# could avoid this rm/link by checking existing link
+	if [ -L /etc/local ] ; then rm -f /etc/local ; fi
+	ln -s /var/tmp/$VMNAME /etc/local
+
+	if [ "$2" = "bebopd" ] ; then
+	   bebopdargs=`grep -v ^# $CPLANT_CFG|grep " bebopd_arguments :" | cut -d: -f2 -`
+	   if [ -z "$bebopdargs" ] ; then
+		bebopd -d
+	   else
+		bebopd $bebopdargs
+	   fi
+	elif [ "$2" = "pct" ]; then
+	   pct -d
+	elif [ "$2" = "yod" ]; then
+	   sleep 1 # ie- do nothing
+	else
+	   echo "Error: unsupported argument to user_env" && exit 0
+	fi
+	
+	;;
+
+    stop)
+
+	if [ $2 = "bebopd" ]; then
+	  killall bebopd
+	elif [ $2 = "pct" ]; then
+	  killall pct
+	else
+	   echo "Error: unsupported argument to user_env"
+	fi
+
+	;;
+
+    *)
+	echo "Usage: {start|stop}" 
+esac

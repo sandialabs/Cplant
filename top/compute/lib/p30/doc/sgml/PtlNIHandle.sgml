@@ -1,0 +1,56 @@
+<!--
+    $Id: PtlNIHandle.sgml,v 1.1 2001/01/10 21:42:54 rbbrigh Exp $
+-->
+
+<!doctype qwertz system>
+
+<manpage title="PtlNIHandle" sectnum="3" date='"04 Jan 2001"'
+    footer='"Portals 3.0"' main='"Portals 3.0 Library"'>
+
+<sect1> NAME
+    <p>
+    <bf/PtlNIHandle/ &mdash Get a network interface handle
+
+<sect1> SYNOPSIS
+    <p>
+     #include "p30.h"
+
+     int PtlNIHandle( ptl_handle_any_t handle, ptl_handle_ni_t* interface );
+
+<sect1> PARAMETERS
+    <p>
+    <descrip>
+    <tag /handle/
+    A handle for the object
+    <tag /interface/
+    On successful return, this location will hold a handle for the network
+    interface associated with <bf /handle/
+    </descrip>
+
+<sect1> DESCRIPTION
+    <p>
+    <bf /PtlNIHandle/ returns a handle for the network interface that the
+    object identified by <bf /handle/ is associated with.  If the object
+    identified by <bf /handle/ is a network interface, this function returns
+    the same value it is passed.
+
+<sect1> RETURN VALUES
+    <p>
+    <descrip>
+    <tag /PTL_OK/
+    Indicates success
+    <tag /PTL_NOINIT/
+    Indicates that the Portals API has not been successfully initialized
+    <tag /PTL_INV_HANDLE/
+    Indicates that <bf /handle/ is not a valid handle
+    <tag /PTL_SEGV/
+    Indicates that <bf /interface/ is not a legal address
+    </descrip>
+
+<sect1> SEE ALSO
+    <p>
+    <bf /PtlNIBarrier(3)/, <bf /PtlNIDist(3)/, <bf /PtlNIFini(3)/,
+    <bf /PtlNIInit(3)/, <bf /PtlNIStatus(3)/<newline>
+    <bf /Portals 3.0 Message Passing Interface document/
+
+</manpage>

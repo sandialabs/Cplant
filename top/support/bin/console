@@ -1,0 +1,19 @@
+#!/bin/sh
+# $Id: console,v 1.2 1997/08/28 19:40:10 wmdavid Exp $
+
+. /etc/cplant-functions
+
+if [ "$#" -lt 1 ]; then
+  echo "Usage: console node-number" 1>&2
+  exit
+fi
+
+LOCK="${CPLANT_ROOT}/lib/locks/lock.node-000$1"
+
+echo "`whoami` $$" >> $LOCK
+
+node_info $1
+
+cu -l $tty -s 9600
+
+rm $LOCK

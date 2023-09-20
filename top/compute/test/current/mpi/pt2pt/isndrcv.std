@@ -1,0 +1,33 @@
+**** Testing MPI_Isend and MPI_Irecv ****
+[isndrcv]: Test 'Send-Receive Test, Type 0' Passed.
+[isndrcv]: Test 'Send-Receive Test, Type 1' Passed.
+[isndrcv]: Test 'Send-Receive Test, Type 2' Passed.
+[isndrcv]: Test 'Send-Receive Test, Type 3' Passed.
+[isndrcv]: Test 'Send-Receive Test, Type 4' Passed.
+[isndrcv]: Test 'Send-Receive Test, Type 5' Passed.
+[isndrcv]: Test 'Send-Receive Test, Type 6' Passed.
+[isndrcv]: Test 'Send-Receive Test, Type 7' Passed.
+[isndrcv]: Test 'Send-Receive Test, Type 8' Passed.
+[isndrcv]: Test 'Send-Receive Test, Type 9' Passed.
+[isndrcv]: Test 'Send-Receive Test, Type 10' Passed.
+[isndrcv]: Test 'Send-Receive Test, Type 11' Passed.
+[isndrcv]: Test 'Tag Selectivity Test' Passed.
+[isndrcv]: Test 'NULL Communicator Test' Passed.
+[isndrcv]: Test 'Invalid Count Test' Passed.
+[isndrcv]: Test 'Invalid Type Test' Passed.
+[isndrcv]: Test 'Invalid Tag Test' Passed.
+[isndrcv]: Test 'Invalid Destination Test' Passed.
+For test suite 'isndrcv':
+Of 18 attempted tests, 18 passed, 0 failed.
+0 -  File: create_send.c   Line: 41
+0 - Error in MPI_SEND_INIT : Invalid communicator
+0 -  File: create_send.c   Line: 41
+0 - Error in MPI_SEND_INIT : Invalid count argument
+0 -  File: create_send.c   Line: 41
+0 - Error in MPI_SEND_INIT : Invalid datatype argument
+0 -  File: create_send.c   Line: 41
+0 - Error in MPI_SEND_INIT : Invalid message tag
+0 -  File: create_send.c   Line: 41
+0 - Error in MPI_SEND_INIT : Invalid rank
+All processes completed test
+**** Testing MPI_Isend and MPI_Irecv ****

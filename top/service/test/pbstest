@@ -1,0 +1,324 @@
+#!/usr/bin/perl -w
+#-------------------------------------------------------------------------------
+# FILE:		pbstest
+# PURPOSE:	Test the options of PBS Commands
+# NOTES:	Only the options a user can execute are being tested.
+# AUTHOR:	Don Moore, 6535
+#-------------------------------------------------------------------------------
+# *** Read the PBS configuration file ***
+#-------------------------------------------------------------------------------
+($ConfigFile)= @ARGV;					# configuration filename
+open (FILE, $ConfigFile) or die "Can't open $ConfigFile: $!\n";
+$line = <FILE>;
+while (defined($line)) {
+	if (defined($line)) {
+		chomp ($line);
+		($Keyword, $Value) = split(/=+/, $line);
+		if ($Keyword =~ /^Logfile/) {
+			$STARTFILE = "> $Value";   # open log file for overwrite
+			$LOGFILE = ">> $Value";	      # open log file for append
+		} elsif ($Keyword =~ /^Executable/) {
+			$Executable = "$Value";		    # a test application
+		} elsif ($Keyword =~ /^WaitTime/) {
+			$WaitTime = "$Value";    # seconds application will wait
+		} elsif ($Keyword =~ /^ComputeNodes/) {
+			$ComputeNodes = "$Value";      # number of compute nodes
+		} elsif ($Keyword =~ /^BinPath/) {
+			$BinPath = "$Value";		     # path for PBS qsub
+		} elsif ($Keyword =~ /^CplantBinPath/) {
+			$CplantBinPath = "$Value";		  # path for yod
+		} elsif ($Keyword =~ /^OutputPath/) {
+			$OutputPath = "$Value";	    # path for other ouput files
+		}
+		$line = <FILE>;
+	} # end if (defined($line))
+} # end while (defined($line))
+close FILE;
+#-------------------------------------------------------------------------------
+# *** Initialize variables
+#-------------------------------------------------------------------------------
+$TestNumber = 0;				    # numbers to track the tests
+$TestFlag = 1;				  	  # test success or failure flag
+@TestList = ();						# array for failed tests
+$ListNumber = 0;		     # for listing the tests in the failed array
+$IncrTestNum = 1;					 # increment test number
+$KeepTestNum = 0;				   # don't increment test number
+#$ZeroReturn = 0;				# zero error return from command
+#-------------------------------------------------------------------------------
+# *** Open the PBS log file  for environment information
+#-------------------------------------------------------------------------------
+open (STARTFILE) or die "Can't open results STARTFILE for overwrite.\n";
+print STARTFILE "\nThis is a non-interactive test for the PBS options\n";
+print STARTFILE "STARTFILE = $STARTFILE\n";
+print STARTFILE "LOGFILE = $LOGFILE\n";
+print STARTFILE "Executable = $Executable\n";
+print STARTFILE "WaitTime = $WaitTime\n";
+print STARTFILE "ComputeNodes = $ComputeNodes\n";
+print STARTFILE "BinPath = $BinPath\n";
+print STARTFILE "CplantBinPath = $CplantBinPath\n";
+print STARTFILE "OutputPath = $OutputPath\n";
+close STARTFILE;
+#-------------------------------------------------------------------------------
+# *** Submit a PBS Job for the following tests
+#-------------------------------------------------------------------------------
+$Command = $CplantBinPath . "yod -kill -sz $ComputeNodes $Executable";
+buildScript ("QScript", $Command);		      # build script for PBS job
+$Command = $BinPath . "qsub -h QScript";		     # submit job to PBS
+runPreTest ($Command, "Qoutput");
+getJobId ("Qoutput");		      # get the PBS Job Id of job just submitted
+system "rm Qoutput";					  # remove the temp file
+#-------------------------------------------------------------------------------
+# *** Test PBS qstat command with -f option
+#-------------------------------------------------------------------------------
+$Description = "Test PBS qstat -f Job ID command";
+$OutputFile = $OutputPath . "Qstat_f.log";
+$Command = $BinPath . "qstat -f $JobId";
+runTest ($Command, $Description, "> ", $OutputFile, $IncrTestNum);
+#-------------------------------------------------------------------------------
+# *** Test PBS qstat command with -u option
+#-------------------------------------------------------------------------------
+$Description = "Test PBS qstat -u command";
+$OutputFile = $OutputPath . "Qstat_u.log";
+$LogName = $ENV{LOGNAME};
+$Command = $BinPath . "qstat -u $LogName";
+runTest ($Command, $Description, "> ", $OutputFile, $IncrTestNum);
+#-------------------------------------------------------------------------------
+# *** Test PBS qrls command
+#-------------------------------------------------------------------------------
+$Description = "Test PBS qrls command";
+$OutputFile = $OutputPath . "Qrls.log";
+$Command = $BinPath . "qrls $JobId";
+runTest ($Command, $Description, "> ", $OutputFile, $IncrTestNum);
+$Command = $BinPath . "qstat";
+runTest ($Command, $Description, ">> ", $OutputFile, $KeepTestNum);
+print "\tQstatStatus = $Status\n";
+#-------------------------------------------------------------------------------
+# *** Submit a PBS Job for the following tests
+#-------------------------------------------------------------------------------
+$Command = $CplantBinPath . "yod -kill -sz $ComputeNodes $Executable";
+buildScript ("QScript", $Command);		      # build script for PBS job
+$Command = $BinPath . "qsub -a 2200 QScript";		     # submit job to PBS
+runPreTest ($Command, "Qoutput");
+getJobId ("Qoutput");		      # get the PBS Job Id of job just submitted
+system "rm Qoutput";					  # remove the temp file
+#-------------------------------------------------------------------------------
+# *** Test PBS qhold command
+#-------------------------------------------------------------------------------
+$Description = "Test PBS qhold command";
+$OutputFile = $OutputPath . "Qhold.log";
+$Command = $BinPath . "qhold $JobId";
+runTest ($Command, $Description, "> ", $OutputFile, $IncrTestNum);
+$Command = $BinPath . "qstat -f $JobId";
+runTest ($Command, $Description, ">> ", $OutputFile, $KeepTestNum);
+#-------------------------------------------------------------------------------
+# *** Test PBS qalter command
+#-------------------------------------------------------------------------------
+$Description = "Test PBS qalter command";
+$OutputFile = $OutputPath . "Qalter.log";
+$Command = $BinPath . "qalter -a 2300 $JobId";
+runTest ($Command, $Description, "> ", $OutputFile, $IncrTestNum);
+$Command = $BinPath . "qstat -f $JobId";
+runTest ($Command, $Description, ">> ", $OutputFile, $KeepTestNum);
+#-------------------------------------------------------------------------------
+# *** Test PBS qstat command with other options
+#-------------------------------------------------------------------------------
+$Description = "Test PBS qstat command";
+$OutputFile = $OutputPath . "Qstat.log";
+$Command = $BinPath . "qstat";
+runTest ($Command, $Description, "> ", $OutputFile, $IncrTestNum);
+
+$Description = "Test PBS qstat -a command";
+$OutputFile = $OutputPath . "Qstat_a.log";
+$Command = $BinPath . "qstat -a";
+runTest ($Command, $Description, "> ", $OutputFile, $IncrTestNum);
+
+$Description = "Test PBS qstat -i command";
+$OutputFile = $OutputPath . "Qstat_i.log";
+$Command = $BinPath . "qstat -i";
+runTest ($Command, $Description, "> ", $OutputFile, $IncrTestNum);
+
+$Description = "Test PBS qstat -r Command";
+$OutputFile = $OutputPath . "Qstat_r.log";
+$Command = $BinPath . "qstat -r";
+runTest ($Command, $Description, "> ", $OutputFile, $IncrTestNum);
+
+$Description = "Test PBS qstat -n command";
+$OutputFile = $OutputPath . "Qstat_n.log";
+$Command = $BinPath . "qstat -n";
+runTest ($Command, $Description, "> ", $OutputFile, $IncrTestNum);
+
+$Description = "Test PBS qstat -s command";
+$OutputFile = $OutputPath . "Qstat_s.log";
+$Command = $BinPath . "qstat -s";
+runTest ($Command, $Description, "> ", $OutputFile, $IncrTestNum);
+
+$Description = "Test PBS qstat -G command";
+$OutputFile = $OutputPath . "Qstat_G.log";
+$Command = $BinPath . "qstat -G";
+runTest ($Command, $Description, "> ", $OutputFile, $IncrTestNum);
+
+$Description = "Test PBS qstat -M command";
+$OutputFile = $OutputPath . "Qstat_M.log";
+$Command = $BinPath . "qstat -M";
+runTest ($Command, $Description, "> ", $OutputFile, $IncrTestNum);
+
+$Description = "Test PBS qstat -R command";
+$OutputFile = $OutputPath . "Qstat_R.log";
+$Command = $BinPath . "qstat -R";
+runTest ($Command, $Description, "> ", $OutputFile, $IncrTestNum);
+
+$Description = "Test PBS qstat -Q command";
+$OutputFile = $OutputPath . "Qstat_Q.log";
+$Command = $BinPath . "qstat -Q";
+runTest ($Command, $Description, "> ", $OutputFile, $IncrTestNum);
+
+$Description = "Test PBS qstat -q command";
+$OutputFile = $OutputPath . "Qstat_q.log";
+$Command = $BinPath . "qstat -q";
+runTest ($Command, $Description, "> ", $OutputFile, $IncrTestNum);
+
+$Description = "Test PBS qstat -B command";
+$OutputFile = $OutputPath . "Qstat_B.log";
+$Command = $BinPath . "qstat -B";
+runTest ($Command, $Description, "> ", $OutputFile, $IncrTestNum);
+#-------------------------------------------------------------------------------
+# *** Test PBS qdel command
+#-------------------------------------------------------------------------------
+$Description = "Test PBS qdel Job ID command";
+$OutputFile = $OutputPath . "Qdel.log";
+$Command = $BinPath . "qdel $JobId";
+runTest ($Command, $Description, "> ", $OutputFile, $IncrTestNum);
+$Command = $BinPath . "qstat";
+runTest ($Command, $Description, ">> ", $OutputFile, $KeepTestNum);
+print "\tQstatStatus = $Status\n";
+sleep $WaitTime;
+removeScript ("QScript");
+#-------------------------------------------------------------------------------
+# *** List the tests that failed ***
+#-------------------------------------------------------------------------------
+if ($TestFlag == 0) {
+	open (LOGFILE) or die "Can't open $LOGFILE file.\n";
+	print LOGFILE "\n***** One or more tests failed. *****\n";
+        foreach $TestList (@TestList) {
+		print LOGFILE "\t$TestList\n";
+	}
+	close LOGFILE;
+} else {
+        open (LOGFILE) or die "Can't open $LOGFILE file.\n";
+        print LOGFILE "\n***** Successful test. *****\n";
+	print "\n***** Successful test. *****\n";
+        close LOGFILE;
+}
+#-------------------------------------------------------------------------------
+# *** Subroutines ***
+#-------------------------------------------------------------------------------
+sub buildScript () {
+#-------------------------------------------------------------------------------
+# PURPOSE:	Build a script file with the commands to submit a PBS job
+# AUTHOR:	Don Moore, 6535
+# INPUTS:	$_[0] - name of script file
+#		$_[1] - yod command to execute from script
+# OUTPUTS:	A script for running a job using PBS	
+#-------------------------------------------------------------------------------
+	open (FILE, "> $_[0]") or die "Can't open $_[0] $!\n";
+	print FILE "#!/bin/bash\n";
+	print FILE "#PBS -l size=$ComputeNodes\n";
+	print FILE "#PBS -l walltime=0:15:0\n";
+	print FILE "#PBS -q default\n";
+	print FILE "cd \$PBS_O_WORKDIR\n";
+	print FILE $_[1];
+	close FILE;
+} # End buildScript
+
+sub getJobId () {
+#-------------------------------------------------------------------------------
+# PURPOSE:	Get the PBS Job Id from the job submitted
+# AUTHOR:	Don Moore, 6535
+# INPUTS:	$_[0] - name of output file
+# OUTPUTS:	$JobId - the Job Id number for a job running my application	
+#-------------------------------------------------------------------------------
+	$Outputfile = $_[0];
+	open (FILE, $Outputfile) or die "Can't open $Outputfile $!\n";
+	my $Line = <FILE>;				# line of the input file
+	while (defined($Line)) {
+		if ($Line =~ /^\s*(\d+)/) {
+			$JobId = $1;
+			print "\t\tJobId = $JobId\n";
+		}
+		$Line = <FILE>;
+	}
+	close FILE;
+	$JobId = $JobId;
+} # End getJobId
+
+sub recordOptionsNotTested () {
+#-------------------------------------------------------------------------------
+# PURPOSE:	Record in the log file that an option was not tested
+# AUTHOR:	Don Moore, 6535
+# INPUTS:	$_[0] - short description of the test
+# OUTPUTS:	None	
+#-------------------------------------------------------------------------------
+	open (LOGFILE) or die "Can't open $LOGFILE file.\n";
+	print LOGFILE "\nOption not tested: $_[0]\n\t";
+	close LOGFILE;
+} # End recordOptionsNotTested
+
+sub removeScript () {
+#-------------------------------------------------------------------------------
+# PURPOSE:	remove the scripts built by buildScript
+# AUTHOR:	Don Moore, 6535
+# INPUTS:	$_[0] - name of script file
+#-------------------------------------------------------------------------------
+	sleep $WaitTime;
+	system "rm $_[0]";
+	system "rm $_[0].*";
+	print "Script removed\n";
+} # End removeScript
+
+sub runPreTest () {
+#-------------------------------------------------------------------------------
+# PURPOSE:	Run one PBS option test
+# AUTHOR:	Don Moore, 6535
+# INPUTS:	None
+# OUTPUTS:	$Status - Success or failure from qsub	
+#-------------------------------------------------------------------------------
+        $Status = system "$_[0] > $_[1]";	 # output both stdout and stderr
+} # End runPreTest
+
+sub runTest () {
+#-------------------------------------------------------------------------------
+# PURPOSE:	Run one pingd option test
+# AUTHOR:	Don Moore, 6535
+# INPUTS:	$_[0] - command for pingd option being tested
+#		$_[1] - short description of the test
+#		$_[2] - overwrite or append a file
+#		$_[3] - name of result file
+#		$_[4] - increment test number flag
+# OUTPUTS:	$Status - Success or failure from PBS	
+#-------------------------------------------------------------------------------
+	open (RSTFILE, $_[2] . $_[3]) or die "Can't open $_[3] file.\n";
+	open (LOGFILE) or die "Can't open $LOGFILE.\n";
+	if ($_[4]) {		   # if first part of test increment test number
+		print "\t$_[1]\n";
+		$TestNumber += 1;
+		$TestTime = localtime();		 # date and time of test
+		print RSTFILE "Test $TestNumber: $TestTime\n";
+		print LOGFILE "\nTest $TestNumber:\n\t$_[1]\n";
+		print LOGFILE "\t$TestTime\n";
+	}
+	print RSTFILE "\t$_[0]\n";	# print the option tested to result file
+	close RSTFILE;
+        $Status = system "$_[0] >> $_[3] 2>&1";	 # output both stdout and stderr
+	if ($Status != 0) {		     	     # if PBS doesn't return a 0
+		print LOGFILE "\tTest failed.\n";
+		print "\t\tTest failed.\n";
+		$TestFlag = 0;
+		$TestList[$ListNumber] = $_[1];
+		$ListNumber += 1;
+	} else {
+		print LOGFILE "\tTest completed as expected.\n";
+	}
+        print LOGFILE "\tPingd output status = $Status.\n";
+        print LOGFILE "\tThe output file for this option is in:\n\t\t $_[3]\n";
+	close LOGFILE;
+} # End runTest

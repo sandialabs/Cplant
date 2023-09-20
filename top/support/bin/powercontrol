@@ -1,0 +1,69 @@
+#!/bin/sh
+
+. /cplant/admin/lib/functions
+
+
+# Determine what to do
+if [ "$1" = "-on" ]; then
+  power_down=no
+  delay=0
+  power_up=yes
+  shift
+elif [ "$1" = "-off" ]; then
+  power_down=yes
+  delay=0
+  power_up=no
+  shift
+elif [ "$1" = "-reset" ]; then
+  power_down=yes
+  delay=5
+  power_up=yes
+  shift
+else
+  # Default-- cycle the power
+  power_down=yes
+  delay=5
+  power_up=yes
+fi
+
+
+plugs=""
+
+#
+# Build a list of plugs to power cycle from the
+# flat file database
+#
+for node_id in $*; do
+  ENTRY="`node_info $node_id`"
+
+  plug="`echo $ENTRY | /usr/bin/cut -d: -f2`"
+  if [ "$plug" = "" ]; then
+	echo "Unknown node $node"
+  else
+	plugs="${plugs} $plug"
+	nodes="${nodes} $nodes"
+  fi
+
+done
+
+#
+# We can't power cycle them all at the same time with the
+# current power contrl hardware.  The startup current on the
+# power supplies is too high and could blow a fuse.
+#
+echo "power down $power_down, power up $power_up: nodes $* (ports=$plugs) "
+echo "User `whoami` is cycling power on nodes $* ($plugs)" >> /tmp/powerlog
+
+if [ "$power_down" = "yes" ]; then
+  for plug in $plugs; do
+    $CPLANT_BIN/power $plug off
+  done
+fi
+
+sleep $delay
+
+if [ "$power_up" = "yes" ]; then
+  for plug in $plugs; do
+    $CPLANT_BIN/power $plug on
+  done
+fi

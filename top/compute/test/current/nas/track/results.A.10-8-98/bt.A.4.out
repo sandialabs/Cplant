@@ -1,0 +1,83 @@
+
+ 
+ NAS Parallel Benchmarks 2.3 -- BT Benchmark 
+ 
+ No input file inputbt.data. Using compiled defaults
+ Size:  64x 64x 64
+ Iterations: 200    dt:   0.000800
+ Number of active processes:     4
+ 
+ Time step    1
+ Time step   20
+ Time step   40
+ Time step   60
+ Time step   80
+ Time step  100
+ Time step  120
+ Time step  140
+ Time step  160
+ Time step  180
+ Time step  200
+ Verification being performed for class A
+ accuracy setting for epsilon =  0.1000000000000E-07
+ Comparison of RMS-norms of residual
+           1 0.1080634671464E+03 0.1080634671464E+03 0.6838244826899E-14
+           2 0.1131973090122E+02 0.1131973090122E+02 0.4707771381408E-15
+           3 0.2597435451158E+02 0.2597435451158E+02 0.4103332397211E-15
+           4 0.2366562254468E+02 0.2366562254468E+02 0.5554487563868E-14
+           5 0.2527896321175E+03 0.2527896321175E+03 0.1259241302557E-13
+ Comparison of RMS-norms of solution error
+           1 0.4234841604053E+01 0.4234841604053E+01 0.1048656009767E-14
+           2 0.4439028249700E+00 0.4439028249700E+00 0.6752834174215E-14
+           3 0.9669248013635E+00 0.9669248013635E+00 0.3214959906465E-14
+           4 0.8830206303977E+00 0.8830206303977E+00 0.6286506715733E-15
+           5 0.9737990177083E+01 0.9737990177083E+01 0.2006566537661E-14
+ Verification Successful
+ 
+ 
+ BT Benchmark Completed.
+ Class           =                        A
+ Size            =               64x 64x 64
+ Iterations      =                      200
+ Time in seconds =                   672.67
+ Total processes =                        4
+ Compiled procs  =                        4
+ Mop/s total     =                   250.17
+ Mop/s/process   =                    62.54
+ Operation type  =           floating point
+ Verification    =               SUCCESSFUL
+ Version         =                      2.3
+ Compile date    =              08 Oct 1998
+ 
+ Compile options:
+    MPIF77       = /Net/mp/cplant/bin/f77 
+    FLINK        = $(MPIF77)
+    FMPI_LIB     = -L$(MPIPATH) -lmpi 
+    FMPI_INC     = -I$(MPIPATH)/include
+    FFLAGS       = -O3 -align records -align dcommons -g
+    FLINKFLAGS   = -v
+    RAND         = (none)
+ 
+ 
+ Please send the results of this run to:
+ 
+ NPB Development Team 
+ Internet: npb@nas.nasa.gov
+ 
+ If email is not available, send this to:
+ 
+ MS T27A-1
+ NASA Ames Research Center
+ Moffett Field, CA  94035-1000
+ 
+ Fax: 415-604-3957
+ 
+ 
+ 
+   Node name     Rank  Node   PID   Elapsed  Exit Code  Terminating Signal
+---------------- ----  ----  -----  -------  ---------  ------------------
+SU-003 node-0003    0    17   8557  0:11:23       0       none
+SU-003 node-0005    1    18   8478  0:11:23       0       none
+SU-003 node-0007    2    19   8435  0:11:22       0       none
+SU-003 node-0014    3    24   8423  0:11:22       0       none
+

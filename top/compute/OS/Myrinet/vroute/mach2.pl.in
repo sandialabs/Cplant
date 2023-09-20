@@ -1,0 +1,98 @@
+#! /usr/bin/perl
+
+  # mach2.pl
+  # verify routes from all nodes
+  # to "all" other nodes
+  # run on ADMIN node as a foreground process
+  # or as a cron job BY ROOT
+  # usage: mach2.pl [no command line options]
+
+  # BEFORE RUNNING this script, the directories
+  # $file_loc and $backup (defined below) 
+  # MUST BE CREATED on the service node where
+  # all2.pl is to be started
+
+
+  # need to configure a service node to run all2.pl
+
+  $cplant_path = "CPLANT_PATH";
+
+  # CONFIGURATION ########################################################
+  @whotocontact = ("jhlaros\@sandia.gov", "jsotto\@sandia.gov", 
+                   "gmcgir\@sandia.gov", "redavis\@sandia.gov");
+  $alaska_svc_node =  "c-15.SU-1";
+  $iceberg_svc_node = "c-7.SU-3";
+  $siberia_svc_node =  "c-0.SU-10";
+
+  # file locations for results on the service node
+  # -- can be used to override defaults given in all2.pl
+  $file_loc = "/tmp/routing";
+  #$file_loc = "/usr/local/jsotto/routing";
+  $backup = "$file_loc/../routing.bak";
+  
+  ########################################################################
+  for ($i=1; $i<@whotocontact; $i++) {
+    $contact_str .= " -c $whotocontact[$i]";
+  }
+  $contact_str .= " $whotocontact[0]";
+
+  # figure out the installation type from known types
+
+  $known_install = "no";
+  $admin = `hostname`;
+  chop($admin);
+  if ( $admin =~ /alaska/ ) {
+    $install = "alaska";
+    $known_install = "yes";
+    $svc_node = $alaska_svc_node;
+  }
+  if ( $admin =~ /siberia/ ) {
+    $install = "siberia";
+    $known_install = "yes";
+    $svc_node = $siberia_svc_node;
+  }
+  if ( $admin =~ /iceberg/ ) {
+    $install = "iceberg";
+    $known_install = "yes";
+    $svc_node = $iceberg_svc_node;
+  }
+
+  if ( $known_install =~ /no/ ) {
+    print("ERROR: installation \"$install\" not a known type...\n");
+    exit -1;
+  }
+
+  print("mach2: doing low-level myrinet test on a \"$install\"-type\n");
+  print("mach2: install ...\n");
+  print("mach2: results can be monitored in $svc_node:$file_loc\n");
+
+ #----------------------------------------------------------------------
+ #                            get started
+ #----------------------------------------------------------------------
+
+ 
+  $msg  = "mach2.pl (low-level myrinet diagnostic) starting\n";
+  $msg .= "on node $admin\n\n";
+  $msg .= "another msg will be sent on successful completion...\n\n";
+  $msg .= "progress can be monitored in $svc_node:$file_loc/mach.log\n\n";
+
+  system("echo '$msg' | mail -s 'Start of Periodic Myrinet Diagnostic' $contact_str"); 
+
+  $result = `rsh $svc_node $cplant_path/sbin/all2.pl $file_loc $backup`;
+
+  $msg  = "mach2.pl (low-level myrinet diagnostic) completing\n";
+  $msg .= "its checkout on $admin of the compute\n";
+  $msg .= "nodes in the vm associated w/ service node $svc_node.\n\n"; 
+
+  $msg .= "to id specific failures grep on \"FAILED\" in the files\n";
+  $msg .= "in $svc_node:$file_loc\n\n";
+
+  $msg .= "the results obtained from the service node are\n"; 
+  $msg .= "as follows\n\n";
+
+  $msg .= "$result\n";
+
+  system("echo '$msg' | mail -s 'Completion of Periodic Myrinet Diagnostic' $contact_str"); 
+  print("$msg");
+
+

@@ -1,0 +1,102 @@
+$Id: README,v 1.2 2000/03/20 20:58:26 lafisk Exp $
+
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * 
+These are the configuration files for the Cplant prime/nonprime
+policy.
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * 
+
+At runtime, the behavior of PBS is determined by the configuration
+files in the working directory.
+
+This directory contains the runtime configuration files that are
+particular to PBS/Cplant and also the commands to set up the PBS
+server the first time it is run against a given working directory.
+
+On Cplant/alaska, we keep a template of the working directory in
+/usr/local/pbs/working.  From there it can be copied onto each
+service node at /tmp/pbs/working.  (This pathname is compiled into
+the PBS codes.)  The nodes hosting PBS clients and daemons must
+have this working directory.  The node hosting the bebopd must
+also have it, since the bebopd invokes the qmgr client to keep
+the PBS server up to date on the number of compute nodes in the machine.
+
+qmgr-setup -
+
+  This file contains the qmgr commands to be supplied to the
+  PBS server the first time it is run against a particular
+  working directory.  The server saves the values in the working
+  directory, so they don't need to be re-entered the next time
+  the server is started.
+
+  When running the server for the first time with a working directory,
+  run:
+
+     pbs_server -t create
+
+  Then enter the qmgr commands in this file.  When starting the server
+  subsequently, it is started without arguments.
+
+  Read the comments in the file before entering the commands.
+
+mom_priv/config
+
+  This is the PBS MOMs configuration file.  If you send the pbs_mom
+  process a SIGHUP, it will re-read this file.  (The PBS MOM runs
+  on each service node and is the process that starts user scripts
+  and monitors them to ensure they don't run over their allotted
+  time.)
+
+  Entries:
+
+  $clienthost - Every service node should be listed here.  The MOM
+    will only accept messages from these hosts.
+
+  $usecp - When a PBS job terminates, the PBS MOM copies it's stdout
+    and stderr streams to a file in the directory from which the
+    job was submitted.  It will use it's own version of rcp (which
+    often fails on alaska) unless told with this directive to use
+    cp. This first field is the remote file path, the second is
+    the local file path to which the files can be copied with cp.
+
+  $cplant_grace - If a PBS jobs runs over its allotted walltime
+    limit and there are jobs waiting to run, the PBS MOM will
+    kill the over-limit job.  If cplant_grace is set to some
+    positive value, the MOM will allow that many seconds grace
+    period before killing the job.  If cplant_grace is zero,
+    MOM will kill the job as soon as it notices it is over-limit.
+    If cplant_grace is negative, MOM will not kill jobs.
+
+sched_priv/holidays
+
+   This file must list the prime and non-prime time periods, and
+   every official holiday in the year.
+
+sched_priv/resource_group
+
+   This file must list every user allowed to submit jobs to PBS.
+   The format is 
+
+      name   unique ID    group   priority
+
+   Users may be grouped into workgroups which are assigned a
+   priority among other groups.  The base group is called root.
+
+sched_priv/usage
+
+   This file is written by the scheduler to keep track of user's
+   time on the machine.  It is used by the fairshare calculations.
+   It should be 0 length with permissions 644.
+
+sched_priv/dedicated_time
+
+   If you have dedicated time, it should be listed in here.  Queues
+   with names beginning "ded" are the only queues allowed to run
+   jobs during dedicated time.
+
+server_priv/nodes
+
+   The "nodes" resource of PBS in our case refers to the service
+   nodes on which the MOMs run.  List each service node and append
+   it with ":ts", indicating that it is timeshared.  (More than
+   one PBS script can be executing on a service node at any given
+   time.)

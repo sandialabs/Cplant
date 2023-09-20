@@ -1,0 +1,26 @@
+
+Cplant Software Release 0.6 - February 9, 2001
+----------------------------------------------
+
+This release of Cplant software adds enhanced error correction and detection
+protocols to the Myrinet message passing software and adds ASCI/Red-style
+job logging capability.  The enhanced error correction/detection code in the
+RTS/CTS module will now recover from a small set of network errors.  Previous
+versions of Cplant software were unable to recover from any Myrinet network
+errors, such as header or data corruption errors.  A new reliability protcol
+within the RTS/CTS module can now recover from such errors.  This release
+also allows for ASCI/Red-style logging of jobs so that the tools used for
+processing ASCI/Red log files are compatible with the Cplant clusters.
+
+Highlights
+----------
+- Limited Myrinet error correctin/detection protocol
+- ASCI/Red-style logging information
+
+Bug Fixes
+---------
+- Various fixes to Portals 3.0 bugs.  The enhanced error correction/detection
+  protocol uncovered some bugs in the Portals 3.0 library code.  For example,
+  some message passing events appeared to be generated out of order due to
+  the way the Portals 3.0 library code was allocating event entries.
+

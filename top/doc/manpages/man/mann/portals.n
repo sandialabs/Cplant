@@ -1,0 +1,55 @@
+.if n .ds Q \&"
+.if t .ds Q ``
+.if n .ds U \&"
+.if t .ds U ''
+.TH portals 1M "28 August 2002" "Cplant" "Cplant System Manager's Manual"
+.tr \&
+.nr bi 0
+.nr ll 0
+.nr el 0
+.de Pp
+.ie \\n(ll>0 \{\
+.ie \\n(bi=1 \{\
+.nr bi 0
+.if \\n(t\\n(ll=0 \{.IP \\(bu\}
+.if \\n(t\\n(ll=1 \{.IP \\n+(e\\n(el.\}
+.\}
+.el .sp 
+.\}
+.el \{\
+.ie \\nh=1 \{\
+.LP
+.nr h 0
+.\}
+.el .PP 
+.\}
+..
+.SH NAME
+    
+
+.Pp
+\fBportals\fP -- Cplant portals startup script
+.SH SYNOPSIS
+    
+
+.Pp
+\fBportals\fP start|stop|restart [ethernet]
+.SH DESCRIPTION
+
+.Pp
+\fBportals\fP is the script in the init.d/ directory which is used
+to start or stop cplant portals on a node.  
+.Pp
+Without the \*Qethernet\*U argument, it loads cplant's custom MCP and
+all cplant kernel modules.
+.Pp
+It \*Qethernet\*U is given as an argument, the script will not attempt
+to load the custom cplant mcp, and the rtscts-eth.mod kernel
+module will be loaded (instead of rtscts.mod).
+.Pp
+.SH SEE ALSO
+    
+
+.Pp
+\fBcfg\fP, \fBcplant\fP,
+Guide to building and installing Cplant

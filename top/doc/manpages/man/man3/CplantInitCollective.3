@@ -1,0 +1,80 @@
+.if n .ds Q \&"
+.if t .ds Q ``
+.if n .ds U \&"
+.if t .ds U ''
+.TH INITCOLLECTIVE 3 "20 November 2001" "CPLANT MANPAGE" "Cplant Runtime Libraries"
+.tr \&
+.nr bi 0
+.nr ll 0
+.nr el 0
+.de Pp
+.ie \\n(ll>0 \{\
+.ie \\n(bi=1 \{\
+.nr bi 0
+.if \\n(t\\n(ll=0 \{.IP \\(bu\}
+.if \\n(t\\n(ll=1 \{.IP \\n+(e\\n(el.\}
+.\}
+.el .sp 
+.\}
+.el \{\
+.ie \\nh=1 \{\
+.LP
+.nr h 0
+.\}
+.el .PP 
+.\}
+..
+.SH NAME
+    
+
+.Pp
+CplantInitCollective, CplantDoneCollective
+.SH SYNOPSIS
+    
+
+.Pp
+\fB#include <cplant.h>\fP
+.Pp
+\fBint CplantInitCollective(int *\fP\fItmout\fP\fB)\fP
+.Pp
+\fBvoid CplantDoneCollective(void)\fP
+.Pp
+.SH DESCRIPTION
+    
+
+.Pp
+The \fBCplant*Grp\fP functions make use of the collective
+operations of the Cplant server library.  Before an application
+can use these functions, every process in the parallel application
+must call \fBCplantInitCollective\fP (even if only a subset 
+will be using the calls).  In this call the structures
+required for server library collective communication are set up,
+and the processes synchronize.  Upon returning from the call,
+the \fBCplant*Grp\fP functions may safely be called.
+.Pp
+The \fItmout\fP in seconds is the length of time the call will
+wait for the synchronization to complete before determining that
+the call has failed.
+.Pp
+\fBCplantDoneCollective\fP may be called when the collective
+functions are no longer needed.  It frees the memory required
+to support the collective operations of the server library.
+.Pp
+.Pp
+.SH RETURN VALUE
+    
+
+.Pp
+\fBCplantInitCollective\fP returns -1 on error and zero on success.
+.SH SEE ALSO
+    
+
+.Pp
+\fBCplantSpawnJobGrp\fP
+\fBCplantFamilyStatusGrp\fP
+\fBCplantMyParentGrp\fP
+\fBCplantMySelfGrp\fP
+\fBCplantInterjobBarrierGrp\fP
+\fBCplantBarrierStatusGrp\fP
+\fBCplantFamilyTerminationGrp\fP
+\fBCplantFamilyMapGrp\fP

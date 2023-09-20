@@ -1,0 +1,205 @@
+#! /usr/bin/perl
+
+  # all2.pl
+  # verify routes from all nodes
+  # to "all" other nodes
+  # run on a SERVICE as a foreground process
+  # or as a cron job, or via mach2.pl's rsh on
+  # the admin node
+  # usage: all2.pl [no command line options]
+
+  # BEFORE RUNNING this script, the directories
+  # $file_loc and $backup (see below) MUST BE CREATED
+
+  # valid nodes are determined at this time by
+  # doing "pingd"
+
+  # need to configure in service nodes (this can be thought of
+  # as an auxiliary set of nodes to check beyond the ones pingd
+  # will inform us about) and who to notify w/ results...
+
+  $cplant_path = "CPLANT_PATH";
+
+  # CONFIGURATION ########################################################
+#  @whotocontact = ("jhlaros\@sandia.gov", "jsotto\@sandia.gov", 
+#                   "gmcgir\@sandia.gov", "redavis\@sandia.gov");
+  @whotocontact = ("jsotto\@sandia.gov");
+  @alaska_svc_nodes =  ("c-15.SU-1", "c-15.SU-2", "c-15.SU-3", "c-15.SU-4", 
+                        "c-15.SU-5", "c-15.SU-6", "c-15.SU-7", "c-15.SU-8", 
+                        "c-15.SU-9");
+  @iceberg_svc_nodes = ("c-7.SU-3");
+  @siberia_svc_nodes =  ("c-0.SU-6", "c-0.SU-8", "c-0.SU-10", "c-0.SU-12",
+                        "c-0.SU-14", "c-0.SU-16", "c-0.SU-18");
+  $file_loc= "/tmp/routing";
+  $backup = "$file_loc/../routing.bak";
+  ########################################################################
+  for ($i=1; $i<@whotocontact; $i++) {
+    $contact_str .= " -c $whotocontact[$i]";
+  }
+  $contact_str .= " $whotocontact[0]";
+
+  # command line arguments (from mach2.p.?) override defaults for
+  # file locations
+
+  if ( $ARGV[0] ne "") {
+    $file_loc = $ARGV[0];
+  }
+  if ( $ARGV[1] ne "") {
+    $backup = $ARGV[1];
+  }
+
+  # figure out the installation type from known types
+
+  $known_install = "no";
+  $install = `hostname`;
+  if ( $install =~ /alaska/ ) {
+    $install = "alaska";
+    $known_install = "yes";
+    @svc_nodes = @alaska_svc_nodes;
+  }
+  if ( $install =~ /siberia/ ) {
+    $install = "siberia";
+    $known_install = "yes";
+    @svc_nodes = @siberia_svc_nodes;
+  }
+  if ( $install =~ /iceberg/ ) {
+    $install = "iceberg";
+    $known_install = "yes";
+    @svc_nodes = @iceberg_svc_nodes;
+  }
+
+  if ( $known_install =~ /no/ ) {
+    print("ERROR: installation \"$install\" not a known type...\n");
+    exit -1;
+  }
+
+  print("all2: doing test on a \"$install\"-type install ...\n");
+
+ #----------------------------------------------------------------------
+ #                            get started
+ #----------------------------------------------------------------------
+
+  $failures = 0;
+
+  for ($i=1; $i<@whotocontact; $i++) {
+    $contact_str .= " -c $whotocontact[$i]";
+  }
+  $contact_str .= " $whotocontact[0]";
+
+  # back up previous results
+  print("backing up files in $file_loc to $backup\n\n");
+  system("rm $backup/*"); 
+  system("cp $file_loc/* $backup");
+  system("rm $file_loc/*"); 
+
+  $service = `hostname`;
+  chop($service);
+
+  $msg  = "all2.pl (low-level myrinet diagnostic) starting\n";
+  $msg .= "on node $service\n\n";
+  $msg .= "another msg will be sent on successful completion...\n\n";
+  $msg .= "progress can be monitored in $file_loc/mach.log\n\n";
+
+  #system("echo '$msg' | mail -s 'Start of Periodic Myrinet Diagnostic' $contact_str"); 
+
+  # get pingd output, and use it to 
+  # determine valid set of nodes for a one-to-all test 
+  $pingd = `$cplant_path/sbin/pingd`;
+  if ( !open(PINGD,">$file_loc/pingd") ) {
+    print("all2: cannot open $file_loc/pingd for writing...\n");
+    exit(-1);
+  }
+  print(PINGD "$pingd");
+  close(PINGD);
+  @lines = split(/\n/, $pingd);
+
+#goto SKIP;
+
+  foreach $i (@lines) {
+    $_ = $i;
+    if ( /SU/ && !/node/ ) {
+      @words = split();
+      $nid0 = $words[0];
+      $sustr = $words[2];
+      $nodestr = $words[3];
+      @fields = split(/-/, $sustr);
+      $sunum = int($fields[1]);
+      @fields = split(/-/, $nodestr);
+      $nodenum = int($fields[1]);
+      $hname = "c-$nodenum.SU-$sunum";
+      if ( !open(ERRORS,">$file_loc/$hname") ) {
+        print("all2: cannot open $file_loc/$hname for writing\n");
+        exit(-1);
+      }
+#      print("doing one-to-all test with $hname...\n");
+      if ( !open(LOG,">>$file_loc/mach.log") ) {
+        print("all2: cannot open $file_loc/mach.log for writing\n");
+        exit(-1);
+      }
+      print(LOG "doing one-to-all test with $hname...\n");
+      close(LOG);
+
+      # inner loop
+      foreach $j (@lines) {
+        $_ = $j;
+        if ( /SU/ && !/node/ ) {
+          @wordz = split();
+          $nid1 = $wordz[0];
+          $result = `$cplant_path/sbin/req $nid0 $nid1`;
+          if ( $result =~ /FAILED/) { 
+            $failures++;
+          }
+          print(ERRORS "$result");
+        }
+      }
+      close(ERRORS);
+    }
+  }
+
+SKIP:
+
+  # now do all-to-one test for each service node
+  open(LOG,">>$file_loc/mach.log\n");
+  print(LOG "doing one-to-all test with service nodes...\n");
+  close(LOG);
+  print("doing one-to-all test with service nodes...\n");
+
+  foreach $svc (@svc_nodes) {
+
+    open(ERRORS,">$file_loc/$svc");
+
+    open(LOG,">>$file_loc/mach.log\n");
+    print(LOG "doing one-to-all test with $svc...\n");
+    close(LOG);
+
+    $nid0 = `$cplant_path/sbin/hname2pnid $svc $install`;
+    chop($nid0);
+      
+    foreach $j (@lines) {
+      $_ = $j;
+      if ( /SU/ && !/node/ ) {
+        @wordz = split();
+        $nid1 = $wordz[0];
+        $result = `$cplant_path/sbin/req $nid0 $nid1`;
+        if ( $result =~ /FAILED/) { 
+          $failures++;
+        }
+        print(ERRORS "$result\n");
+      }
+    }
+    close(ERRORS);
+  }
+
+  $msg  = "all2.pl (low-level myrinet diagnostic) completing\n";
+  $msg .= "all-2-all test of the nodes in the vm associated\n";
+  $msg .= "with $service...\n\n"; 
+  $msg .= "it looks like there were $failures failures recorded in\n";
+  $msg .= "$file_loc (grep for FAILED on the files there\n";
+  $msg .= "or in $backup for specific failures)\n";
+  #system("echo '$msg' | mail -s 'Completion of Periodic Myrinet Diagnostic' $contact_str"); 
+  print("$msg");
+  open(LOG,">>$file_loc/mach.log\n");
+  print(LOG "$msg");
+  close(LOG);
+
+

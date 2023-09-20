@@ -1,0 +1,35 @@
+#
+# $Id: Makefile-alpha,v 1.2 2001/02/16 05:39:11 lafisk Exp $
+#
+
+include ../../../Makefile-common
+
+LIB         = libsrvr.a
+CSOURCES    = $(shell ls ../*.c)
+COBJECTS    = $(notdir $(CSOURCES:.c=.o))
+DEPS        = $(COBJECTS:.o=.d)
+
+INSTALLTARGETS = $(LIB)
+INSTALLDIR     = $(libdir)
+
+vpath %.c ..
+
+all: $(LIB)
+
+ifeq ($(MAKE_DEPS),yes)
+include $(DEPS)
+endif
+
+$(COBJECTS): %.o : ../%.c
+	$(CC) $(CFLAGS) $(INCLUDEDIRS) -c $<
+
+$(LIB): $(LIB)($(COBJECTS))
+
+install uninstall: $(INSTALLTARGETS)
+	@$($@)
+
+dep: $(DEPS)
+
+clean:
+	-rm -f $(COBJECTS) $(LIB) $(DEPS)
+

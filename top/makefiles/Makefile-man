@@ -1,0 +1,13 @@
+#
+include ../Makefile-common
+ 
+###################### fix compute/tools ####################
+
+ifeq ($(OS),linux)
+SUBDIRS = ../doc/manpages/
+endif
+
+all:
+
+%:
+	$(do-subdirs)

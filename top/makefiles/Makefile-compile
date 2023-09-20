@@ -1,0 +1,16 @@
+#
+include ../Makefile-common
+ 
+SUBDIRS   = ../lib \
+            ../compute/lib/p30 \
+            ../compute/lib/apps \
+            ../compute/tool \
+            ../compute/test/current/general \
+            ../compute/lib/mpich-1.2.0 \
+            ../compute/test/current/mpi/simple \
+            ../compile
+
+all:
+
+%:
+	$(do-subdirs)

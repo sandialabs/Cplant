@@ -1,0 +1,31 @@
+#! /bin/sh
+#
+# $Id: head_p3.in,v 1.2 2001/11/01 22:46:22 pumatst Exp $
+#
+
+#
+# CPLANT_PATH - Base directory for startup files, include files, and libraries
+# 
+CPLANT_PATH=${CPLANT_PATH-DEFAULT_PATH}
+
+INCLUDE_DIR="\
+    -I$CPLANT_PATH/include \
+    -I$CPLANT_PATH/include/sys \
+    -I$CPLANT_PATH/include/portals \
+    -I$CPLANT_PATH/include/IO \
+    -I$CPLANT_PATH/include/load \
+    -I$CPLANT_PATH/compute/OS/linux/include \
+    -I$CPLANT_PATH/compute/lib/mpich-1.2.0/include \
+    "
+
+LIB_DIR="\
+    -L$CPLANT_PATH/compute/lib/IO/ia64-linux \
+    -L$CPLANT_PATH/lib/comm/ia64-linux \
+    -L$CPLANT_PATH/lib/puma/ia64-linux \
+    -L$CPLANT_PATH/compute/lib/apps/ia64-linux \
+    -L$CPLANT_PATH/compute/lib/p30/lib/ia64-linux \
+    -L$CPLANT_PATH/compute/lib/mpich-1.2.0/ia64-linux \
+    " 
+
+STARTUP_DIR="$CPLANT_PATH/lib/start/ia64-linux"
+     

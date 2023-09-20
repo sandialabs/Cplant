@@ -1,0 +1,15 @@
+
+##### disabled nodes
+# node.n-1.r-2 : disabled
+
+##### Bebopd ##### PBS scheduler node
+ node.n-0.y-1 : local_disk portals user_env=bebopd pbs-env=bebopd-support-only pbs-env=scheduler pbs-env=server 
+##### arguments for bebopd
+ bebopd_arguments :  -remap /cplant/etc/remap -PBSupdate -PBSlist 1536..1545 -d
+
+##### Login nodes
+ node.n-2.y-1 node.n-4.y-1 node.n-2.y-3 : local_disk portals default_route=134.253.138.254 pbs-env=mom mount_nfs=sana017g:/vol/cplant_home/home,/home mount_nfs=sana017g:/vol/cplant_home/projects,/projects user_env=yod enfs_client=10.0.7.2,10.0.7.4,10.0.7.6,10.0.7.8,10.0.7.10,10.0.7.12,10.0.7.14,10.0.7.16,10.0.7.18,10.0.7.20,10.0.7.22,10.0.7.24 ntpd lbcd sshd
+
+##### compute nodes
+ default : ram_disk portals enfs_client=10.0.7.2,10.0.7.4,10.0.7.6,10.0.7.8,10.0.7.10,10.0.7.12,10.0.7.14,10.0.7.16,10.0.7.18,10.0.7.20,10.0.7.22,10.0.7.24 user_env=pct 
+

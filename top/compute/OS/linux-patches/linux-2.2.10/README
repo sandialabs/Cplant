@@ -1,0 +1,78 @@
+top/compute/OS/linux-patches/linux-2.2.10/README.
+
+NEW: Automated build of the linux kernel is now
+supported via "make" and "make install"
+in this directory. This requires access to the 
+KERNEL_LOC location as defined in ./Makefile.
+If the host you are building on does not have
+access to this location, then linux-2.2.10.tar.gz 
+should be copied to another location and KERNEL_LOC in
+./Makefile should be modified accordingly. 
+Also, to get the right linux config file,
+TARGET in top/Makefile-common should be set accordingly. 
+Currently supported values are SIBERIA, ALASKA and
+X86-GENERIC, with
+ALASKA being the default in Makefile-common.
+
+This directory contains the Cplant "patch" for the 
+linux 2.2.10 kernel.
+
+The Cplant patch is pretty minimal,
+w/o support for portals syscalls and other things.
+We just hack a small handful of kernel files.
+
+axp
+---
+The Cplant patch for axp 2.2.x is really a tar file.
+It uses the stock kernel from the standard sites:
+
+   http://www.sunsite.unc.edu/pub/Linux/kernel/v2.2/
+           linux-2.2.x.tar.gz
+
+    1) obtain and unarchive the above package in the
+       same directory that has this README:
+
+          % tar xvfz linux-2*.tar.gz
+
+    2) apply the Cplant patch from this dir:
+
+          % tar xvf axp-2.2.x.tar
+
+    3) set up the linux link in Cplant/top/compute/OS:
+
+          % cd ../..         
+          % ln -s linux-patches/linux-2.2.x/linux linux
+
+       i.e. top/compute/OS/linux should point to top/compute/
+       OS/linux-patches/linux-2.2.x/linux which should have the 
+       kernel you just patched.
+
+    4) there is a linux/config.ALASKA file if you actually want
+       to configure and/or build the kernel.
+
+
+issues
+------
+There are some issues I ran into in running Cplant on 2.2 kernels.
+
+1) on booting a node, portmap service needs to start BEFORE the
+   nfs mounts, i.e., /etc/rc.d/init.d/portmap should run before
+   /etc/rc.d/init.d/nfsfs. the way this is controlled on a redhat
+   machine is that the links /etc/rc.d/rc3.d/SXXportmap and
+   /etc/rc.d/rc3.d/SYYnfsnfs should have XX < YY.
+
+2) in setting up routes in scripts, include the netmask when doing 
+   /sbin/route:
+
+     /sbin/route add -net 192.168.254.0 netmask 255.255.255.0 gw boothost
+
+not just
+
+     /sbin/route add -net 192.168.254.0 gw boothost
+
+for instance.
+
+3) i do NOT believe that the tulip driver needs to be modified with
+   the REVERSE_PROBE_ORDER or media choice hacks. also, the de4x5
+   driver seems to work well on the dual ethernet interface service
+   nodes

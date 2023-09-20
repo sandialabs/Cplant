@@ -1,0 +1,121 @@
+FYOD release notes:
+
+Applications programer information:
+
+The Fyod paths available are
+	/raid_010/tmp
+	/raid_020/tmp
+	/raid_030/tmp
+	/raid_040/tmp
+	/raid_050/tmp
+	/raid_060/tmp
+
+Files created on those path names will be directed via FYOD to the RAID
+disks.
+
+From a compute node, the only functions supported are
+	OPEN
+	WRITE
+	READ
+	CLOSE
+There may be a few lesser function that also work because of the nature
+of the interface.
+
+Significant functions that do NOT work are CD and MKDIR.   (This capability
+should be added in the medium term future.)  To work with the directory
+sturcture currently, it is necessary to log on to the I/O service node.
+Full path names need to be specified on opens for the time being.
+
+
+The status of the FYOD files system can be determined with the
+interim utility, "findunits".   It will list the raid units it 
+is able to communicate with.
+
+All of the raid units are NFS mounted to the I/O service node and 
+through that Service node is the only access to the FYOD files
+system from the outside world.
+
+
+-----------------------------------------------------------------------------
+*****************************************************************************
+-----------------------------------------------------------------------------
+
+Release notes to the Cplant I/O group  and to operations: 
+
+See also the information in README.operations!
+
+The following items are in random order.
+
+FYOD needs a design followed by full editting of
+what debug print out comes out at what debug level.
+(Levels up to 5 are defined.   Above about 3, there is
+danger of yod time-outs because things go SO SLOW.)
+There is a need for a very high level when nothing
+is working.  But there is a need for something
+at level 1 or 2, in which there is very little out
+put from a file transfer, but enough output to tell
+that a file open or a forward of an open request occurred.
+
+There are a few additional functions that should be
+supported forth with.
+MKDIR should actually be VERY easy.
+
+FYOD as it starts, should list units found even
+at DBGlevel 0.
+
+The issue of muliple copies of FYOD on a single
+node needs to be reflected on.   It will remain
+a "No No", but what happens when it inadvertently
+occurs?
+
+There is a Quick-and-Dirty routine "findunits",
+which is currently in /cplant/sbin on the IO
+VM of Alaska.  It displays the units that an
+FYOD can talk to.   Its virtue is that it goes
+out over myrinet and interragates the FYODs 
+to get this information.
+	This routine should be integrated with
+	FYOD so that it can reside in "bin"
+	instead of "sbin" and be used by an
+	applications programer to check on
+	FYOD status.
+
+	Its output can be improved as part of
+	the DBGlevel clean up mentioned above.
+(The source for this routine currently resides
+in a directory play at
+/usr/local-1/jpvandy/Cplant/top/IO/util/fyod/play
+on compile.   There is a build script, "john",
+there (instead of a make file.)  It is a
+modified FYOD so it needs much other stuff
+from the normal fyod/alpha-linux.)
+
+The cplant FYOD test program, newmver, from
+top/compute/test/io_timing/newmver.c
+has some zero divides in it.   Corrections
+have not been checked because of the code
+freeze.
+-----------------------------------------------------------------------------
+*****************************************************************************
+-----------------------------------------------------------------------------
+
+Operation:
+
+The I/O node needs are unique enough, that it
+is assumed (by John and Bill) that it will
+require a separate VM even as a production
+unit.
+
+FSCK on the raids takes a very long time.
+Thus it is quite desirable that the raids
+be cleanly unmounted before booting whenever
+possible.
+
+Because of the NFS mounts to the I/O service
+node, it is appropriate that the unmounts
+start on that node and then countinue after
+that succeeds
+
+
+README.release
+

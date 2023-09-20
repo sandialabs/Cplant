@@ -1,0 +1,5 @@
+Cplant versions of kernel files are in the axp-cplant tree.
+
+Should be able to build the kernel by doing "./make".
+
+See alpha.bash or intel.bash for specific instructions.

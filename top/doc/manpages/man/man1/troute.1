@@ -1,0 +1,40 @@
+.TH TROUTE 1 "Cplant Myrinet Utilities" "Cplant" \" -*- nroff -*-
+.SH NAME
+.B troute 
+\- utility (for testing a specified myrinet route on Cplant)
+.SH SYNOPSIS
+.B troute 
+\ sequence-of-route-bytes
+
+.SH DESCRIPTION
+.B troute 
+must be run as the superuser.
+
+.B troute
+is a ping utility for myrinet on Cplant. It is run 
+on a service or compute node to test myrinet connectivity via
+a specified route. It takes as argument a space-separated list 
+of route bytes in the form 0xST where S and T are hex digits.
+
+.B troute 
+is a C program that makes ioctl() calls to the portals and
+rtscts devices.
+
+.B troute 
+is primarily intended to be used in conjunction with
+routes that double back to the node of origin -- a self-ping
+test is performed on which success or failure is reported. However,
+
+.B troute
+can also be used to just send a ping packet out the specified path.
+If that path terminates in another node, the other node can be
+monitored for the arrival of a ping type packet.
+
+.B troute 
+must be run as the superuser.
+
+.SH EXIT CODE
+Zero if successful, nonzero otherwise.
+
+.SH SEE ALSO
+vping(1), mping(1), crawl(1), vroute(1) 

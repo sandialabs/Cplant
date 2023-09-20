@@ -1,0 +1,81 @@
+*         Portable Batch System (PBS) Software License
+* 
+* Copyright (c) 1999, MRJ Technology Solutions.
+* All rights reserved.
+* 
+* Acknowledgment: The Portable Batch System Software was originally developed
+* as a joint project between the Numerical Aerospace Simulation (NAS) Systems
+* Division of NASA Ames Research Center and the National Energy Research
+* Supercomputer Center (NERSC) of Lawrence Livermore National Laboratory.
+* 
+* Redistribution of the Portable Batch System Software and use in source
+* and binary forms, with or without modification, are permitted provided
+* that the following conditions are met:
+* 
+* - Redistributions of source code must retain the above copyright and
+*   acknowledgment notices, this list of conditions and the following
+*   disclaimer.
+* 
+* - Redistributions in binary form must reproduce the above copyright and 
+*   acknowledgment notices, this list of conditions and the following
+*   disclaimer in the documentation and/or other materials provided with the
+*   distribution.
+* 
+* - All advertising materials mentioning features or use of this software must
+*   display the following acknowledgment:
+* 
+*   This product includes software developed by NASA Ames Research Center,
+*   Lawrence Livermore National Laboratory, and MRJ Technology Solutions.
+* 
+*         DISCLAIMER OF WARRANTY
+* 
+* THIS SOFTWARE IS PROVIDED BY MRJ TECHNOLOGY SOLUTIONS ("MRJ") "AS IS" WITHOUT 
+* WARRANTY OF ANY KIND, AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING,
+* BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
+* FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT ARE EXPRESSLY DISCLAIMED.
+* 
+* IN NO EVENT, UNLESS REQUIRED BY APPLICABLE LAW, SHALL MRJ, NASA, NOR
+* THE U.S. GOVERNMENT BE LIABLE FOR ANY DIRECT DAMAGES WHATSOEVER,
+* NOR ANY INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+* DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+* OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+* CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+* OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE
+* USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ 
+* This license will be governed by the laws of the Commonwealth of Virginia,
+* without reference to its choice of law rules.
+
+*
+HOLIDAYFILE_VERSION1		File version number
+*
+YEAR	1999
+*
+* Prime/Nonprime Table 
+*
+*		Prime	Non-Prime
+* Day		Start	Start
+*
+  weekday	0800	1800
+  saturday	none	all
+  sunday	none	all
+*
+* Day of	Calendar	Company
+* Year		Date		Holiday
+*
+    1           Jan 1           New Year's Day
+   18           Jan 18          Martin Luther King Day
+   46           Feb 15          President's Day
+  149           May 29          Memorial Day
+  186           Jul 5           Independence Day
+  249           Sep 6           Labor Day
+  284           Oct 11          Columbus Day
+  315           Nov 11          Veteran's Day
+  329           Nov 25          Thanksgiving
+  330           Nov 26          Thanksgiving
+  358           Dec 24          Christmas Eve
+  361           Dec 27          Energy conservation
+  362           Dec 28          Energy conservation
+  363           Dec 29          Energy conservation
+  364           Dec 30          Energy conservation
+  365           Dec 31          Energy conservation

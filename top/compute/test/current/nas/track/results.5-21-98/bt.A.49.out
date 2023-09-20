@@ -1,0 +1,129 @@
+
+
+ NAS Parallel Benchmarks 2.3 -- BT Benchmark 
+
+ No input file inputbt.data. Using compiled defaults
+ Size:  64x 64x 64
+ Iterations: 200    dt:   0.000800
+ Number of active processes:    49
+
+ Time step    1
+ Time step   20
+ Time step   40
+ Time step   60
+ Time step   80
+ Time step  100
+ Time step  120
+ Time step  140
+ Time step  160
+ Time step  180
+ Time step  200
+ Verification being performed for class A
+ accuracy setting for epsilon =  0.1000000000000E-07
+ Comparison of RMS-norms of residual
+           1 0.1080634671464E+03 0.1080634671464E+03 0.7364263659738E-14
+           2 0.1131973090122E+02 0.1131973090122E+02 0.1098479988995E-14
+           3 0.2597435451158E+02 0.2597435451158E+02 0.3009110424621E-14
+           4 0.2366562254468E+02 0.2366562254468E+02 0.8256670703047E-14
+           5 0.2527896321175E+03 0.2527896321175E+03 0.1371673561714E-13
+ Comparison of RMS-norms of solution error
+           1 0.4234841604053E+01 0.4234841604053E+01 0.1048656009767E-14
+           2 0.4439028249700E+00 0.4439028249700E+00 0.6252624235385E-14
+           3 0.9669248013635E+00 0.9669248013635E+00 0.1263019963254E-14
+           4 0.8830206303977E+00 0.8830206303977E+00 0.1257301343147E-14
+           5 0.9737990177083E+01 0.9737990177083E+01 0.4377963354896E-14
+ Verification Successful
+
+
+ BT Benchmark Completed.
+ Class           =                        A
+ Size            =               64x 64x 64
+ Iterations      =                      200
+ Time in seconds =                   424.19
+ Total processes =                       49
+ Compiled procs  =                       49
+ Mop/s total     =                   396.72
+ Mop/s/process   =                     8.10
+ Operation type  =           floating point
+ Verification    =               SUCCESSFUL
+ Version         =                      2.3
+ Compile date    =              21 May 1998
+
+ Compile options:
+    MPIF77       = /Net/mp/cplant/bin/f77 
+    FLINK        = $(MPIF77)
+    FMPI_LIB     = -L$(MPIPATH) -lmpi 
+    FMPI_INC     = -I$(MPIPATH)/include
+    FFLAGS       = -O3 -align records -align dcommons
+    FLINKFLAGS   = (none)
+    RAND         = (none)
+
+
+ Please send the results of this run to:
+
+ NPB Development Team 
+ Internet: npb@nas.nasa.gov
+ 
+ If email is not available, send this to:
+
+ MS T27A-1
+ NASA Ames Research Center
+ Moffett Field, CA  94035-1000
+
+ Fax: 415-604-3957
+
+
+Contacting node allocation daemon...
+49 nodes are allocated to your job ID 819
+
+   Node name        Rank  Node   PID   Elapsed  Exit Code  Terminating Signal
+------------------- ----  ----  -----  -------  ---------  ------------------
+                       0    18  14219  0:07:14       0       none
+                       1    19  14225  0:07:13       0       none
+                       2    20  14218  0:07:13       0       none
+                       3    21  14222  0:07:14       0       none
+                       4    22  14225  0:07:13       0       none
+                       5    23  14225  0:07:13       0       none
+                       6    24  14218  0:07:14       0       none
+                       7    25  14218  0:07:14       0       none
+                       8    26  14224  0:07:13       0       none
+                       9    28  14213  0:07:14       0       none
+                      10    29  14216  0:07:14       0       none
+                      11    30  14223  0:07:14       0       none
+                      12    32  14535  0:07:13       0       none
+                      13    33  14386  0:07:14       0       none
+                      14    34  14350  0:07:13       0       none
+                      15    35  14342  0:07:14       0       none
+                      16    36  14477  0:07:13       0       none
+                      17    37  14298  0:07:13       0       none
+                      18    38  14265  0:07:13       0       none
+                      19    39  14318  0:07:13       0       none
+                      20    40  14041  0:07:13       0       none
+                      21    41  14056  0:07:14       0       none
+                      22    42  14035  0:07:13       0       none
+                      23    43  14029  0:07:14       0       none
+                      24    44  14082  0:07:13       0       none
+                      25    45  14026  0:07:13       0       none
+                      26    46  14033  0:07:13       0       none
+                      27    48  27593  0:07:13       0       none
+                      28    49  27512  0:07:13       0       none
+                      29    50  27520  0:07:13       0       none
+                      30    51  27498  0:07:14       0       none
+                      31    52  27490  0:07:13       0       none
+                      32    53  27514  0:07:13       0       none
+                      33    54  27486  0:07:14       0       none
+                      34    55  27485  0:07:13       0       none
+                      35    56  27498  0:07:14       0       none
+                      36    57  27474  0:07:13       0       none
+                      37    58  27486  0:07:14       0       none
+                      38    59  27491  0:07:14       0       none
+                      39    60  27486  0:07:13       0       none
+                      40    61  27465  0:07:14       0       none
+                      41    62  27532  0:07:14       0       none
+                      42    64  27486  0:07:13       0       none
+                      43    65  27450  0:07:13       0       none
+                      44    66  27537  0:07:14       0       none
+                      45    67  27544  0:07:14       0       none
+                      46    68  27553  0:07:13       0       none
+                      47    69  27550  0:07:13       0       none
+                      48    70  27568  0:07:14       0       none

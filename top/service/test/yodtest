@@ -1,0 +1,485 @@
+#!/usr/bin/perl -w
+#-------------------------------------------------------------------------------
+# FILE:		yodtest
+# PURPOSE:	Test the options of yod
+# NOTES:	Only the options a user can execute are being tested.
+# AUTHOR:	Don Moore, 6535
+#-------------------------------------------------------------------------------
+# *** Read the yod configuration file ***
+#-------------------------------------------------------------------------------
+($ConfigFile)= @ARGV;					# configuration filename
+open (CFGFILE, $ConfigFile) or die "Can't open $ConfigFile: $!\n";
+$line = <CFGFILE>;
+while (defined($line)) {
+	if (defined($line)) {
+		chomp ($line);
+		($Keyword, $Value) = split(/=+/, $line);
+		if ($Keyword =~ /^Logfile/) {
+			$STARTFILE = "> $Value";   # open log file for overwrite
+			$LOGFILE = ">> $Value";	      # open log file for append
+		} elsif ($Keyword =~ /^Executable/) {
+			$Executable = "$Value";		    # a test application
+		} elsif ($Keyword =~ /^WaitExecutable/) {
+			$WaitExecutable = "$Value";   # another test application
+		} elsif ($Keyword =~ /^WaitTime/) {
+			$WaitTime = "$Value";    # seconds application will wait
+		} elsif ($Keyword =~ /^ComputeNodes/) {
+			$ComputeNodes = "$Value";      # number of compute nodes
+		} elsif ($Keyword =~ /^TooManyNodes/) {
+			$TooManyNodes = "$Value";     # more than allotted nodes
+		} elsif ($Keyword =~ /^BinPath/) {
+			$BinPath = "$Value";		     # path for PBS qsub
+		} elsif ($Keyword =~ /^CplantBinPath/) {
+			$CplantBinPath = "$Value";		  # path for yod
+		} elsif ($Keyword =~ /^CplantSbinPath/) {
+			$CplantSbinPath = "$Value";		# path for pingd
+		} elsif ($Keyword =~ /^OutputPath/) {
+			$OutputPath = "$Value";	    # path for other ouput files
+		}
+		$line = <CFGFILE>;
+	} # end if (defined($line))
+} # end while (defined($line))
+close CFGFILE;
+#-------------------------------------------------------------------------------
+# *** Initialize variables
+#-------------------------------------------------------------------------------
+$TestNumber = 0;				    # numbers to track the tests
+$TestFlag = 1;				  	  # test success or failure flag
+@TestList = ();						# array for failed tests
+$ListNumber = 0;		     # for listing the tests in the failed array
+$IncrTestNum = 1;					 # increment test number
+$KeepTestNum = 0;				   # don't increment test number
+$ZeroReturn = 0;				    # zero error return from yod
+$NonZeroReturn =1;				# non zero error return from yod
+#-------------------------------------------------------------------------------
+# *** Open the yod log file  for environment information
+#-------------------------------------------------------------------------------
+open (STARTFILE) or die "Can't open results STARTFILE for overwrite.\n";
+print STARTFILE "\nThis is a non-interactive test for the yod options\n";
+print STARTFILE "STARTFILE = $STARTFILE\n";
+print STARTFILE "LOGFILE = $LOGFILE\n";
+print STARTFILE "Executable = $Executable\n";
+print STARTFILE "WaitExecutable = $WaitExecutable\n";
+print STARTFILE "ComputeNodes = $ComputeNodes\n";
+print STARTFILE "TooManyNodes = $TooManyNodes\n";
+print STARTFILE "BinPath = $BinPath\n";
+print STARTFILE "CplantBinPath = $CplantBinPath\n";
+print STARTFILE "CplantSbinPath = $CplantSbinPath\n";
+print STARTFILE "OutputPath = $OutputPath\n";
+close STARTFILE;
+#-------------------------------------------------------------------------------
+# *** Test common yod options
+#-------------------------------------------------------------------------------
+$Description = "Test yod default"; 
+$Command = "yod -batch $Executable";
+$OutputFile = $OutputPath . "YodDefault.log";
+runTest ($Command, $Description, "> ", $OutputFile, $ZeroReturn, $IncrTestNum);
+
+$Description = "Test yod -alloc requires user input"; 
+recordOptionsNotTested ($Description);
+
+$Description = "Test yod -batch option";
+$Command = "yod -batch -sz $ComputeNodes $Executable";
+$OutputFile = $OutputPath . "YodBatch.log";
+runTest ($Command, $Description, "> ", $OutputFile, $ZeroReturn, $IncrTestNum);
+
+$Description = "Test yod -bt option requires debugging in application";
+recordOptionsNotTested ($Description);
+
+$Description = "Test yod -sz option";
+$Command = "yod -batch -sz $ComputeNodes $Executable";
+$OutputFile = $OutputPath . "YodSz.log";
+runTest ($Command, $Description, "> ", $OutputFile, $ZeroReturn, $IncrTestNum);
+
+$Description = "Test yod -file option";
+$OutputFile = $OutputPath . "YodFile.log";
+$Command = "yod -batch -file $OutputFile -sz $ComputeNodes $Executable";
+runTest ($Command, $Description, ">> ", $OutputFile, $ZeroReturn, $IncrTestNum);
+
+$Description = "Test yod -list option";
+getNodeList ($ComputeNodes);			     # use pingd to get the list
+$Command = "yod -batch -list $List $Executable";
+$OutputFile = $OutputPath . "YodList.log";
+runTest ($Command, $Description, "> ", $OutputFile, $ZeroReturn, $IncrTestNum);
+
+$Description = "Test yod -l option";
+getNodeList ($ComputeNodes);			     # use pingd to get the list
+$Command = "yod -batch -l $List $Executable";
+$OutputFile = $OutputPath . "YodLi.log";
+runTest ($Command, $Description, "> ", $OutputFile, $ZeroReturn, $IncrTestNum);
+
+$Description = "Test yod -Log option put info in a different place";
+recordOptionsNotTested ($Description);
+
+$Description = "Test yod -NOBUF option";
+$Command = "yod -batch -NOBUF -sz $ComputeNodes $Executable";
+$OutputFile = $OutputPath . "YodNOBUF.log";
+runTest ($Command, $Description, "> ", $OutputFile, $ZeroReturn, $IncrTestNum);
+
+$Description = "Test yod -N option";
+$Command = "yod -batch -N -sz $ComputeNodes $Executable";
+$OutputFile = $OutputPath . "YodN.log";
+runTest ($Command, $Description, "> ", $OutputFile, $ZeroReturn, $IncrTestNum);
+
+$Description = "Test yod -nid node-number is only used by Cplant developers";
+recordOptionsNotTested ($Description);
+
+$Description = "Test yod -pid portal-ID is only used by Cplant developers";
+recordOptionsNotTested ($Description);
+
+$Description = "Test yod -quiet option";
+$Command = "yod -batch -quiet -sz $ComputeNodes $Executable";
+$OutputFile = $OutputPath . "YodQuiet.log";
+runTest ($Command, $Description, "> ", $OutputFile, $ZeroReturn, $IncrTestNum);
+
+$Description = "Test yod -q option";
+$Command = "yod -batch -q -sz $ComputeNodes $Executable";
+$OutputFile = $OutputPath . "YodQ.log";
+runTest ($Command, $Description, "> ", $OutputFile, $ZeroReturn, $IncrTestNum);
+
+$Description = "Test yod -show option";
+$Command = "yod -batch -show -sz $ComputeNodes $Executable";
+$OutputFile = $OutputPath . "YodShow.log";
+runTest ($Command, $Description, "> ", $OutputFile, $ZeroReturn, $IncrTestNum);
+
+$Description = "Test yod -sleep option";
+$Command = "yod -batch -sleep -sz $ComputeNodes $Executable";
+$OutputFile = $OutputPath . "YodSleep.log";
+runTest ($Command, $Description, "> ", $OutputFile, $ZeroReturn, $IncrTestNum);
+
+$Description = "Test yod -timing option";
+$Command = "yod -batch -timing -sz $ComputeNodes $Executable";
+$OutputFile = $OutputPath . "YodTiming.log";
+runTest ($Command, $Description, "> ", $OutputFile, $ZeroReturn, $IncrTestNum);
+
+$Description = "Test yod -t option";
+$Command = "yod -batch -t -sz $ComputeNodes $Executable";
+$OutputFile = $OutputPath . "YodT.log";
+runTest ($Command, $Description, "> ", $OutputFile, $ZeroReturn, $IncrTestNum);
+#-------------------------------------------------------------------------------
+# *** Test yod debugging options ***
+#-------------------------------------------------------------------------------
+$Description = "Test yod -d io option";
+$Command = $CplantBinPath . "yod -batch -d io -sz $ComputeNodes $Executable";
+$OutputFile = $OutputPath . "Yoddio.log";
+runTest ($Command, $Description, "> ", $OutputFile, $ZeroReturn, $IncrTestNum);
+
+$Description = "Test yod -d iomore option";
+$Command = $CplantBinPath . "yod -batch -d iomore -sz $ComputeNodes $Executable";
+$OutputFile = $OutputPath . "Yoddiomore.log";
+runTest ($Command, $Description, "> ", $OutputFile, $ZeroReturn, $IncrTestNum);
+
+$Description = "Test yod -d load option";
+$Command = $CplantBinPath . "yod -batch -d load -sz $ComputeNodes $Executable";
+$OutputFile = $OutputPath . "Yoddload.log";
+runTest ($Command, $Description, "> ", $OutputFile, $ZeroReturn, $IncrTestNum);
+
+$Description = "Test yod -d loadmore option";
+$Command = $CplantBinPath . "yod -batch -d loadmore -sz $ComputeNodes $Executable";
+$OutputFile = $OutputPath . "Yoddloadmore.log";
+runTest ($Command, $Description, "> ", $OutputFile, $ZeroReturn, $IncrTestNum);
+
+$Description = "Test yod -d alloc option";
+$Command = $CplantBinPath . "yod -batch -d alloc -sz $ComputeNodes $Executable";
+$OutputFile = $OutputPath . "Yoddalloc.log";
+runTest ($Command, $Description, "> ", $OutputFile, $ZeroReturn, $IncrTestNum);
+
+$Description = "Test yod -d hetero option";
+$Command = $CplantBinPath . "yod -batch -d hetero -sz $ComputeNodes $Executable";
+$OutputFile = $OutputPath . "Yoddhetero.log";
+runTest ($Command, $Description, "> ", $OutputFile, $ZeroReturn, $IncrTestNum);
+
+$Description = "Test yod -d pbs option";
+$Command = $CplantBinPath . "yod -d pbs -sz $ComputeNodes $Executable";
+buildScript ("PBSScript", $Command);
+$Command = $BinPath . "qsub PBSScript";
+$OutputFile = $OutputPath . "Yoddpbs.log";
+runTest ($Command, $Description, "> ", $OutputFile, $ZeroReturn, $IncrTestNum);
+sleep $WaitTime;
+removeScript ("PBSScript");				     # remove the script
+
+$Description = "Test yod -d environ option";
+$Command = $CplantBinPath . "yod -batch -d environ -sz $ComputeNodes $Executable";
+$OutputFile = $OutputPath . "Yoddenviron.log";
+runTest ($Command, $Description, "> ", $OutputFile, $ZeroReturn, $IncrTestNum);
+
+$Description = "Test yod -d progress option";
+$Command = $CplantBinPath . "yod -batch -d progress -sz $ComputeNodes $Executable";
+$OutputFile = $OutputPath . "Yoddprogress.log";
+runTest ($Command, $Description, "> ", $OutputFile, $ZeroReturn, $IncrTestNum);
+
+$Description = "Test yod -d failure option";
+$Command = $CplantBinPath . "yod -batch -d failure -sz $ComputeNodes $Executable";
+$OutputFile = $OutputPath . "Yoddfailure.log";
+runTest ($Command, $Description, "> ", $OutputFile, $ZeroReturn, $IncrTestNum);
+
+$Description = "Test yod -d debug option requires debugging in application";
+recordOptionsNotTested ($Description);
+
+$Description = "Test yod -d bebopd option";
+$Command = $CplantBinPath . "yod -batch -d bebopd -sz $ComputeNodes $Executable";
+$OutputFile = $OutputPath . "Yoddbebopd.log";
+runTest ($Command, $Description, "> ", $OutputFile, $ZeroReturn, $IncrTestNum);
+
+$Description = "Test yod -d comm option";
+$Command = $CplantBinPath . "yod -batch -d comm -sz $ComputeNodes $Executable";
+$OutputFile = $OutputPath . "Yoddcomm.log";
+runTest ($Command, $Description, "> ", $OutputFile, $ZeroReturn, $IncrTestNum);
+
+$Description = "Test yod -d phase1 option";
+$Command = $CplantBinPath . "yod -batch -d phase1 -sz $ComputeNodes $Executable";
+$OutputFile = $OutputPath . "Yoddphase1.log";
+runTest ($Command, $Description, "> ", $OutputFile, $ZeroReturn, $IncrTestNum);
+
+$Description = "Test yod -d phase2 option";
+$Command = $CplantBinPath . "yod -batch -d phase2 -sz $ComputeNodes $Executable";
+$OutputFile = $OutputPath . "Yoddphase2.log";
+runTest ($Command, $Description, "> ", $OutputFile, $ZeroReturn, $IncrTestNum);
+#-------------------------------------------------------------------------------
+# *** Test yod D option ***
+#-------------------------------------------------------------------------------
+$Description = "Test yod -D option";
+$Command = $CplantBinPath . "yod -batch -D -sz $ComputeNodes $Executable";
+$OutputFile = $OutputPath . "YodD.log";
+runTest ($Command, $Description, "> ", $OutputFile, $ZeroReturn, $IncrTestNum);
+
+$Description = "Test yod -interactive option is for a live user";
+recordOptionsNotTested ($Description);
+#-------------------------------------------------------------------------------
+# *** Test yod kill option ***
+#-------------------------------------------------------------------------------
+$Description = "Test yod -kill option";
+$Command = $CplantBinPath . "yod -kill -sz $ComputeNodes $WaitExecutable $WaitTime";
+buildScript ("KillScript", $Command);		  # build script for job to kill
+$Command = $BinPath . "qsub KillScript";		    # submit job to kill
+$OutputFile = $OutputPath . "YodKill.log";
+runTest ($Command, $Description, "> ", $OutputFile, $ZeroReturn, $IncrTestNum);
+sleep 5;                                                # wait for job to submit
+if ($ComputeNodes <= 1) {
+	getMyNodeList ();
+	$Command = $CplantSbinPath . "pingd -interrupt -l $List -NoInquire";
+} else {
+	getMyNodeList ();                   # get a list of nodes running my job
+	$Command = $CplantSbinPath . "pingd -interrupt -l $LastNode -NoInquire";
+}
+runTest ($Command, $Description, ">> ", $OutputFile, $ZeroReturn, $KeepTestNum);
+sleep 5;
+$Command = $CplantSbinPath . "pingd -mine";
+runTest ($Command, $Description, ">> ", $OutputFile, $ZeroReturn, $KeepTestNum);
+removeScript ("KillScript");				     # remove the script
+#-------------------------------------------------------------------------------
+# *** Test yod Help options ***
+#-------------------------------------------------------------------------------
+$Description = "Test yod -help option";
+$Command = CplantBinPath . "yod -help";
+$OutputFile = $OutputPath . "YodHelp.log";
+runTest ($Command, $Description, "> ", $OutputFile, $NonZeroReturn, $IncrTestNum);
+
+$Description = "Test yod -batch -h option";
+$Command = CplantBinPath . "yod -batch -h";
+$OutputFile = $OutputPath . "YodH.log";
+runTest ($Command, $Description, "> ", $OutputFile, $NonZeroReturn, $IncrTestNum);
+
+$Description = "Test yod -vhelp option";
+$Command = CplantBinPath . "yod -batch -vhelp";
+$OutputFile = $OutputPath . "YodVhelp.log";
+runTest ($Command, $Description, "> ", $OutputFile, $NonZeroReturn, $IncrTestNum);
+
+$Description = "Test yod -v option";
+$Command = CplantBinPath . "yod -batch -v";
+$OutputFile = $OutputPath . "YodV.log";
+runTest ($Command, $Description, "> ", $OutputFile, $NonZeroReturn, $IncrTestNum);
+#-------------------------------------------------------------------------------
+# *** Test the what if yod options ***
+#-------------------------------------------------------------------------------
+				     # What if I submit a job on too many nodes?
+$Description = "Test yod -sz (Too Many Nodes) option";
+$Command = CplantBinPath . "yod -sz $TooManyNodes $Executable";
+$OutputFile = $OutputPath . "YodTooBig.log";
+runTest ($Command, $Description, "> ", $OutputFile, $NonZeroReturn, $IncrTestNum);
+		      #What if the node size is more than the nodes in the list?
+$Description = "Test yod -sz (n) > -list (nodes) option";
+$NodeSize = $ComputeNodes + 3;
+getNodeList ($ComputeNodes);			     # use pingd to get the list
+$Command = CplantBinPath . "yod -sz $NodeSize -list $List $Executable";
+$OutputFile = $OutputPath . "YodSzGTList.log";
+runTest ($Command, $Description, "> ", $OutputFile, $NonZeroReturn, $IncrTestNum);
+		     #What if the node size is less than the nodes in the list?
+$Description = "Test yod -sz (n) < -list (nodes) option";
+$NodeSize = $ComputeNodes - 1;
+getNodeList ($NodeSize);		     # use pingd to get the list
+$Command = $CplantBinPath . "yod -sz $NodeSize -list $List $Executable";
+$OutputFile = $OutputPath . "YodSzLTList.log";
+runTest ($Command, $Description, "> ", $OutputFile, $ZeroReturn, $IncrTestNum);
+		      # What if I submit a job on the same nodes as another job?
+$Description = "Test yod -list (node-list) & yod -list (same node-list)";
+$Command = $CplantBinPath . "yod -sz $ComputeNodes $WaitExecutable $WaitTime";
+buildScript ("ClobberScript", $Command);	      # build script for PBS job
+$Command = $BinPath . "qsub ClobberScript";	   # submit job to get clobbered
+$OutputFile = $OutputPath . "YodClobber.log";
+runTest ($Command, $Description, "> ", $OutputFile, $ZeroReturn, $IncrTestNum);
+sleep 5;						# wait for job to submit
+getMyNodeList ();		 	    # get a list of nodes running my job
+$Command = $CplantBinPath . "yod -list $List $Executable";  # run job to clobber
+runTest ($Command, $Description, ">> ", $OutputFile, $NonZeroReturn, $KeepTestNum);
+removeScript ("ClobberScript");				     # remove the script
+#-------------------------------------------------------------------------------
+# *** List the tests that failed ***
+#-------------------------------------------------------------------------------
+if ($TestFlag == 0) {
+	open (LOGFILE) or die "Can't open $LOGFILE file.\n";
+	print LOGFILE "\n***** One or more tests failed. *****\n";
+        foreach $TestList (@TestList) {
+		print LOGFILE "\t$TestList\n";
+	}
+	close LOGFILE;
+} else {
+        open (LOGFILE) or die "Can't open $LOGFILE file.\n";
+        print LOGFILE "\n***** Successful test. *****\n";
+        close LOGFILE;
+}
+#-------------------------------------------------------------------------------
+# *** Subroutines ***
+#-------------------------------------------------------------------------------
+sub buildScript () {
+#-------------------------------------------------------------------------------
+# PURPOSE:	Build a script file with the commands to submit a PBS job
+# AUTHOR:	Don Moore, 6535
+# INPUTS:	$_[0] - name of script file
+#		$_[1] - command to execute from script
+# OUTPUTS:	A script for running a job using PBS	
+#-------------------------------------------------------------------------------
+	open (SCRIPT, "> $_[0]") or die "Can't open $_[0] $!\n";
+	print SCRIPT "#!/bin/bash\n";
+	print SCRIPT "#PBS -l size=$ComputeNodes\n";
+	print SCRIPT "#PBS -l walltime=0:15:0\n";
+	print SCRIPT "#PBS -q default\n";
+	print SCRIPT "cd \$PBS_O_WORKDIR\n";
+	print SCRIPT $_[1];
+	close SCRIPT;
+} # End buildScript
+
+sub getMyNodeList () {
+#-------------------------------------------------------------------------------
+# PURPOSE:	Create a list of nodes for my job from pingd -mine
+# AUTHOR:	Don Moore, 6535
+# INPUTS:	$1 - free node numbers from pingd -mine(\d+)
+# OUTPUTS:	$List - a list of compute nodes	running my jobs
+#-------------------------------------------------------------------------------
+	@NodeList = ();				      # initialize the nod array
+        $Count=0;                                    # initialize the node count
+	$PINGD = $CplantSbinPath . "pingd -mine";
+	open(PINGD, "$PINGD 2>&1 |");
+	while(<PINGD>) {
+		if (/^\s*(\d+)\s+\(.*\)/) {
+			$NodeList[$Count] = $1;			# array of nodes
+			if ($Count == 0) {			    # start list
+				$List = $NodeList[$Count];	 # list of nodes
+			} else {				   # add to list
+				$List = $List . "," . $NodeList[$Count];
+			}
+			$Count++;
+		}
+	}
+	$LastNode = $NodeList[$ComputeNodes - 1];
+} # End getMyNodeList
+
+sub getNodeList () {
+#-------------------------------------------------------------------------------
+# PURPOSE:	Create a list of nodes from pingd
+# AUTHOR:	Don Moore, 6535
+# INPUTS:	$1 - free node numbers from pingd (\d+)
+#		$_[0] - number of compute nodes for list
+# OUTPUTS:	$List - a list of free compute nodes	
+#-------------------------------------------------------------------------------
+	@NodeList = ();				      # initialize the nod array
+	$Count=0;                                    # initialize the node count
+	$PINGD = $CplantSbinPath . "pingd";
+	open(PINGD, "$PINGD 2>&1 |");
+	while(<PINGD>) {
+		if (/^\s*(\d+)\s+\(.*\)\s*$/) {
+			$NodeList[$Count] = $1;		   # array of free nodes
+			if ($Count == 0) {			    # start list
+				$List = $NodeList[$Count];	 # list of nodes
+			} elsif ($Count < $_[0]) {		   # add to list
+				$List = $List . "," . $NodeList[$Count];
+			} else {			       # $Count >= $_[0]
+				last;				#exit while loop
+			}
+			$Count++;
+		}
+	}
+        $LastNode = $NodeList[$ComputeNodes - 1];
+} # End getNodeList
+
+sub recordOptionsNotTested () {
+#-------------------------------------------------------------------------------
+# PURPOSE:	Record in the log file that a yod option was not tested
+# AUTHOR:	Don Moore, 6535
+# INPUTS:	$_[0] - short description of the test
+# OUTPUTS:	None	
+#-------------------------------------------------------------------------------
+	open (LOGFILE) or die "Can't open $LOGFILE file.\n";
+	print LOGFILE "\nOption not tested:\n\t$_[0]\n";
+	close LOGFILE;
+} # End recordOptionsNotTested
+
+sub removeScript () {
+#-------------------------------------------------------------------------------
+# PURPOSE:	remove the scripts built by buildScript
+# AUTHOR:	Don Moore, 6535
+# INPUTS:	$_[0] - name of script file
+#-------------------------------------------------------------------------------
+	sleep $WaitTime;
+	system "rm $_[0]";				     # remove the script
+	system "rm $_[0].*";		   # remove the script's .e and .o files
+} # End removeScript
+
+sub runTest () {
+#-------------------------------------------------------------------------------
+# PURPOSE:	Run one yod option test
+# AUTHOR:	Don Moore, 6535
+# INPUTS:	$_[0] - command for yod option being tested
+#		$_[1] - short description of the test
+#		$_[2] - overwrite or append a file
+#		$_[3] - name of result file
+#		$_[4] - error code for return from yod
+#		$_[5] - increment test number flag
+# OUTPUTS:	$Status - Success or failure from yod	
+#-------------------------------------------------------------------------------
+	open (RSTFILE, $_[2] . $_[3]) or die "Can't open $_[3] file.\n";
+	open (LOGFILE) or die "Can't open $LOGFILE file.\n";
+	if ($_[5]) {		   # if first part of test increment test number
+		$TestNumber += 1;
+		$TestTime = localtime();		 # date and time of test
+		print RSTFILE "Test $TestNumber: $TestTime\n";
+		print LOGFILE "\nTest $TestNumber:\n\t$_[1]\n";
+		print LOGFILE "\t$TestTime\n";
+	}
+        print RSTFILE "\t$_[0]\n";	# print the option tested to result file
+        close RSTFILE;
+        $Status = system "$_[0] >> $_[3] 2>&1";	 # output both stdout and stderr
+	if (!$_[4]) {			    # if a zero from yod is a good thing
+		if ($Status != 0) {		     # if yod doesn't return a 0
+        		print LOGFILE "\tTest failed.\n";
+			$TestFlag = 0;
+			$TestList[$ListNumber] = $_[1];#put description in array
+			$ListNumber += 1;
+		} else {
+			print LOGFILE "\tTest completed as expected.\n";
+		}
+	} else {			     # if a zero from yod is a bad thing
+                if ($Status == 0) {			    # if yod returns a 0
+                        print LOGFILE "\t\tTest failed.\n";
+                        $TestFlag = 0;
+                        $TestList[$ListNumber] = $_[1];#put description in array
+                        $ListNumber += 1;
+                } else {
+                        print LOGFILE "\tTest completed as expected.\n";
+                }
+
+	}
+        print LOGFILE "\tyod output status = $Status.\n";
+        print LOGFILE "\tThe output file for this option is in\n\t\t$_[3]\n";
+	close LOGFILE;
+} # End runTest

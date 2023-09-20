@@ -1,0 +1,125 @@
+#!/bin/bash
+# $Id: portals,v 1.1.2.8 2002/10/07 21:27:41 jrstear Exp $
+
+# number of nodes in the cluster
+numNodes=`wc -l $CPLANT_PATH/etc/cplant-map | cut -c1-8`
+
+
+if [ -n "$2" ]; then
+  mode=`echo $2 | cut -d, -f1`
+  if [ $mode == "ethernet" ]; then
+  	modlist="cTask addrCache p3 ptRXTX rtscts_eth"
+  	mcplist=""
+  	[ -c /dev/ptRXTX ] || mknod /dev/ptRXTX c 65 0
+  	myrIPnet="10.0.0.0"
+  	myrIPmask="255.0.0.0"
+  	dev=`echo $2 | cut -sd, -f2`
+	if [ -n "$dev" ]; then
+  		etherDev="$dev"
+	else
+  		etherDev="myri0"
+	fi
+  else
+  	echo "$0: Error, Unknown option $2.  Exiting"
+	exit 1
+  fi
+else
+  modlist="cTask addrCache p3 rtscts myrIP"
+  mcplist="rtsmcp.4 rtsmcp.7 rtsmcp.9"
+  myrIPnet="10.0.0.0"
+  myrIPmask="255.0.0.0"
+fi
+
+#echo "CPLANT: $0: pnid=$pnid, numNodes=$numNodes, modules=$modules mcps=$mcps"
+
+# main stuff
+case "$1" in
+    start) 
+    	# ensure that necessary devices are made
+	if [ ! -c /dev/cTask ]; then
+		mknod -m 666 /dev/cTask c 63 0 || exit 1
+	fi
+	if [ ! -c /dev/rtscts ]; then
+		mknod -m 666 /dev/rtscts c 61 0 || exit 1
+	fi
+	if [ ! -c /dev/portals3 ]; then
+		mknod -m 666 /dev/portals3 c 62 0 || exit 1
+	fi
+	if [ ! -c /dev/addrCache ]; then
+		mknod -m 666 /dev/addrCache c 64 0 || exit 1
+	fi
+	if [ ! -c /dev/ptRXTX ]; then
+		mknod -m 666 /dev/ptRXTX c 65 0 || exit 1
+	fi
+
+	# append full paths
+	for i in $modlist;do modules="$modules $CPLANT_PATH/modules/$i.mod"; done
+	for i in $mcplist;do    mcps="$mcps $CPLANT_PATH/mcps/$i"; done
+
+    	# test that everything is present
+	for item in $modules $mcps; do
+		while [ ! -f $item ]; do
+          		echo "CPLANT: $0: $item missing, sleeping for 5sec."
+			sleep 5	# sleep and retry rather than exit
+		done
+	done
+
+	# load modules
+	for item in $modules; do
+		if ! insmod $item; then
+			echo "insmod $item failed, exiting."
+			exit 1 
+		fi
+		if [ "$item" == "$CPLANT_PATH/modules/cTask.mod" ]; then
+		    setNumNodes $numNodes
+		    setNid $NodeID
+		elif [ "$item" == "$CPLANT_PATH/modules/ptRXTX.mod" ]; then
+		    setIface $etherDev
+		    setMACS.pl
+		fi
+	done
+
+	if [ -z $2 ]; then
+	  	# we're using our mcp
+	  	# select the first found local ext2 fs for temporary copies
+	  	fs=`grep ext2 /proc/mounts | grep /dev | head -1 | awk '{print $2}'` 
+	  	test -n $fs || exit "can't find a local ext2 fs for mcp copies, exiting."
+	  	# must have a local copy due to how mcpload works
+	  	cp -f $mcps $fs
+	  	# little assumption here that the mcps are called rtsmcp.{4,7,9}
+		ROUTES_FILE=$CPLANT_PATH/routes/`hostname` 
+        	mcpload -m $fs/rtsmcp -dma 0 -pnid $NodeID -route $ROUTES_FILE
+	  	rm -f $fs/rtsmcp.{4,7,9}
+
+		# now configure the interface
+          	/sbin/ifconfig myrIP0 `pnid2ip $myrIPnet $myrIPmask $NodeID` up 
+          	/sbin/route add -net $myrIPnet netmask $myrIPmask dev myrIP0
+          	setRoute $myrIPnet $myrIPmask
+    	elif [ $etherDev == "myri0" ]; then
+        	# we are doing portals over ethernet
+		# now reconfigure the ethernet interface to use our IP scheme
+        	/sbin/ifconfig $etherDev down
+        	/sbin/ifconfig $etherDev `pnid2ip $myrIPnet $myrIPmask $NodeID` up 
+        	setRoute $myrIPnet $myrIPmask
+	fi
+        ;;
+
+    stop)
+	if [ -z $2 ]; then
+        	/sbin/ifconfig myrIP0 down
+	fi
+
+	# unload modules (reverse order)
+	for item in $modlist; do rev="$item $rev";done; modlist=$rev
+	for item in $modlist; do
+		/sbin/rmmod $item
+	done
+        ;;
+
+    restart)
+    	portals stop
+	portals start
+        ;;
+    *)
+        echo "Usage:  {start|stop|restart} [ethernet]" 
+esac

@@ -1,0 +1,534 @@
+/**
+ ** $Id: portalPingPong.c.portals2,v 1.1 2001/11/17 01:02:37 lafisk Exp $
+
+     This is a portal ping-pong latency/bandwidth test for when the clock
+     is too coarse-grain to be able to measure microsecond level times 
+     consistently and accurately.
+ **
+ **/
+
+
+#include<stdio.h>
+#include<string.h>
+#include<stdlib.h>
+#ifdef __linux__
+#include<getopt.h>
+#endif
+#ifdef __osf__
+#include"linux-getopt.h"
+#endif
+#include<sys/param.h>
+#include"puma.h"
+#include"sysptl.h"
+#include"collcore.h"
+
+extern double dclock();
+
+#define START                 0
+#define FINISH             1024
+#define INC                  32
+#define COUNT               500
+#define MAX_SIZE (1024*1024*50) /* 50 MB */
+
+/* globals */
+double           *aligned;
+int               start         = START;
+int               finish        = FINISH;
+int               inc           = INC;
+int               count         = COUNT;
+int               match         = 0;
+MEM_OP_TYPE       memOp         = SINGLE_SNDR_OFF_SV_BDY;
+PORTAL_INDEX      portalNum;
+MEM_DESC_TYPE    *memDesc;
+void            (*memDescInit)( void );
+void            (*memDescWait)( void );
+SEND_INFO_TYPE    sendInfo;
+IND_MD_BUF_DESC   indBuf;
+COMB_MD_BUF_DESC  combBuf;
+
+void nodekill(INT32 node, INT32 pid, INT32 sig);
+int send_user_msg2(CHAR *buff, INT32 nbytes, UINT32 dest, UINT16 portal, 
+    UINT8 operation, SEND_INFO_TYPE *send_info);
+
+void barrier()
+{
+    static COLL_STRUCT collStruct;
+    static int         initialized=0;
+
+    if ( ! initialized ) {
+	_coll_struct_init( &collStruct );
+	initialized = 1;
+    }
+
+    _reduce_short( PUMA_NULLOP, NULL, 0, 0, 0, NULL, 1, _my_nnodes, _my_rank,
+		   0, NULL, &collStruct );
+
+    _bcast_short( NULL, 0, 0, NULL, 1, _my_nnodes, _my_rank, 0, &collStruct );
+
+}
+
+    
+void usage( char *name, char *msg )
+{
+    char usagestr[512];
+
+    if ( _my_rank == 0 ) {
+	sprintf( usagestr,
+		 "usage: %s [OPTION]...\n"
+		 "Portal ping-pong latency and bandwidth test\n\n"
+		 "  -s, --start\t\t\tstart value [START]\n"
+		 "  -f, --finish\t\t\tfinish value [FINISH]\n"
+		 "  -i, --inc\t\t\tincrement [INC]\n"
+		 "  -c, --count\t\t\tnumber of times per size [COUNT]\n"
+		 "  -m, --match\t\t\tuse a match list [no match]\n"
+		 "  -M, --md [descriptor]\t\tmemory descriptor [single]\n"
+		 "            single\t\t\tsingle block\n"
+		 "            ind\t\t\t\tindependent block\n"
+		 "            dyn\t\t\t\tdynamic block\n"
+		 "            comb\t\t\tcombined block (not implemented)\n"
+		 "  -h, --help\t\t\tdisplay this message\n\n",
+		 name);
+	fprintf( stderr, usagestr );
+	if ( msg ) {
+	    fprintf( stderr,"%s\n", msg );
+	}
+    }
+
+    exit( 1 );
+}
+
+
+void getOptions( int ac, char **av )
+{
+    static char *short_options = "c:e:hi:mM:s:";
+    static struct option long_options[] = {
+	{"count", required_argument, 0, 'c'},
+	{"finish", required_argument, 0, 'e'},
+	{"help", no_argument, 0, 'h'},
+	{"inc",required_argument, 0, 'i'},
+	{"match", no_argument, 0, 'm' },
+	{"md", required_argument, 0, 'M'},
+	{"start", required_argument, 0, 's'},
+	{ 0, 0, 0, 0 }
+    };
+    int  opttype;
+    char msg[128];
+
+    optind = 0;
+    /* opterr = 0; */
+
+    while ( 1 ) {
+
+	if ( (opttype = getopt_long_only( ac, av, short_options, long_options, 0 ) )
+	     == EOF ) {
+	    break;
+	}
+
+	switch ( opttype ) {
+	case 'c':
+	    count = (int)strtol( optarg, 0, 10 );
+	    break;
+	case 'e':
+	    finish = (int)strtol( optarg, 0, 10 );
+	    break;
+	case 'h':
+	    usage( av[0], 0 );
+	case 'i':
+	    inc = (int)strtol( optarg, 0, 10 );
+	    break;
+	case 'm':
+	    match = 1;
+	    break;
+	case 'M':
+	    if ( strcmp( optarg, "single" ) == 0 ) {
+		memOp = SINGLE_SNDR_OFF_SV_BDY;
+		break;
+	    }
+	    else if ( strcmp( optarg, "ind" ) == 0 ) {
+		memOp = IND_LIN_SV_HDR_BDY;
+		break;
+	    }
+	    else if ( strcmp( optarg, "dyn" ) == 0 ) {
+		memOp = DYN_SV_HDR_BDY;
+		break;
+	    }
+	    else if ( strcmp( optarg, "comb" ) == 0 ) {
+		memOp = COMB_SNDR_OFF_SV_BDY;
+		sprintf( msg, "Invalid memory descriptor: not implemented\n" );
+		usage( av[0], msg );
+		break;
+	    }
+	    sprintf( msg, "Unknown memory descriptor: %s", optarg );
+	    usage( av[0], msg );
+	case 's':
+	    start = (int)strtol( optarg, 0, 10 );
+	    break;
+	case '?':
+	default:
+	    usage( av[0], 0 );
+	}
+    }
+
+    if ( start < 0 ) {
+	sprintf(msg, "Invalid start value: %d\n", start );
+	usage( av[0], msg );
+    }
+    else if ( finish < 0 ) {
+	sprintf(msg, "Invalid finish value: %d\n", finish );
+	usage( av[0], msg );
+    }
+    else if ( start > finish ) {
+	sprintf(msg, "Invalid start value: %d\n", start );
+	usage( av[0], msg );
+    }
+    else if ( inc < 0 ) {
+	sprintf(msg, "Invalid increment value: %d\n", inc );
+	usage( av[0], msg );
+    }
+    else if ( count <= 0 ) {
+	sprintf(msg, "Invalid times value: %d\n", count );
+	usage( av[0], msg );
+    }	
+
+    if ( finish > MAX_SIZE ) {
+	finish = MAX_SIZE;
+    }
+
+}
+
+void singleInit( )
+{
+    static int      once=0;
+    SINGLE_MD_TYPE *single;
+
+    single           = &memDesc->single;
+    single->msg_cnt  = 0;
+
+    if ( ! once ) {
+	single->buf      = (char *)aligned;
+	single->buf_len  = MAX_SIZE;
+	once             = 1;
+    }
+
+    single->rw_bytes = -1;
+
+}
+
+
+void singleWait( )
+{
+    SINGLE_MD_TYPE *single;
+
+    single = &memDesc->single;
+
+    while ( (volatile int)single->rw_bytes < 0 );
+
+}
+
+
+void indInit()
+{
+    static int   once=0;
+    IND_MD_TYPE *ind;
+
+    indBuf.hdr.msg_len = -1;
+
+    if ( ! once ) {
+	indBuf.buf          = (char *)aligned;
+	indBuf.buf_len      = MAX_SIZE;
+    }
+
+    indBuf.first_read       = 0;
+    indBuf.last_probe       = -1;
+    indBuf.next_free        = 0;
+
+    ind = &memDesc->ind;
+
+    if ( ! once ) {
+	ind->buf_desc_table = &indBuf;
+	ind->num_buf_desc   = 1;
+	once                = 1;
+    }
+	
+}
+
+
+void indWait( )
+{
+    IND_MD_TYPE *ind;
+
+    ind = &memDesc->ind;
+
+    while ( (volatile int)ind->buf_desc_table->hdr.msg_len < 0 );
+
+}
+    
+
+void dynInit()
+{
+    static int once=0;
+
+    if ( ! once ) {
+	if ( sptl_dyn_init( &memDesc->dyn, (char *)aligned, MAX_SIZE ) < 0 ) {
+	    fprintf(stderr,"sptl_dyn_init() failed\n");
+	    nodekill( -1, -1, 9 );
+	}
+	once = 1;
+    }
+
+}
+
+
+void dynWait()
+{
+    CHAMELEON ignoreBits, matchBits;
+    int       found = 0;
+
+    ignoreBits.ints.i0 = 0xffffffff;
+    ignoreBits.ints.i1 = 0xffffffff;
+    matchBits.ints.i0  = 0;
+    matchBits.ints.i1  = 0;
+    
+    while ( ! found ) {
+	sptl_dyn_srch( &memDesc->dyn, -1, -1, ignoreBits, matchBits, portalNum, 0, &found );
+    }
+
+}
+
+
+void combInit()
+{
+    static int    once=0;
+    COMB_MD_TYPE *comb;
+
+    if ( ! once ) {
+	combBuf.buf          = (char *)aligned;
+	combBuf.buf_len      = MAX_SIZE;
+    }
+    
+    comb = &memDesc->comb;
+
+    if ( ! once ) {
+	comb->buf_desc_table = &combBuf;
+	once                 = 1;
+    }
+
+    comb->rw_bytes           = -1;
+    comb->num_buf_desc       = 1;
+
+}
+
+
+void combWait( )
+{
+    COMB_MD_TYPE *comb;
+
+    comb = &memDesc->comb;
+
+    while ( (volatile int)comb->rw_bytes < 0 );
+
+}
+
+
+void initMatchList()
+{
+    static MATCH_DESC_TYPE  matchListEntries[2];
+    MATCH_LIST_TYPE        *matchList;
+
+    matchList                              = &memDesc->match;
+    matchList->list_len                    = 2;
+    matchList->u_lst                       = matchListEntries;
+    					   
+    matchListEntries[0].rank               = -1;
+    matchListEntries[0].gid                = -1;
+    matchListEntries[0].ign_mbits.ints.i0  = 0;
+    matchListEntries[0].ign_mbits.ints.i1  = 0; 
+    matchListEntries[0].must_mbits.ints.i0 = 0;
+    matchListEntries[0].must_mbits.ints.i1 = 0;
+    matchListEntries[0].next               = 1;
+    matchListEntries[0].next_on_nobuf      = 1;
+    matchListEntries[0].next_on_nofit      = 1;
+    matchListEntries[0].mem_op             = UNASSIGNED_MD;
+    matchListEntries[0].ctl_bits           = MCH_OK;
+
+    matchListEntries[1].rank               = -1;
+    matchListEntries[1].gid                = -1;
+    matchListEntries[1].ign_mbits.ints.i0  = 0;
+    matchListEntries[1].ign_mbits.ints.i1  = 0;
+    matchListEntries[1].must_mbits.ints.i0 = 0;
+    matchListEntries[1].must_mbits.ints.i1 = 0;
+    matchListEntries[1].next               = 1;
+    matchListEntries[1].next_on_nobuf      = 1;
+    matchListEntries[1].next_on_nofit      = 1;
+    matchListEntries[1].mem_op             = memOp;
+    matchListEntries[1].ctl_bits           = MCH_OK;
+
+    memDesc         = &matchList->u_lst[1].mem_desc;
+
+}
+
+
+void portalInit( )
+{
+    PORTAL_DESCRIPTOR *portalDesc;
+
+
+    portalDesc                       = &_my_pcb->portal_table2[portalNum];
+    portalDesc->stat_bits            = 0x00;
+    portalDesc->active_cnt           = 0;
+    _my_pcb->portals_dropped.ints.i0 = 0;
+    _my_pcb->portals_dropped.ints.i1 = 0;
+
+    memDesc = &portalDesc->mem_desc;
+
+    if ( match ) {
+	portalDesc->mem_op    = MATCHING;
+	initMatchList();
+    }
+    else {
+	portalDesc->mem_op = memOp;
+    }
+
+    switch ( memOp ) {
+    case SINGLE_SNDR_OFF_SV_BDY:
+	memDescInit = singleInit;
+	memDescWait = singleWait;
+	break;
+    case IND_LIN_SV_HDR_BDY:
+	memDescInit = indInit;
+	memDescWait = indWait;
+	break;
+    case DYN_SV_HDR_BDY:
+	memDescInit = dynInit;
+	memDescWait = dynWait;
+	break;
+    case COMB_SNDR_OFF_SV_BDY:
+	memDescInit = combInit;
+	memDescWait = combWait;
+	break;
+    }
+
+    portalDesc->stat_bits = PTL_ACTIVE;
+
+}
+
+
+void printHeadings()
+{
+    char matchListMsg[32];
+    char portalMsg[16];
+
+    if ( match ) {
+	sprintf( matchListMsg, "with a match list" );
+    }
+    else {
+	sprintf( matchListMsg, " " );
+    }
+    
+    switch ( memOp ) {
+    case SINGLE_SNDR_OFF_SV_BDY:
+	sprintf( portalMsg, "a single" );
+	break;
+    case IND_LIN_SV_HDR_BDY:
+	sprintf( portalMsg, "an independent" );
+	break;
+    case DYN_SV_HDR_BDY:
+	sprintf( portalMsg, "a dynamic" );
+	break;
+    case COMB_SNDR_OFF_SV_BDY:
+	sprintf( portalMsg, "a combined" );
+	break;
+    }
+	
+    printf("#\n"
+           "#     Results for %d trials, each of length %d through %d in increments of %d\n"
+	   "#     using %s block memory descriptor %s\n"
+           "#\n"
+           "# Length(bytes)  Latency(us)  Bandwidth(MB/s)\n"
+           "#                 average        average\n",
+	   count, start, finish, inc, portalMsg, matchListMsg );
+}
+
+void printStats( int length, double latency, double bandwidth )
+{
+    printf("%9d       %8.2f     %8.2f\n",
+	   length, latency, bandwidth );
+}
+
+int main( int ac, char **av )
+{
+    double time;
+    double latency;
+    double bandwidth;
+    int    length;
+    int    i;
+
+    if ( _my_nnodes < 2 ) {
+	if ( _my_rank == 0 ) {
+	    fprintf(stderr,"This program requires at least 2 nodes to run\n");
+	    exit(1);
+	}
+    }
+
+    getOptions( ac, av );
+
+    if ( (aligned = (double *)malloc( MAX_SIZE) ) == NULL ) {
+	fprintf(stderr,"malloc() failed\n");
+	exit(1);
+    }
+
+    sptl_c_alloc( &portalNum, NULL, _my_nnodes, _my_rank );
+
+    portalInit( match, memOp, portalNum, aligned, sizeof(aligned) );
+
+    memset( &sendInfo, 0, sizeof(sendInfo) );
+
+    if ( portal_lock_buffer( &sendInfo, sizeof(sendInfo) )||
+	 portal_lock_buffer( aligned, sizeof(aligned) )   ||
+	 portal_lock_buffer( &indBuf, sizeof(indBuf) )    ||
+	 portal_lock_buffer( &combBuf, sizeof(combBuf) )   ) {
+	fprintf(stderr,"portal_locK_buffer() failed\n");
+	exit(1);
+    }
+
+    if ( _my_rank == 0 ) {
+	printHeadings();
+    }
+
+    for ( length=start; length<=finish; length+=inc ) {
+
+	latency     = 0.0;
+	bandwidth   = 0.0;
+	
+        memDescInit();
+
+	barrier();
+
+	time = dclock();
+
+    	for ( i=0; i<count; i++ ) {
+
+	  if ( _my_rank == 0 ) {
+	    send_user_msg2((CHAR*) aligned, length, 1, portalNum, 0, &sendInfo );
+	    memDescWait();
+	    memDescInit();
+	  }
+	  else if ( _my_rank == 1 ) {
+	    memDescWait();
+	    memDescInit();
+	    send_user_msg2( (CHAR*)aligned, length, 0, portalNum, 0, &sendInfo );
+	  }
+
+	}
+
+	time = dclock() - time;
+
+	if ( _my_rank == 0 ) {
+	    time      = time / count; /* average time */
+	    latency   = time * 1000000.0 / 2.0; /* microseconds, one-way */
+	    bandwidth = length / (time * 1024.0 * 1024.0); /* megabytes */
+	    printStats( length, latency, bandwidth );
+	}
+    }
+    return 0;
+}

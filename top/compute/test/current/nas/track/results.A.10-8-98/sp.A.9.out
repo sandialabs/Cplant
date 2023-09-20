@@ -1,0 +1,98 @@
+ 
+
+ NAS Parallel Benchmarks 2.3 -- SP Benchmark
+
+ No input file inputsp.data. Using compiled defaults
+ Size:  64x 64x 64
+ Iterations: 400    dt:   0.001500
+ Number of active processes:     9
+
+ Time step    1
+ Time step   20
+ Time step   40
+ Time step   60
+ Time step   80
+ Time step  100
+ Time step  120
+ Time step  140
+ Time step  160
+ Time step  180
+ Time step  200
+ Time step  220
+ Time step  240
+ Time step  260
+ Time step  280
+ Time step  300
+ Time step  320
+ Time step  340
+ Time step  360
+ Time step  380
+ Time step  400
+ Verification being performed for class A
+ accuracy setting for epsilon =  0.1000000000000E-07
+ Comparison of RMS-norms of residual
+           1 0.2479982239930E+01 0.2479982239930E+01 0.7288129144589E-13
+           2 0.1127633796437E+01 0.1127633796437E+01 0.7935552842380E-13
+           3 0.1502897788877E+01 0.1502897788877E+01 0.4284585146431E-13
+           4 0.1421781621170E+01 0.1421781621170E+01 0.4138597617877E-13
+           5 0.2129211303514E+01 0.2129211303514E+01 0.1113762817568E-12
+ Comparison of RMS-norms of solution error
+           1 0.1090014029782E-03 0.1090014029782E-03 0.3999809054732E-12
+           2 0.3734395176929E-04 0.3734395176928E-04 0.1008892302739E-12
+           3 0.5009278540654E-04 0.5009278540654E-04 0.6763712102491E-14
+           4 0.4767109393954E-04 0.4767109393953E-04 0.1967303037748E-12
+           5 0.1362161339921E-03 0.1362161339921E-03 0.6705815996597E-13
+ Verification Successful
+ 
+ 
+ SP Benchmark Completed.
+ Class           =                        A
+ Size            =               64x 64x 64
+ Iterations      =                      400
+ Time in seconds =                   224.65
+ Total processes =                        9
+ Compiled procs  =                        9
+ Mop/s total     =                   378.42
+ Mop/s/process   =                    42.05
+ Operation type  =           floating point
+ Verification    =               SUCCESSFUL
+ Version         =                      2.3
+ Compile date    =              08 Oct 1998
+ 
+ Compile options:
+    MPIF77       = /Net/mp/cplant/bin/f77 
+    FLINK        = $(MPIF77)
+    FMPI_LIB     = -L$(MPIPATH) -lmpi 
+    FMPI_INC     = -I$(MPIPATH)/include
+    FFLAGS       = -O3 -align records -align dcommons -g
+    FLINKFLAGS   = -v
+    RAND         = (none)
+ 
+ 
+ Please send the results of this run to:
+ 
+ NPB Development Team 
+ Internet: npb@nas.nasa.gov
+ 
+ If email is not available, send this to:
+ 
+ MS T27A-1
+ NASA Ames Research Center
+ Moffett Field, CA  94035-1000
+ 
+ Fax: 415-604-3957
+ 
+ 
+ 
+   Node name     Rank  Node   PID   Elapsed  Exit Code  Terminating Signal
+---------------- ----  ----  -----  -------  ---------  ------------------
+SU-002 node-0014    0    40  14744  0:03:49       0       none
+SU-002 node-0010    1    42  14753  0:03:49       0       none
+SU-002 node-0012    2    43  14726  0:03:49       0       none
+SU-002 node-0008    3    45  14750  0:03:48       0       none
+SU-002 node-0004    4    47  14733  0:03:48       0       none
+SU-001 node-0001    5    48  14611  0:03:48       0       none
+SU-001 node-0003    6    49  14589  0:03:49       0       none
+SU-001 node-0005    7    50  14569  0:03:48       0       none
+SU-001 node-0007    8    51  14569  0:03:48       0       none
+

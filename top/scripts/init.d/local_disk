@@ -1,0 +1,27 @@
+#!/bin/bash
+
+# 
+# script to enable swapping on service nodes or nodes
+# with disks, also mounts local tmp dir.
+#
+case "$1" in
+    start)
+        # Turn on swap 
+        /sbin/swapon -v -p 0 /dev/sda1
+        # check and mount the local /tmp directory
+        /sbin/e2fsck -p -y /dev/sda2
+        mount -n /dev/sda2 /var/tmp || exit 1
+        # clean up creds
+        rm -f /var/tmp/krc5cc*
+        chmod 777 /var/tmp
+        ;;
+
+    stop)
+        umount /var/tmp
+        /sbin/swapoff /dev/sda1
+
+        ;;
+    *)
+        echo "Usage: $0  {start|stop}"
+esac
+

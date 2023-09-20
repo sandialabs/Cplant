@@ -1,0 +1,110 @@
+.TH VROUTED 1 "Cplant Myrinet Utilities" "Cplant" \" -*- nroff -*-
+.SH NAME
+.B vrouted 
+\- vroute server (for verifying myrinet routes on Cplant)
+.SH SYNOPSIS
+.B vrouted
+\-inetd 
+.br
+.B vrouted
+\-p portnum 
+.SH DESCRIPTION
+.B vrouted
+is the server side of the 
+.B vroute 
+utility for myrinet route
+verification on Cplant. It works in conjunction with the
+.B vroute 
+client via sockets and TCP/IP to provide detection of one-way 
+or two-way pings between myrinet nodes. 
+.B vrouted 
+is based on
+the Cplant myrinet implementation using the rtscts driver/module.
+In addition, the rtscts module must be a late version
+(after 3/30/99) with handling of PING type myrinet messages.
+.P
+.B vrouted 
+is normally registered as a service with inetd
+using the files /etc/services and /etc/inetd.conf.
+.P
+An invocation of 
+.B vroute 
+runs on three nodes: the vroute
+client runs on a controller node (SSS-0 or SSS-1) and coordinates 
+myrinet pings
+between a pair of sender and receiver targets both connected
+by myrinet and running 
+the
+.B vrouted
+service.
+.P
+Unless the -p option is used, all three nodes need to have a line like
+.P
+vroute        8011/tcp
+.P
+in their /etc/services file. Here, "8011" binds a specific
+port to vrouted service requests. The actual port number
+should be chosen as appropriate for a given site.
+In addition, the sender
+and receiver, i.e. the servers, should have a line like
+.P
+vroute stream tcp nowait root /usr/sbin/vrouted vrouted -inetd
+.P
+in their /etc/inetd.conf file. This way inetd can act as a
+proxy for vrouted. This simplifies operation of the client
+once the servers have been installed. Accordingly, the binary for
+.B vrouted
+should be installed in /usr/sbin on the server nodes.
+.P
+As an alternative to registering 
+.B vrouted 
+as a service with inetd, it can also be run "by hand" on the
+sender and receiver by specifying
+a port with the -p switch. In this case, the 
+.B vroute
+client should be run on the controller using the same switch.
+.P
+.B vrouted
+servers learn their identity as either sender or receiver from
+the 
+.B vroute 
+client. Once contacted by a client the servers attempt to open
+a pair of devices, /dev/portals and /dev/rtscts, on the local
+node. Opening these devices requires that they exist as files
+with the appropriate permissions (normally read and write by
+world) and that the corresponding Linux kernel modules be loaded.
+.B vrouted
+also assumes that the rtscts MCP (Myrinet Control Program) is 
+running on its local Lanai card.
+.P
+When contacted,
+.B vrouted
+uses the portals device to find out its Cplant node id (nid),
+which it reports to the other server by way of the
+.B vroute
+client. Optionally, as determined by the client, it can verify
+the client's notion of the server's nid. Its main job though is,
+as sender, to initiate a myrinet ping or, as receiver,
+to check for receipt of such a message. These actions are
+performed by way of ioctl calls to the rtscts device. Optionally,
+the client may call for a follow-up ping in the reverse direction,
+i.e., from receiver to sender.
+
+.SS OPTIONS
+.TP
+.I "\-i, \-inetd"
+Run as a service registered with inetd. Incompatible with the
+-p option.
+.TP
+.I "\-p portnum"
+Specify a port number for connecting to the service. For use
+when run "by hand", i.e., not in conjunction with inetd. Incompatible
+with the -i option. In this case, if the server is able to do
+socket initialization and is ready to accept connections it prints
+a message to that effect to STDOUT.
+
+.SH FILES
+/etc/services, /etc/inetd.conf
+
+.SH SEE ALSO
+vroute(1), inetd(8)

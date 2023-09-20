@@ -1,0 +1,22 @@
+DoLink=1
+STRIP_EXEC=
+# link?
+for arg in "$@" ; do
+    case "$arg" in 
+	-g)
+	STRIP_EXEC=-s
+	;;
+	-c)
+	DoLink=0
+	break
+	;;
+    esac
+done
+
+if [ $DoLink = 1 ] ; then 
+g77 $STRIP_EXEC -static -DLINUX_PORTALS $INCLUDE_DIR \
+    $STARTUP_DIR/startup.o $LIB_DIR $* $CPLANT_LIBS -lc -lgcc
+#    -lg2c
+else
+g77 -DLINUX_PORTALS $INCLUDE_DIR $*
+fi

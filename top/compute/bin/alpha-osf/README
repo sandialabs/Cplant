@@ -1,0 +1,11 @@
+top/compute/bin/alpha-osf/README
+----------------------------------
+
+Prior to this README there were a couple of empty directories 
+in our Cplant repository which created a problem when tagging 
+the repository for release and then checking out the tag. The 
+empty directories do not show up in the checkout: 
+
+top/compute/bin/alpha-linux
+top/compute/bin/alpha-osf
+

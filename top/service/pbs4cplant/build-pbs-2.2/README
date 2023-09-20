@@ -1,0 +1,445 @@
+$Id: README,v 1.6 2001/06/29 06:32:15 lafisk Exp $
+
+Introduction:
+-------------
+This directory contains
+
+  o cplantPatch        - a patch file of Cplant changes for PBS
+  o obj - a directory containing two scripts to configure a directory
+	  for building and installing PBS
+  o configs.onequeue - a directory containing runtime configuration files for
+	  PBS and a file of commands for setting the initial parameters of the
+	  running PBS server.
+
+The patches were created for version 2.2, patch level 8 of PBS.  The PBS
+source is available for free at www.openpbs.com.
+
+there is a good chance they will work on a later version of PBS.
+
+Building PBS for Cplant:
+------------------------
+1. Obtain the Open PBS source from www.openpbs.com.  Tar up that source and
+   the directory containing this README file and copy it to the 
+   file system where you are going to build and install PBS.  (We'll refer 
+   to the directory into which you install these files as PBSTOP.) 
+   The binaries will be executed from the Cplant service nodes, so
+   the file system should be one that is mounted on the service nodes
+   or one that gets distributed to the sss0s.  We install our PBS
+   executables in /cplant/nfs-root-alpha/sbin and /cplant/nfs-root-alpha/bin
+   on the sss1.  We build in /usr/local/pbs on the sss1.  But you could 
+   also build and install on a file server that is mounted by the service 
+   nodes.
+
+   Note that the stat structure changed sometime between glibc 2.0.7 and
+   glibc 2.1.2, so a PBS server, scheduler or MOM built on one will report 
+   errors if run on the other.  (Calls to chk_file_sec() will fail.)
+   Beware of this if you have different Linux distributions running on
+   service nodes and admin or file server nodes.
+
+2. Uncompress and untar the PBS distribution.
+
+3. Move the directory created by this tar file to a directory called
+   "patched".  (Or don't, but we'll call it "patched" from now on.)
+   If you believe you may want to modify PBS and subsequently build
+   a new Cplant patch file, then copy the entire "patched" directory 
+   to a directory named "origsrc".  Later on you can create a new 
+   patch file by diff'ing origsrc and patched.
+
+   The "patched" directory contains a copy of the PBS adminstrator's
+   guide.  You may also want to obtain the External Reference Specification
+   for more detailed information about PBS.  This can be built from this
+   directory, or obtained from http://mrj.pbs.com.
+
+4. Move the cplantPatch to PBSTOP/patched, and apply it in that directory 
+   with this command:
+
+   "patch -N -p1 -l < cplantPatch"
+
+   If you want to know what all these patches do, there's a description
+   toward the end of this README.
+
+5. PBSTOP/patched contains all the source files required to build PBS.
+   PBSTOP/obj is the target directory that will contain the object files.
+   In PBSTOP/obj edit the scripts configBuild and configInstall to have
+   the correct pathnames for your build and installation of PBS
+   executables and runtime files.  See the comments in the two
+   files for the meaning of the values in the file.
+
+   The pathnames in configBuild (except for SRCDIR) are compiled into the 
+   code, and so should represent the path name at execution time (from the 
+   service nodes).  The pathnames in configInstall are used when copying 
+   the executables to their home, and so should represent the pathname on 
+   the build machine.
+
+   Also ensure that the directory defined with the "prefix" argument 
+   exists and is owned by root. 
+
+8. In PBSTOP/obj execute the configBuild script.  PBSTOP/obj is now set 
+   up to be the target directory.  Type "make" to build the code.
+
+9. In PBSTOP/obj execute the configInstall script.  PBSTOP/obj is now set 
+   up to copy the compiled PBS codes to the proper location and to build
+   a template of the runtime working directory.  Type "make install".
+
+10. The PBS code is built and installed.  Now it is necessary to set up
+    the runtime configuration files, and start PBS.
+
+Setting up runtime configuration files:
+--------------------------------------
+
+The PBS server, scheduler, MOMs and clients access a runtime directory
+for configuration information and logging.  The install process created
+a template for this directory.  (It's at the pathname specified by
+"set-server-home" in configInstall.)  The configuration files in this
+template must be updated with Cplant hostnames and scheduling policy 
+configuration parameters, and copied into place on the service nodes.  
+Cplant specific configuration files are in PBSTOP/configs.onequeue.  
+(This is for the single queue policy.)
+
+I should write a script to do this.  Until then, follow these steps.
+
+All hostnames in the working directory files should be the hostnames to
+be used by PBS codes on service nodes when they establish socket connections.
+These hostnames will be used by the PBS clients and daemons to establish 
+connections with each other and to authenticate incoming requests.
+
+1. Copy the MOMs' config file from PBSTOP/config.onequeue/mom_priv/config 
+to the working directory template.  Set these values in the file:
+
+$clienthost - Host names of nodes on which PBS server, scheduler and other
+MOMs are running.
+
+$usecp - Directs the MOM to use "cp" instead of "rcp" when copying files
+back to users directories.  List file systems that are shared by
+the service nodes on which the MOMs are running.
+
+2. Copy the scheduler's configuration files from 
+PBSTOP/config.onequeue/sched_priv to the sched_priv directory of the
+working directory template.  Edit them as follows:
+
+sched_priv/resource_group - This file should list every PBS user, followed
+by a unique ID, followed by a parent group, followed by a priority.  You can
+use the user ID from the passwd file for the unique ID, use "root" for 
+everybody's parent group, and 10 for everybody's priority.  If all users
+have the same priority, you may leave the resource_group file empty.
+
+sched_priv/dedicated_time - see the file for how to set up dedicated time
+periods.  It you don't have dedicated time you still need the file.
+
+sched_priv/holidays - lists the prime and non prime time periods, and all
+holidays for the year.  You need the prime and non prime periods even if
+you are running the "one queue" scheduler, because the scheduler sorts the
+jobs in the queue differently during prime and non prime time.
+
+sched_priv/sched_config - lists parameters of the scheduling policy.  You
+may be able to copy this straight into the working directory without any
+changes.
+
+sched_priv/usage - you need a zero length usage file with permission 644.
+
+3. Copy the server's "nodes" file from PBSTOP/config.onequeue/server_priv
+to the server_priv directory of the working directory template.  You need 
+one line for each node on which a PBS MOM daemon will run.  Each line should 
+be appended with ":ts" to tell the server it is timeshared.  Do not put 
+any blank lines or comments in this file.
+
+4. The PBSserver file should contain the hostname of the node on which
+the PBS server is running.
+
+5.  Decide where you want the runtime configuration files to go.  Actually
+you already decided because it's the set-server-home value in configBuild.
+It is recommended that each service node have a local working directory.
+If you can't do this, be certain you built with the CPLANT_REMOTE_WORKING_DIR
+switch.
+
+6.  Now copy the working directory to each of the service nodes on which
+PBS clients, MOMs, the scheduler or the server will run.  This
+would be to the location named by "set-server-home" in configBuild.  Use
+the -p option in your copy to ensure the permissions are maintained.
+
+Running the PBS server for the first time:
+------------------------------------------
+
+The first time you run the PBS server, you must run it with the
+argument "-t create", which creates a new database for the server
+in the working directory.  Then you need to run "qmgr" and set
+several operating parameters.  These parameters are listed in the
+file PBSTOP/configs.onequeue/qmgr-setup.  See the PBS External
+Reference Specification for an explanation of the values in
+the file.
+
+It is important to set the default queue's resources_max.size
+attribute.  This attribute defines limit on the size of jobs in
+this queue.  If users attempt to submit a job that requests more
+nodes than this size, "qsub" will display an error and suggest
+the possibility that their job belongs in a dedicated time queue.
+(Use qmgr command "set queue default resources_max.size = 75".)
+You may want to change this value from time to time as the size
+of your compute partition changes.
+
+You must be root on the node the server is running on to enter
+the first qmgr commands.  There are qmgr commands that set up other
+users as PBS managers, and once those are entered, these other users 
+and users on other hosts may enter qmgr commands.
+
+The PBS server verifies the incoming qmgr configuration requests
+by checking the hostname of the source of the command.  If the primary
+name on the interface is not the name in the PBSserver file, you will get
+get an "Unauthorized Request" error when you attempt to configure
+the server with qmgr.  By looking at the server's log file in the
+server_logs directory, you can see what hostname the server resolved
+the incoming request to.
+
+Making a patch file:
+-------------------
+
+If you change the PBS source you need to make a new patch file.  This script
+would create the patch file when the 2.2 PBS distribution is in "origsrc"
+and the Cplant version is in "patched".  (See step 3 above in "Building PBS".)
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  
+#!/bin/bash
+#
+export TZ=UTC0
+export LC_ALL=C
+echo "diff -Naurw origsrc patched > cplantPatch"
+diff -Naurw origsrc patched > cplantPatch
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  
+
+The patches
+------------
+
+The Cplant patches to PBS 2.2, patch level 8, accomplish the following:
+
+1. We added a "size" resource to PBS.  It's analygous to the yod
+   "-size" argument.  It represents the number of compute nodes
+   requested by the job.  PBS does not run on our compute nodes.
+   They are an abstract resource managed by PBS with help from
+   the Cplant runtime system.  The MOM puts the "size" in the
+   PBS job's environment so yod can pass it along to the cplant
+   node allocator.  (The "nodes" resource in PBS represents the
+   service nodes on which the job scripts run.)
+
+   (server/resc_def_all.c, qstat.c, resmom/start_exec.c, fifo/check.c,
+   fifo/fairshare.c, fifo/globals.c, fifo/server_info.c, fifo/sort.c
+   fifo/sort.h)
+
+2. Changes to qstat display the "size" and "walltime" requests 
+   of a job and the total compute nodes in use by jobs.  We also
+   display the amount of time the job has been in the queue. 
+   (qstat.c)
+
+
+3. MOM, scheduler and clients use our gethostbypeer() instead
+   of gethostname() to determine their host name on the network
+   connecting them to the other service nodes.  (With multiple
+   network interfaces, gethostname() may return the wrong name.)
+   gethostbypeer() uses "ping -R pbs-server-host-name" to find my 
+   host name on this network.)
+
+   (qsub.c, net_connect.h, prepare_path.c, Libnet/Makefile.in,
+   Libnet/gethostbypeer.c, mom_main.c, pbs_sched.c)  
+
+4. PBS server gets it's hostname from the file in the runtime working
+   directory that lists the hostname of the server, instead of from
+   gethostname().  (pbsd_main.c)
+
+5. We skip the check of the the full path name starting at root
+   when verifying that runtime files and directories have the
+   correct permissions.  (Liblog/chk_file_sec.c)
+
+6. Log file entries contain the physical node number of the reporter.
+   (Liblog/pbs_log.c, pbsd_main.c, mom_main.c, pbs_sched.c)
+
+7. If the compile time flag CPLANT_SCHEDULER_PING_NODES is set, the
+   scheduler checks to see if node is alive before trying to talk_with_mom.
+   (If node crashed after server last queried it, scheduler will hang
+   trying to talk to it.)  This time-consuming check is far less likely
+   to be needed if CPLANT_NONBLOCKING_CONNECTIONS is on.
+
+   (Libnet/node_is_alive.c, Libnet/Makefile.in, node_info.c)
+
+8. MOM uses "$cplant_grace" directive in it's config file to determine
+   how long to wait before killing overlimit jobs.  If directive value
+   is negative, overlimit jobs are not killed.  MOM only kills overlimit
+   jobs if there are jobs in the queues waiting for nodes.  (Scheduler
+   notifies MOMs after each scheduling cycle if there are jobs waiting 
+   or if there are no jobs waiting.)
+
+   MOMs kill all parallel apps started by a PBS job when the PBS job
+   terminates.  It simply invokes the Cplant utility "pingd". 
+
+   MOM adds the "size" resource request to PBS job's environment as PBS_NNODES.
+
+   (catch_child.c, linux/mom_mach.c, mom_main.c)
+
+8. PBS codes only try to lock files in runtime working directory if
+   CPLANT_REMOTE_WORKING_DIR is undefined.  (mom_main.c, pbs_sched.c,
+   pbsd_main.c)
+
+9. If CPLANT_PRIME_NONPRIME_POLICY is defined, the scheduler only runs
+   jobs from the "prime" queue during prime time, refusing to start jobs
+   that will run past the end of prime time.  No user is permitted to have
+   running jobs that requested more than N/2 node hours total, where N is
+   the number of compute nodes in the machine.  During nonprime time, the
+   scheduler runs jobs from both the prime and nonprime queue, with higher
+   priority given to jobs in the nonprime queue.  (Queues need to be setup
+   with priorities this way.)  Nonprime jobs will not be started if they
+   would extend into prime time.  If this value is not defined, the
+   scheduler ignores prime/nonprime boundaries when scheduling jobs whose
+   walltime exceeds the boundary, and the scheduler runs jobs from all
+   queues.  (So use sched_config values and queue settings to get desired
+   policy.)
+
+   If CPLANT_RUN_ON_SUBMITTING_NODE is defined, the scheduler will try to
+   run the job on the node from which the job was submitted, otherwise it
+   will run it on the least loaded service node.
+
+   We added two sorts to sort in increasing and decreasing order by the
+   job's "size" resource request.
+
+   The scheduler sends a message to all MOMs at the end of each scheduling
+   cycle to inform them of whether or not there are jobs in the queues that
+   are waiting to run but can't because of a lack of compute nodes.  We
+   hacked the Libnet/rm.c facility to do this.
+
+   (check.c, config.h, constant.h, data_types.h, fairshare.c, globals.c,
+   fifo.c, globals.h, job_info.c, node_info.c, node_info.h, prime.c,
+   queue_info.c, server_info.c, sort.h, sort.c, node_manager.c, Libnet/rm.c)
+
+10.  If the scheduler receives a SIGHUP, it will re-read all of it's
+   configuration files.  (It will do all the actions it does on receiving
+   a SCH_CONFIGURE command.)  (pbs_sched.c)
+
+11.  If qsub rejects a request because of a resource request that is not
+   valid for the queue, information is displayed about how to find the
+   resource limits on the default and dedicated time queues. (qsub.c)
+
+12.  If CPLANT_NONBLOCKING_CONNECTIONS is defined at compile time, the
+   server will open non-blocking sockets to talk to moms and scheduler and
+   will time out and log a warning if the it can't reach the process.  (The
+   mom's use this code also to talk to other moms.)  Server will check
+   a node's status before attempting connection. (pbs_nodes.h, 
+   Libnet/net_client.c, server/node_func.c, server/run_sched.c,
+   server/svr_connect.c)
+
+13.  When mom is started with the "-p" option, it will add the jobs
+   already running on the node when it started to it's list of jobs
+   to poll.  (resmom/catch_child.c)
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  
+
+The compile switches
+--------------------
+
+CPLANT_SERVICE_NODE - general cplant patches for "size" resource,
+   use of gethostbypeer, scheduler interface to MOMs for notification
+   of waiting jobs, MOMs killing of jobs that go over walltime
+   request if there are jobs waiting in the queue, MOMs killing of 
+   parallel applications when PBS job completes
+
+
+CPLANT_PRIME_NONPRIME_POLICY - Define this and rebuild the scheduler
+   to turn on Cplant's prime/non-prime policy.  During prime time,
+   the scheduler will only run jobs from the "prime" queue.  It
+   will not allow any user to have running jobs whose node-hour
+   total exceed N/2, where N is the number of nodes available in
+   the machine.  It will not start jobs from the "prime" queue
+   whose walltime request would extend past the prime time period.
+   During non-prime time, the scheduler will run jobs from the
+   prime and non-prime queues, with higher priority going to jobs
+   in the non-prime queue.  Jobs in the non-prime queue will not
+   be started if their walltime request would run past the end
+   of non-prime time.
+
+   If this is not turned on, all queues are evaluated during prime
+   and nonprime time.  The settings in the scheduler sched_config
+   file determine the priority given to the jobs in the queues
+   during prime and nonprime time.  We don't care about prime/nonprime
+   time boundaries.
+
+CPLANT_RUN_ON_SUBMITTING_HOST - If this is defined, the scheduler
+   will schedule each job to run on the service node from which
+   it was submitted.  If the MOM is not running on that node, it
+   will choose another node.  If this is not defined, the scheduler
+   load balances PBS jobs across the service nodes.
+
+CPLANT_REMOTE_WORKING_DIR - define this if the working directory
+  is NFS mounted from a remote server.  If it's defined we won't
+  try to lock files with fcntl(), which often fails.  It is much
+  preferable to place the working directory locally.
+
+CPLANT_NONBLOCKING_CONNECTIONS lib/Libnet/net_client.c will open
+   non-blocking sockets, so server and mom don't hang when connecting
+   to a mom that's exited or a mom on a node that's crashed.  Also,
+   server will check state of a node (in server's data structure)
+   before attempting to connect.  Server will log a big warning if
+   a node is unreachable.
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  
+
+Upgrading to a new PBS version when jobs are running:
+
+Date: Wed, 1 Dec 1999 10:16:30 -0800 (PST)
+From: Robert Henderson <hender@bayarea.net>
+To: pbs-users@pbs.mrj.com
+Subject: Upgrading PBS while jobs are running.
+Message-ID: <Pine.NEB.4.05.9912010959320.12890-100000@baygate.bayarea.net>
+MIME-Version: 1.0
+Content-Type: TEXT/PLAIN; charset=US-ASCII
+Sender: owner-pbs-users@CARAVAN.COM
+Precedence: bulk
+Content-Length: 1785
+Status: OR
+
+The following question was received:
+ 
+        Is it possible to upgrade PBS and keep long-running jobs in the
+        system?
+ 
+Normally, the answer would be no  for the following reasons:
+ 
+      - On many systems, a running program will crash if its text space is
+        changed while it is running.   The system pages the text (program)
+        data not from the swap space but from the original file.   If that
+        file is changed, the instruction pointer becomes invalid.
+ 
+      - pbs_mom becomes aware that a running job has termnated by
+        receiving the SIGCHLD signal when the top process (the shell) of
+        the job dies.   Prior to 2.2, if pbs_mom died or was killed, and
+        then restarted, she would no longer be the parent of the top
+        process.   Hence on restart, she would kill the processes and
+        force a requeue of the job.
+ 
+On of the new features in 2.2 is the ability to tell pbs_mom with the -p
+option to allow running jobs to continue to run.   When the job
+terminates, pbs_mom will not of course get the SIGCHLD, but after awhile
+she will (now) notice that there are no processes alive in the job and
+begin normal end of job processing.
+ 
+So with the following warning...
+ 
+        THIS PROCEEDURE IS UNTESTED!!!
+ 
+To upgrade with running jobs in the system that you do not want to
+requeue...
+ 
+1.  Stop the server via the qterm command WITH the "quick" option:
+        qterm -t quick
+ 
+2.  Kill pbs_mom(s) with SIGKILL  (-9)   only.
+ 
+3.  Kill the scheduler (pbs_scheduler).
+ 
+4.  Install the new versions of PBS.
+ 
+5.  Start the new
+        a.  scheduler (pbs_sched)
+        b.  pbs_mom(s)  with the -p option
+                pbs_mom -p
+        c.  server (pbs_server)
+ 
+ 
+ Bob Henderson                  bob.henderson@ieee.org
+ MRJ Technology Solutions
+

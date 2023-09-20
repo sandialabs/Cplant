@@ -1,0 +1,35 @@
+#! /usr/bin/perl
+
+if ( $ARGV[0] eq "" ) {
+  print("usage: gm2cplant gm-master-route-file\n");
+  print("usage: where master-file is the output from simpleroutes\n");
+  exit 0;
+}
+
+if ( !open(GMMAP,"$ARGV[0]" ) ) {
+  print("could not open master route file, \"$ARGV[0]\", for reading\n");
+  exit -1;
+} 
+
+if ( !open(CPLANT,">cplant-map") ) {
+  print("could not open cplant map file, cplant-map, for writing\n");
+  exit -1;
+}
+
+while ( <GMMAP> ) {
+  if ( /\(/ ) {
+    while ( <GMMAP> ) {
+      if ( /\(/ ) {
+        goto END;
+      }
+      @words = split();
+# to remove quoting comment the next line
+#     print(CPLANT "$words[0]\n");
+# or to leave quoting intact comment the next 2 
+      @name = split(/"/,$words[0]);
+      print(CPLANT "$name[1]\n");
+    }
+  }
+}
+
+END:

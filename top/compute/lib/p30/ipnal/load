@@ -1,0 +1,40 @@
+#!/usr/bin/perl -w
+use strict;
+use IO::Socket;
+
+my $num_nodes = 4;
+my ($loader,@nodes) = map { /:\d+$/ ? $_ : "$_:1090" } split /,/, shift;
+
+my $sock = IO::Socket::INET->new(
+	PeerAddr	=> $loader,
+) or die "$0: Unable to contact server: $@\n";
+
+print $sock "map 0 ",
+	join( ' ', @nodes ),
+	"\n";
+while( <$sock> ) {
+	print;
+	last if /^pidmap/;
+}
+
+print $sock $_;	# Send pidmap right back
+
+while( <$sock> ) {
+	print;
+	last if /^pidmap connected/;
+	exit if /ABORT/;
+}
+
+my $image = shift || './a.out';
+print $sock "image $image\n";
+
+while( <$sock> ) {
+	print;
+	last if /^image sent/;
+	exit if /ABORT/;
+}
+
+print $sock "run ", join( ' ', @ARGV ), "\n";
+while( <$sock> ) {
+	print;
+}

@@ -1,0 +1,14 @@
+#!/bin/bash
+# $Id: default_route,v 1.1.2.1 2002/08/09 20:34:00 jrstear Exp $
+
+case "$1" in
+    start)
+	route add default gw $2
+        ;;
+    stop)
+	route delete default
+        ;;
+    *)
+        echo "Usage: $0  {start|stop}"
+esac
+

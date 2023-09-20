@@ -1,0 +1,37 @@
+$Id: README.dir_struct,v 1.4 1998/03/10 21:27:27 rolf Exp $
+
+    This directory contains system software for the compute partition.
+    Right now we have plans for to OSes running in this partition:
+    Linux and Puma. Each has its own executables, that is why the bin
+    directory has subdirectories.
+
+    Linux is also used in the service (and support) partition. Since
+    most changes to Linux will be for the compute partition, we decided
+    to put it under top/compute/OS.
+
+    Puma portals, portals over Ethernet, and portals over Myrinet are
+    also used in the service partition. Since they are closely related
+    to the OSes, we put them here as well.
+
+    Right now we keep the sources for a x86 Linux kernel as well as the
+    sources for an Alpha (axp) kernel around. The axp patches screw up
+    the i386 kernel. We don't want to deal with this using CVS branches
+    or something like that. Maybe someday the x86 and Alpha kernel will
+    be reconciled. Then we can go to a single source tree.
+
+    +---/top
+    |   +---/compute
+    |   |   +---/OS
+    |   |   |   +---/linux ------------+  link to linux-axp or linux-i386
+    |   |   |   +---/linux-axp  <------+
+    |   |   |   +---/linux-i386
+    |   |   |   +---/puma
+    |   |   |   +---/portals
+    |   |   |   +---/Myrinet
+    |   |   +---/bin
+    |   |   |   +---/linux
+    |   |   |   +---/puma
+    |   |   +---/lib
+    |   |   |   +---/IO
+    |   |   |   +---/mpi
+

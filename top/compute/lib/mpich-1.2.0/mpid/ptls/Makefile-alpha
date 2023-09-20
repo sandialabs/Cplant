@@ -1,0 +1,38 @@
+#
+# $Id: Makefile-alpha,v 1.1 2000/02/18 03:22:46 rbbrigh Exp $
+#
+
+include ../../../../../../Makefile-common
+
+CFLAGS      +=  -DFORTRANUNDERSCORE -DHAVE_CONFIG_H -DMPID_DEVICE_CODE
+
+INCLUDEDIRS += -I.. -I../../../include -I../../../src/coll
+
+CSOURCES     = adi2recv.c adi2send.c adi2init.c adi2probe.c adi2ssend.c \
+               adi2hsend.c adi2hrecv.c adi2hssend.c adi2pack.c adi2mpack.c \
+               adi2req.c adi2cancel.c adi2hrsend.c adi2rsend.c \
+               tr2.c sbcnst2.c cmnargs.c queue.c \
+               ptlscoll.c ptlsinit.c ptlspriv.c ptlsshort.c ptlsdebug.c \
+               ptlslong.c ptlsready.c ptlssshort.c ptlsrecv.c 
+
+COBJECTS     = $(CSOURCES:.c=.o)
+
+LIBDIR       = ../../../$(CPLANT_ARCH)-$(OS)
+LIB          = $(LIBDIR)/libmpi.a
+
+all: $(LIB)
+
+$(LIB): $(LIBDIR) $(LIB)($(COBJECTS))
+
+$(LIBDIR):
+	@-mkdir $(LIBDIR)
+
+$(COBJECTS): %.o : ../%.c
+	$(CC) $(CFLAGS) $(INCLUDEDIRS) -c $<
+
+install uninstall:
+	@$(MAKE) -C ../../../ $@
+
+clean:
+	@rm -f $(COBJECTS)
+

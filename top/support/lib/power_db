@@ -1,0 +1,10 @@
+# $Id: power_db,v 1.2 1997/08/28 19:41:04 wmdavid Exp $
+# Node:Power port:tc port:
+0001:2:tc0 ttyC0:
+0002:0:tc0 ttyC1:
+0003:8:tc0 ttyC2:
+0004:10:tc0 ttyC3:
+0005:4:tc0 ttyC4:
+0006:12:tc0 ttyC5:
+0007:7:tc0 ttyC6:
+0008:9::

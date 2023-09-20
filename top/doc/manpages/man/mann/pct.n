@@ -1,0 +1,176 @@
+.if n .ds Q \&"
+.if t .ds Q ``
+.if n .ds U \&"
+.if t .ds U ''
+.TH PCT 8L "04 May 2001" "Cplant" "Cplant Utilities"
+.tr \&
+.nr bi 0
+.nr ll 0
+.nr el 0
+.de Pp
+.ie \\n(ll>0 \{\
+.ie \\n(bi=1 \{\
+.nr bi 0
+.if \\n(t\\n(ll=0 \{.IP \\(bu\}
+.if \\n(t\\n(ll=1 \{.IP \\n+(e\\n(el.\}
+.\}
+.el .sp 
+.\}
+.el \{\
+.ie \\nh=1 \{\
+.LP
+.nr h 0
+.\}
+.el .PP 
+.\}
+..
+.SH NAME
+    
+
+.Pp
+\fBPCT\fP -- Process Control Thread
+.SH SYNOPSIS
+    
+
+.Pp
+\fBpct\fP
+[\fB-nid\fP \fInum\fP \fB-pid\fP \fInum\fP ] 
+[\fB-D\fP] 
+[\fB-S\fP [1|0]] 
+[\fB-L\fP [1|0]] 
+[\fB-daemon\fP]
+.SH DESCRIPTION
+    
+
+.Pp
+The \fBPCT\fP (Process Control Thread) is a process running on
+each compute node of the Cplant.  The \fBPCT\fP accepts the
+parallel application executable image from yod and starts the 
+user process.  The \fBPCT\fP can respond to bebopd requests
+for status information about it's state and about the user
+process it is hosting.
+.SH OPTIONS
+    
+
+.Pp
+.PP
+.nr ll +1
+.nr t\n(ll 2
+
+.TP
+.I "-nid \fInode-number\fP -pid \fIportal-id\fP"
+.nr bi 1
+.Pp
+The \fBPCT\fP normally registers with the bebopd managing the
+virtual machine.  If an alternative bebopd is running for test
+purposes in addition to the regular bebopd, and you wish this
+\fBPCT\fP to register with the alternative bebopd, then provide
+the node number and portal ID of that bebopd with these
+arguments.
+
+.TP
+.I "-D"
+.nr bi 1
+.Pp
+This option causes the \fBPCT\fP to output information about
+what it is doing.  Repeating the \fI-D\fP option on the command
+line increases the amount of information.
+Normally the information goes to the log file (/var/log/cplant)
+on the compute node.  This can be changed with the \fI-S\fP
+and \fI-L\fP options.
+
+
+.TP
+.I "-daemon"
+.nr bi 1
+.Pp
+By default the PCT runs as a foreground process.  Use \fI-d\fP to
+run it in the background.
+
+.TP
+.I "-S [0|1]    "
+.nr bi 1
+.Pp
+The \fBPCT\fP outputs warnings and errors, and, if the
+\fI-D\fP option is used, status information.
+The \fI0\fP switch turns off all output from the \fBPCT\fP to stderr.
+The \fI1\fP switch turns it on.  By default, the \fBPCT\fP \fIdoes not\fP
+write to stderr.
+
+.TP
+.I "-L [0|1]    "
+.nr bi 1
+.Pp
+The \fBPCT\fP outputs warnings and errors, and, if the
+\fI-D\fP option is used, status information.
+The \fI0\fP switch turns off all output from the \fBPCT\fP to the
+log file.
+The \fI1\fP switch turns it on.  By default, the \fBPCT\fP \fIdoes\fP
+write to log file.
+.nr ll -1
+.PP
+.Pp
+.SH ERRORS
+    
+
+.Pp
+The \fBPCT\fP reports error conditions in the log file (/var/log/cplant).
+It will not exit unless the error makes it impossible for the \fBPCT\fP
+to do it's job, for example if it has no memory to allocate a portal.
+Errors in loading applications are reported back to yod.
+.Pp
+.SH SIGNALS
+    
+
+.Pp
+On receiving a SIGUSR1 or SIGUSR2, the \fBPCT\fP will log the routine it
+is in now, what routines it was in most recently, and the state of the 
+application process it is hosting.  It will also display a loop counter,
+which should increment on subsequent displays, indicating whether the
+PCT is stuck somewhere or has been progressing through it's main service
+loop.
+.Pp
+On receiving a SIGHUP, the \fBPCT\fP will close and reopen it's log file,
+re-read the site file, and re-read the cplant-host file and send a status
+update to the bebopd listed there.
+.Pp
+.SH FILES
+    
+
+.Pp
+.PP
+.nr ll +1
+.nr t\n(ll 2
+.TP
+.I "/cplant/cplant-host"
+.nr bi 1
+.Pp
+This file identifies the location of a bebopd daemon.
+.TP
+.I "/etc/local/site"
+.nr bi 1
+.Pp
+This file defines site specific information that may be required
+by the \fBbebopd\fP.
+.TP
+.I "/var/log/cplant"
+.nr bi 1
+.Pp
+This is the log file where Cplant daemons and utilities log
+status.
+.nr ll -1
+.PP
+.Pp
+.SH SEE ALSO
+    
+
+.Pp
+\fBpingd\fP
+\fByod\fP
+\fBbebopd\fP
+\fBsite\fP
+.SH BUGS
+    
+
+.Pp
+Let us know if you locate any (cplant-help@cs.sandia.gov).

@@ -1,0 +1,5 @@
+heap_alloc/heap_free; Lee; Tue Nov 14 11:20:42 MST 2000
+
+The heap allocator allocates twice as much memory as asked for when the
+request is a power of 2 in size. Since IO buffers nearly always are
+that, we're using the system malloc currently.

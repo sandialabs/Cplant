@@ -1,0 +1,17 @@
+$Id: README.dir_struct,v 1.2 1997/08/27 04:34:01 rolf Exp $
+
+    This directory contains system software for the service partition.
+    Executables and libraries go into bin. (The source for the libraries
+    is in lib.) Each utility has its own subdirectory; e.g. bebopd and
+    yod.
+
+    +---/top
+    |   +---/service
+    |   |   +---/bin
+    |   |   +---/include
+    |   |   +---/lib
+    |   |   |   +---/config
+    |   |   +---/util
+    |   |   |   +---/bebopd
+    |   |   |   +---/yod
+

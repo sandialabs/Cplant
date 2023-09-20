@@ -1,0 +1,80 @@
+
+Cplant Software Release 0.3 - August 19, 1999
+---------------------------------------------
+
+This release of Cplant software enables independent parallel I/O and
+contains several bug fixes that increase the reliability of the system
+and help identify failing components.  Users can now access
+independent filesystems residing on different RAIDS.  Access to each
+RAID is provided by fyod, a daemon process running on the I/O nodes.
+Application programs can expect to see 15-20 MB/s I/O bandwidth per
+individual RAID. For more information on using the parallel I/O
+capabilities, see
+
+  http://www.cs.sandia.gov/cplant/doc/io/fyod.html
+
+Highlights
+----------
+- Indpendent parallel I/O capability
+- Increased message passing reliablity
+- New showmesh_tk tool for system management
+- Backtrace available from hung processes
+- Suppression of Fortran runtime library error messages
+
+
+Bug Fixes
+---------
+- Unreliable message passing
+  o MPI communication errors (hung nodes)
+  o Application load errors (unsuccessful loads, hung nodes)
+- Yod node list processing
+- Compile scripts allow quoted arguments
+
+
+System Software Developer Tests
+-------------------------------
+- NAS Parallel Benchmarks version 2.3 Class A up to 256 nodes
+- MPLinpack benchmark on 310 nodes
+- All to All bit error tests on 310 nodes
+- Application tests on 256 nodes
+
+
+Application Tests
+-----------------
+- MPI Communication tests
+  o Parallel "Hello, world"
+  o Ping pong
+  o Repeated broadcast
+  o Sparse matrix-vector multiply
+  o Molecular dynamics exchange
+
+- Application libraries
+  o BLAS
+  o LAPACK
+  o SCALAPACK
+  o Aztec
+
+- Applications
+  o MP-Quest
+  o Tramonto
+ 
+
+Changes Since Release 0.2
+-------------------------
+- fyod support
+- showmesh_tk tool added
+- fix to the Portals module for message state handling
+- fix to the compile scripts to allow quoted arguments
+- fix to yod for processing node list
+- fixed problem with GDB being parent of application process
+- PCT cleans up after child process rather than using atexit()
+- 'yod -g' now gives backtrace when iterrupted by the user
+- suppression of FORTRAN runtime library error messages (yod -d rtl)
+- more group communication failure info
+- more verbose launch failure messages
+- yod sends mail on failed loads
+- server communication library Portals now marked as allocated
+- several updates to the regression test scripts
+- new userlog entries flushed to avoid garbled lines
+- updated guide to the Cplant runtime environment
+- change to MCP to remove debug code

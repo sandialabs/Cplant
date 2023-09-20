@@ -1,0 +1,80 @@
+
+
+ NAS Parallel Benchmarks 2.3 -- IS Benchmark
+
+ Size:  8388608  (class A)
+ Iterations:   10
+ Number of processes:     16
+
+   iteration
+        1
+        2
+        3
+        4
+        5
+        6
+        7
+        8
+        9
+        10
+
+
+ IS Benchmark Completed
+ Class           =                        A
+ Size            =                  8388608
+ Iterations      =                       10
+ Time in seconds =                     3.00
+ Total processes =                       16
+ Compiled procs  =                       16
+ Mop/s total     =                    27.96
+ Mop/s/process   =                     1.75
+ Operation type  =              keys ranked
+ Verification    =               SUCCESSFUL
+ Version         =                      2.3
+ Compile date    =              08 Oct 1998
+
+ Compile options:
+    MPICC        = /Net/mp/cplant/bin/cc
+    CLINK        = $(MPICC)
+    CMPI_LIB     = -L$(MPIPATH) -lmpi
+    CMPI_INC     = -I$(MPIPATH)/include
+    CFLAGS       = -O3
+    CLINKFLAGS   = (none)
+
+
+ Please send the results of this run to:
+
+ NPB Development Team
+ Internet: npb@nas.nasa.gov
+ 
+ If email is not available, send this to:
+
+ MS T27A-1
+ NASA Ames Research Center
+ Moffett Field, CA  94035-1000
+
+ Fax: 415-604-3957
+
+Contacting node allocation daemon...
+16 nodes are allocated to your job ID 3650
+Compute partition synchronized
+Application processes begin user code.
+
+   Node name     Rank  Node   PID   Elapsed  Exit Code  Terminating Signal
+---------------- ----  ----  -----  -------  ---------  ------------------
+SU-003 node-0003    0    17   4518  0:00:08       0       none
+SU-003 node-0005    1    18   4437  0:00:07       0       none
+SU-003 node-0007    2    19   4403  0:00:08       0       none
+SU-003 node-0009    3    20   4401  0:00:08       0       none
+SU-003 node-0014    4    24   4400  0:00:08       0       none
+SU-003 node-0010    5    26   4392  0:00:07       0       none
+SU-003 node-0006    6    28   4409  0:00:08       0       none
+SU-003 node-0008    7    29   4398  0:00:07       0       none
+SU-003 node-0004    8    31   4416  0:00:07       0       none
+SU-002 node-0001    9    32   4838  0:00:07       0       none
+SU-002 node-0003   10    33   4609  0:00:07       0       none
+SU-002 node-0005   11    34   4663  0:00:07       0       none
+SU-002 node-0007   12    35   4589  0:00:07       0       none
+SU-002 node-0009   13    36   4583  0:00:07       0       none
+SU-002 node-0011   14    37   4589  0:00:07       0       none
+SU-002 node-0013   15    38   4583  0:00:07       0       none

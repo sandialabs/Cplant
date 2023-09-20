@@ -1,0 +1,34 @@
+DoLink=1
+ServiceNode=0
+# link? service node compile?
+for arg in "$@" ; do
+    case "$arg" in 
+        -c)
+        DoLink=0
+        break
+        ;;
+        -service)
+        ServiceNode=1
+        shift
+        break
+        ;;
+    esac
+done
+
+if [ $ServiceNode = 1 ] ; then
+/usr/bin/fort $FLAGS \
+    $*
+elif [ $DoLink = 1 ] ; then 
+/usr/bin/F77COMPILER $FLAGS OPTIFLAGS \
+        $INCLUDE_DIR \
+        $STARTUP_DIR/startup.o \
+        $* \
+        $LIB_DIR \
+        $CPLANT_LIBS \
+        -lUfor -lfor -lFutil F77MATHLIB
+#	-lgrp_io
+else
+/usr/bin/F77COMPILER $FLAGS OPTIFLAGS \
+        $INCLUDE_DIR \
+        $* 
+fi

@@ -1,0 +1,390 @@
+#!/usr/bin/perl
+###############################################################################
+# showmesh
+#
+# perl script that parses pingd output and formats it like the
+# Puma showmesh command.
+# 02/07/2001, dwdoerf
+# Updated to arbitrarily order the columns. This allows the mesh output
+# to represent physical SU layout.
+###############################################################################
+
+# Machine dependent parameters
+$machine = "ross";
+@planeY = ("y-4","y-5","y-6","y-7","y-8","y-9","y-10","y-11");
+@plane0 = ("t-10","t-0","t-18","t-8","t-11","t-1","t-19","t-9");
+@plane1 = ("t-12","t-2","t-20","t-26","t-13","t-3","t-21","t-27");
+@plane2 = ("t-14","t-4","t-22","t-28","t-15","t-5","t-23","t-29");
+@plane3 = ("t-16","t-6","t-24","t-30","t-17","t-7","t-25","t-31");
+@plane4 = ("t-36","t-38","t-34","t-32","t-37","t-39","t-35","t-33");
+@plane5 = ("t-40","t-42","t-44","t-46","t-41","t-43","t-45","t-47");
+@included_SUs = (@plane0,@plane1,@plane2,@plane3,@plane4,@plane5,@planeY);
+#@included_SUs = (@plane5,@planeY);
+$plane_size = 8;
+$maxnode = 32;
+
+$showbad = 1 if ($ARGV[0]=~/-b/);
+$cplant_path = "/cplant";
+$PINGD         = "$cplant_path/sbin/pingd -f|";
+
+%nodes         = ();
+%jobs          = ();
+
+
+$nodename = `uname -n`;
+if ($nodename =~ /alaska/i) {
+  $servicenode   = 15;
+} else {
+  $servicenode   = 0;
+}
+
+@alphabet = ('.', a..z, A..Z, 0..9);	# char in front is a null placeholder
+$nextjob = 1;
+
+$stalechar     = '-';
+$availchar     = '*';
+$unknownchar   = '?';
+$allocatedchar = '+';
+$unavailchar   = '!';
+$servicechar   = '$';
+$jobcharlen    = 1;  # default of 1 for when there's no jobs running yet
+
+# nextjob return a string of the next job based on @alphabet and $nextjob
+# up to (an arbitrary) 3 digits.  sub nextjob() uses variable $nextjob
+#
+# this is a string incrementing function, not a number incrementing function.
+# in other words, "0" != "00" just like "a" != "aa".
+sub nextjob {
+  my $base = $#alphabet + 1;
+  my $val = "", $i;
+  my $idx;
+
+			# start with (base ^ 2)
+  for ($i = 2; $i >= 0; $i--) {
+    $idx = int ($nextjob / ($base ** $i));
+			# if first character isn't a "null"
+    if ($idx > 0) {
+			# check for non-printable "null's" and use the
+			# next letter instead
+      do { $nextjob++ ; return nextjob() } if ($idx % $base == 0);
+			# otherwise, build the string from our alphabet
+      $val .= @alphabet[$idx % $base];
+    }
+  }
+
+  $nextjob++;                   # global
+  return $val;
+}
+
+###############################################################################
+# Parse the pingd output
+###############################################################################
+
+# open up a read pipe from pingd
+open PINGD or die "**Internal error** - unable to start $PINGD";
+
+# get the first line of output
+$_= <PINGD>;
+
+# look for problems
+if ( (/Can not register myself as PPID=/)       ||
+     (/can't locate bebopd registry file name/) ||
+     (/Sorry, unable to locate bebopd/)          ) {
+    die "**Internal error** - unable to determine status\n";
+}
+
+# get the next line of output
+$_ = <PINGD>;
+
+# look for problems
+if ( /No reponse with data from bebopd, sorry/ ) {
+    die "**Internal error** - unable to determine status\n";
+}
+
+# everything should be ok
+# eat the next three lines
+$i = 3;
+while ( <PINGD> && --$i ) {};
+
+# grab information about each node    
+while( <PINGD> ) {
+
+    # node has a job running
+    if ( /^\s*(\d+)\s+\(\s+(\w+-\d+)\s+\w+-(\d+)\s+\)\s+(\d+)\s+(\d+)\/\s*(\d+)\s+(\w+)\s+(\d+):(\d+):(\d+)/ ) {
+
+	$pnid = int $1;
+	$su   = $2;
+        $node = int $3;
+	$jid  = int $4;
+	#$pid  = int $5;
+        $rank = int $6;
+        $user = $7;
+        $hour = int $8;
+        $min  = int $9;
+        $sec  = int $10;
+        $su   =~ s/-0+(\d)/-$1/;  # remove the padding that pingd puts in.
+
+        # process job not seen before
+	if ( ! defined $jobs{ $jid } ) {
+	    $jobs{$jid}		= nextjob;
+	    $jobcharlen		= length($jobs{$jid});
+	    $jobs{$jid}{user}	= $user;
+            $jobs{$jid}{maxrank}= $rank;
+            $jobs{$jid}{time}	= 0;
+	}
+
+        # process a job seen before
+	$nodes{$node}{$su} = $jobs{$jid};
+ 
+        $jobs{$jid}{time} += ($hour * 3600) + ($min * 60) + $sec;
+
+        # figure out how big the job is
+	if ( $jobs{$jid}{maxrank} < $rank ) {
+	    $jobs{$jid}{maxrank} = $rank;
+	}
+
+    }
+
+    # stale node
+    if ( /^\s*(\d+)\s+\(\s+(\w+-\d+)\s+\w+-(\d+)\s+\)\s+node data is stale/ ) {
+
+	$pnid = int $1;
+	$su   = $2;
+        $node = int $3;
+        $su   =~ s/-0+(\d)/-$1/;  # remove the padding that pingd puts in.
+
+	$nodes{$node}{$su} = $stalechar;
+
+    }
+
+    # node reported in for allocation
+    if ( /^\s*(\d+)\s+\(\s+(\w+-\d+)\s+\w+-(\d+)\s+\)\s+node reported in for possible allocation/ ) {
+
+        $pnid = int $1;
+        $su   = $2;
+        $node = int $3;
+        $su   =~ s/-0+(\d)/-$1/;  # remove the padding that pingd puts in.
+
+        $nodes{$node}{$su} = $allocatedchar;
+
+    }
+
+    # unavailable node
+    if ( /^\s*(\d+)\s+\(\s+(\w+-\d+)\s+\w+-(\d+)\s+\)\s+node is unavailable/ ) {
+
+	$pnid = int $1;
+	$su   = $2;
+        $node = int $3;
+        $su   =~ s/-0+(\d)/-$1/;  # remove the padding that pingd puts in.
+
+	$nodes{$node}{$su} = $unavailchar;
+
+    }
+
+    # free node
+    if ( /^\s*(\d+)\s+\(\s+(\w+-\d+)\s+\w+-(\d+)\s+\)\s*$/ ) {
+
+	$pnid = int $1;
+	$su   = $2;
+        $node = int $3;
+        $su   =~ s/-0+(\d)/-$1/;  # remove the padding that pingd puts in.
+
+	$nodes{$node}{$su} = $availchar;
+
+    }
+
+    # get total
+    if ( /^Total: (\d+)$/ ) {
+
+	#$total = $1;
+
+    }
+
+    # get total busy
+    if ( /^Total busy: (\d+)$/ ) {
+
+	#$busy = $1;
+
+    }
+
+    # get total free
+    if ( /^Total free: (\d+)$/ ) {
+
+	$free = $1;
+
+    }
+
+    # get total not responding
+    if ( /Total not responding to ping \(try again\): (\d+)$/ ) {
+
+	#$dead = $1;
+
+    }
+
+}
+
+# close the pipe
+close PINGD;
+
+###############################################################################
+# Form the mesh display
+###############################################################################
+
+$pad = "   ";				# 3 spaces
+$jobwidth = ($jobcharlen + 1);		# width of biggest job number + 1
+
+#print the su numbering header
+print $pad," ";
+$i=0;
+foreach $su (@included_SUs) {
+    if ( $i == $plane_size ) {
+        printf "%${jobwidth}s", "";	# jobwidth spaces
+        $i=0;
+    }
+    $section = $su;
+    $section =~ s/[^a-z]//g; # get rid of all but the letter designation
+    printf "%${jobwidth}s",$section;
+    ++$i;
+}
+print "\n";
+
+print $pad," ";
+$i=0;
+foreach $su (@included_SUs) {
+    if ( $i == $plane_size ) {
+        printf "%${jobwidth}s", "";	# jobwidth spaces
+        $i=0;
+    }
+    $number = $su;
+    $number =~ s/\D//g; # get rid of all but the number
+    if ($number >= 10) {
+        printf "%${jobwidth}d",$number/10;
+    }
+    else {
+        printf "%${jobwidth}s",""; 
+    }
+    ++$i;
+}
+print "\n";
+
+print $pad," ";
+$i=0;
+foreach $su (@included_SUs) {
+    if ( $i == $plane_size ) {
+        printf "%${jobwidth}s", "";	# jobwidth spaces
+        $i=0;
+    }
+    $number = $su;
+    $number =~ s/\D//g; # get rid of all but the number
+    printf "%${jobwidth}d",$number%10;
+    ++$i;
+}
+print "\n";
+
+#print the top of the frame
+print $pad,"+";
+$i=0;
+foreach $su (@included_SUs) {
+    if ( $i == $plane_size ) {
+	for ( $j=1; $j<$jobwidth; $j++ ) {
+	    print "-";
+	}
+        printf("%s","+");
+        $i=0;
+    }
+    for ( $j=0; $j<$jobwidth; $j++ ) {
+        print "-";
+    }
+    ++$i;
+}
+for ( $j=1; $j<$jobwidth; $j++ ) {
+    print "-";
+}
+print "+\n";
+
+# print the "mesh"
+for ( $node=1; $node<=$maxnode; $node++ ) {
+    printf("%3d| ",$node);
+    $i = 0;
+    foreach $su (@included_SUs) {
+        if ( $i == $plane_size ) {
+            printf("%${jobcharlen}s ","|");
+	    $i=0;
+	}
+        if ( ! defined $nodes{$node}{$su} ) {
+	        $newstring = $unknownchar;
+		push @badnodes, "node.n-$node.$su";
+	}
+	else {
+	    $newstring = $nodes{$node}{$su};
+	    $statuscount{$newstring}++;
+	}
+        printf("%${jobcharlen}s ",$newstring);
+	++$i;
+    }
+    printf("%${jobcharlen}s\n","|");
+}
+
+#print the bottom of the frame
+print $pad,"+";
+$i=0;
+foreach $su (@included_SUs) {
+    if ( $i == $plane_size ) {
+	for ( $j=1; $j<$jobwidth; $j++ ) {
+	    print "-";
+	}
+        printf("%s","+");
+        $i=0;
+    }
+    for ( $j=0; $j<$jobwidth; $j++ ) {
+        print "-";
+    }
+    ++$i;
+}
+for ( $j=1; $j<$jobwidth; $j++ ) {
+    print "-";
+}
+print "+\n";
+
+
+# print the legend
+print "Legend:\n";
+printf   " $servicechar    service node %s", $statuscount{$servicechar} ? "($statuscount{$servicechar})\n" : "\n";
+printf   " $unknownchar    non-existent node %s", scalar @badnodes ? sprintf "(%s)\n", scalar @badnodes : "\n";
+printf   " $unavailchar    dead node %s", $statuscount{$unavailchar} ? "($statuscount{$unavailchar})\n" : "\n";
+printf " $allocatedchar    allocated node %s", $statuscount{$allocatedchar} ? "($statuscount{$allocatedchar})\n" : "\n";
+printf     " $stalechar    stale node %s", $statuscount{$stalechar} ? "($statuscount{$stalechar})\n" : "\n";
+printf     " $availchar    free node %s", $statuscount{$availchar} ? "($statuscount{$availchar})\n" : "\n";
+print "Available Cplant nodes: $free\n\n";
+print " Job    ID      User    Size    Time\n"
+     ."-----  ----  ---------  ----  --------\n";
+
+format JOBS =
+@>>>>  @>>>  @>>>>>>>>  @>>>  @>>>>>>>
+$job, $jobs{$job}, $jobs{$job}{user}, $size, $time
+.
+
+$~ = "JOBS";
+
+# print job info
+foreach $job ( sort keys %jobs ) {
+    $size = $jobs{$job}{maxrank} + 1;
+    $avg  = $jobs{$job}{time} / $size;
+    $hour = $avg / 3600;
+    $avg  = $avg % 3600;
+    $min  = $avg / 60;
+    $sec  = $avg % 60;
+    $time = sprintf "%.2d:%.2d:%.2d", $hour, $min, $sec;
+    write;
+}
+
+$~ = "STDOUT";
+
+print "\n\n";
+
+exit unless $showbad;
+
+printf "non-existent nodes are:\n ";
+map {printf "$_ "} @badnodes;
+print "\n\n"
+

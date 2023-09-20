@@ -1,0 +1,104 @@
+#!/bin/bash
+#
+# $Id: configBuild,v 1.3 2000/06/21 19:41:11 lafisk Exp $
+ 
+#
+#  This script sets up the necessary environment to configure the PBS
+#  distribution prior to building it.
+#
+#  The path names here are compiled into code and should represent the
+#  path names from the nodes on which the PBS executables will run.
+#
+# The PBS server runs on one service node in the vm.  The PBS commands
+# and MOM run on any service node in the vm.  All three will access configuration
+# files and write log files to the PBS_HOME area defined in this file.
+#
+
+#
+# location of PBS source directory
+#
+SRCDIR=/usr/local/pbs/patched
+
+OPTS=" "
+#
+# --prefix specifies prefix of install directories.  
+#          User commands will appear in prefix/bin, admin
+#          commands appear in prefix/sbin, libraries in prefix/lib, etc.
+#
+OPTS=$OPTS"--prefix=/ "
+ 
+OPTS=$OPTS"--srcdir=$SRCDIR "
+ 
+OPTS=$OPTS"--mandir=/man "
+ 
+#
+# For debugging, deamons stay in foreground, and dump debugging data
+# to stdout.  Comment this out if not debugging.
+#
+#OPTS=$OPTS"--enable-debug "
+#
+ 
+#
+# build the C scheduler
+#
+OPTS=$OPTS"--set-sched=c --set-sched-code=fifo "
+#
+# --set-server-home defines the directory for the PBS server's working
+#                   files.  It is PBS_HOME.
+#
+OPTS=$OPTS"--set-server-home=/tmp/pbs/working "
+
+# --set-server-name-file sets the name of the file naming the
+# the PBS server.  It is written to PBS_HOME.
+#
+OPTS=$OPTS"--set-server-name-file=PBSserver "
+#
+
+#
+# --set-default-server names the default machine that the PBS server is
+#                      running on.  
+#
+#  This value goes in the PBSserver file in the working directory.  Before
+#  starting PBS you may want to change it to the name of the node hosting 
+#  the PBS server.
+#
+OPTS=$OPTS"--set-default-server=sservice-2.sandia.gov "
+ 
+#
+# Cplant compile switches in the PBS source code:
+#
+# CPLANT_SERVICE_NODE causes the pbs_server to get it's host name 
+# from the PBSserver file in the working directory rather than from 
+# gethostname, which can return the name at an alternate interface.
+# Many other Cplant hacks are ifdef'd with this value as well.
+#
+# CPLANT_REMOTE_WORKING_DIR advises that the runtime working directory
+#   (PBS_HOME) is on a remote NFS mounted file system, so the file 
+#   locking should not be attempted.
+#
+# CPLANT_RUN_ON_SUBMITTING_HOST advises the scheduler to schedule all
+#   jobs to run on the host from which they were submitted, rather than
+#   load balancing them across the machine.
+#
+# CPLANT_PRIME_NONPRIME_POLICY turns on code in the scheduler that 
+#   distinguishes between prime and nonprime time.  Only jobs from the 
+#   prime queue will be scheduled to run during prime time, and users
+#   during prime time will be unable to take more than N/2 nodes,
+#   where N is the number of compute nodes in the machine.
+#
+# CPLANT_DEBUG_EVENT - the scheduler will keep a circular buffer with 
+#   200 recent events and timings.  This log can be viewed in the
+#   log file after sending the scheduler a SIGUSR1.
+#
+# CPLANT_NONBLOCKING_CONNECTIONS lib/Libnet/net_client.c will open
+#   non-blocking sockets, so server and mom don't hang when connecting
+#   to a mom that's exited or a mom on a node that's crashed.
+#
+# CPLANT_SCHEDULER_PING_NODES - the scheduler will verify that it can
+#   ping a node before trying to send a message to a mom on that node.  
+#
+# Now configure directories to build and/or install PBS.
+#
+
+echo $SRCDIR/configure $OPTS  --set-cflags='-DCPLANT_SERVICE_NODE -DCPLANT_NONBLOCKING_CONNECTIONS -DCPLANT_REMOTE_WORKING_DIR -DNO_SECURITY_CHECK '
+$SRCDIR/configure $OPTS  --set-cflags='-DCPLANT_SERVICE_NODE -DCPLANT_NONBLOCKING_CONNECTIONS -DCPLANT_REMOTE_WORKING_DIR -DNO_SECURITY_CHECK '

@@ -1,0 +1,205 @@
+Introduction:
+-------------
+This directory contains
+
+  o cplantPatch        - a patch file of Cplant changes for PBS
+  o configpbs4cplant   - a script to configure a target directory for the
+			 PBS build and installation
+  o configBuild/configInstall - another two scripts to configure for build
+				and installation separately when path names
+				differ on build and target machine.
+
+The patches were created for the version 2.1, patch level 15 of PBS.  You
+may obtain Open PBS source code by registering at the Veridian web site
+www.openpbs.com.
+
+The changes in the patches are listed at the end of this document.
+
+Building PBS for Cplant:
+------------------------
+1. Obtain the PBS distribution, and copy it, the configure script, and the patch file
+   to the machine on which you are going to build PBS.  (We'll refer to the 
+   directory into which you copied these files as PBSTOP.) Ideally this machine 
+   accesses a file system that is also accessed by the machines on which the 
+   PBS binaries will run, and by the same path name.  These path names are 
+   compiled into the PBS codes at build time, and used by the install process 
+   at install time.  See the configpbs4cplant script for details and ways 
+   around this limitation.
+
+2. Uncompress and untar the PBS distribution.
+
+3. Move the directory created when you untarred the distribution to a directory
+   named "patched".  This directory should still be in PBSTOP.
+
+4. If you believe you may want to modify PBS and subsequently build
+   a new Cplant patch file, then copy the entire "patched" directory to a 
+   directory named "origsrc".  Later on you can create a new patch file by 
+   diff'ing origsrc and patched.
+
+5. Move the cplantPatch to PBSTOP/patched, and apply it in that directory with
+   this command:
+
+   "patch -N -p1 -l < cplantPatch"
+
+6. PBSTOP/patched contains all the source files required to build PBS.
+   Create a new directory PBSTOP/obj (or whatever you like) for the
+   target directory.  The configure process will create another tree
+   here for the object files.
+
+7. Move configpbs4cplant to PBSTOP/obj, edit it to contain the
+   correct pathnames, and ensure that it is executable.  Also ensure that
+   the directory defined with the "prefix" argument in configpbs4cplant
+   exists and is owned by root.  (If the install pathnames differ on the
+   build and target machines, edit and use configBuild to contain the
+   pathnames from the target machine, and edit and use configInstall to
+   contain the pathnames on the build machine.)
+
+8. In PBSTOP/obj execute the configpbs4cplant (or configBuild) script.  
+   PBSTOP/obj is now set up to receive the compiled PBS codes.
+
+9. In PBSTOP/obj type "make" to build the PBS code.  When this completes
+   successfully, the PBS binaries are built in subdirectories of obj.
+
+10. In PBSTOP/obj, as root, type "make install" (after running configInstall
+    if using configBuild/configInstall).  The PBS executables and 
+    other runtime files are installed in the directory indicated by the 
+    "prefix" argument of the configpbs4cplant file.
+ 
+Making a patch file:
+-------------------
+
+If you change the PBS source you need to make a new patch file.  This script
+would create the patch file when the 2.1 PBS distribution is in "origsrc"
+and the Cplant version is in "patched".  (See step 4 above.)
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  
+#!/bin/bash
+#
+export TZ=UTC0
+export LC_ALL=C
+echo "diff -Naurw origsrc patched > cplantPatch"
+diff -Naurw origsrc patched > cplantPatch
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  
+
+Cplant patches:
+--------------
+
+1. A fix to the "configure" script for Alpha Linux, whose library
+   has setresuid but not setresgid.
+
+2. Modifications to qstat.c.  Our qstat displays the "size" request
+   of the job and also the total compute nodes allocated.
+
+3. Our service nodes have multiple network interfaces and likely as
+   not gethostname will return the wrong hostname.  So the PBS 
+   server gets it's hostname from the PBSserver file.  All other
+   PBS daemons and clients get their hostname from "gethostbypeer", which
+   we added under lib/Libnet.  It gets my hostname by using "ping -R" to
+   ping the node named in PBSserver and then looking at the first
+   hostname displayed.   (qsub.c, net_connect.h, prepare_path.c,
+   Libnet/Makefile.in, gethostbypeer.c, mom_main.c, pbs_sched.c,
+   pbsd_main.c)
+
+4. chk_file_sec.c - we omit some of the security checks on directories.
+
+5. Our log file entries include the physical node number of
+   the reporting daemon.  (pbs_log.c, pbs_sched.c, ?)
+
+6. We enhanced the RM_CMD_CONFIG message mechanism.  If the message
+   starts with a "#", it is a special Cplant configuration message.  The
+   scheduler uses this mechanism to inform the MOMs after every scheduling
+   cycle whether or not there are jobs waiting to run.  (Libnet/rm.c,
+   mom_main.c, node_info.c, node_info.h)
+   
+7. The MOM calls our "kill_parallel_apps" to kill Cplant parallel apps 
+   started by PBS jobs.  (catch_child.c, mom_main.c, requests.c)
+
+8. We rewrote the MOMs mom_over_limit() to test only if the PBS job has
+   exceeded its walltime allocation. (linux/mom_mach.c)
+
+9. We added a $cplantgrace directive to the MOMs config file, which determines
+   the number of seconds grace period before an over-limit job is killed.
+   If the directive value is negative, the MOM won't kill over-limit jobs.
+   (mom_main.c)
+
+10.  MOM maintains a cplant_waiting_jobs boolean.  If there are cplant jobs
+    waiting in queues to run, MOM will kill over-limit jobs.  If there are
+    no waiting jobs, the MOM will let over-limit jobs continue to run.
+    (MOM gets updated on the value by the scheduler whenever it completes
+    a scheduling cycle.) (mom_main.c, fifo.c)
+
+11.  If CPLANT_REMOTE_WORKING_DIR is defined, the daemons will not try to
+     lock a file in the working directory.  If the working directory is on
+     a remote file system, the lock can fail causing the daemon to quit.
+     The purpose of the lock is to ensure that multiple daemons are not
+     started.  It's inconvenient. (mom_main.c, pbs_sched.c, pbsd_main.c)
+
+12.  The MOM adds the environment variable PBS_NNODES to the job script's
+     environment.  This is the number of compute nodes allocated to the
+     job.  (start_exec.c)
+
+13.  The scheduler checks that prime time jobs do not request more than
+     N/2 node hours, where N is the number of compute nodes in the machine
+     and node hours are the product of the size and walltime requests.
+     (function check_node_hour_limits() in check.c, config.h, constant.h,
+      globals.c, globals.h, job_info.c)
+
+14.  The scheduler checks that a job will not run past the end of prime
+     or non-prime time before scheduling it to run.  (function
+     check_prime_non_prime_boundary() in check.c, config.h, constant.h,
+     data_types.h, job_info.c, prime.c)
+
+15.  During prime time, the scheduler only requests the "prime" queue from
+     the server.  During non-prime time, the scheduler requests both the
+     "prime" and "non-prime" queues, and will run "prime" jobs if there
+     are no jobs waiting in the "non-prime" queue (due to priority attribute
+     of each queue).  (queue_info.c)
+
+16.  In evaluating a job's resource request, we check it against the
+     queue limits and also against the server limits and take the
+     most restrictive one.  (check_avail_resources() in check.c)
+
+17.  We rewrote the scheduler's check_node_availability() because we
+     simply need a single timeshared service node in order to
+     run the job.  (check_node_availability() in check.c)
+
+18.  We close the usage file in the scheduler.  It wasn't being
+     flushed to disk.  (fairshare.c)
+
+19.  Our usage value for fairshare is the product of nodes requested
+     and walltime requested. (fairshare.c)
+
+20.  We changed the res_to_check array to contain the "size" resource
+     and the "walltime" resource only.  (These are the resources
+     that will be checked by the scheduler.)  (globals.c)
+
+21.  The scheduler chooses the node with the lowest loadave value
+     as the node to run the selected job.  (node_info.c)
+
+22.  The scheduler extracts the resources_available, resources_max
+     and resources_assigned values from the queue information
+     obtained from the server and uses this in scheduling jobs.
+     (queue_info.c)
+
+23.  We added a "size" resource to the server.  This represents
+     the number of compute nodes required by the job.  (server_info.c,
+     resc_def_all.c)
+
+24.  When the server responds to a request for the number of
+     free nodes, it includes timeshared nodes in the count.  (That's
+     all we have, in fact).  (node_manager.c)
+
+25.  The PBS server queries the MOMs every 5 minutes to see if they
+     are alive.  If a MOM node goes down after this query and the
+     server invokes a scheduling cycle, the scheduler can hang
+     waiting to establish a connection to the MOM.  So we added
+     a node_is_alive call that tries to rsh to the node and
+     times out if it fails.  The scheduler calls this before
+     trying to talk_with_mom(). (lib/Libnet/node_is_alive.c,
+     scheduler.cc/samples/fifo/node_info.c)
+
+26.  If compiled with CPLANT_RUN_ON_SUBMITTING_HOST, the PBS job is 
+     always started on the submitting host. 
+     (scheduler.cc/samples/fifo/data_types.h, 
+     scheduler.cc/samples/fifo/job_info.c, scheduler.cc/samples/fifo/node_info.c)
+

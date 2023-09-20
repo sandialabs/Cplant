@@ -1,0 +1,65 @@
+
+Cplant Software Release 0.5 - June 22, 2000
+-------------------------------------------
+
+This release of Cplant software makes great strides in improving the
+reliability and stability of the runtime environment, especially in
+the area of message passing.  The release contains the next generation
+of a scalable message passing layer designed specifically for the
+architecture of a PC cluster, Portals 3.0.  The new design has led to
+increased robustness as well as increased message passing performance.
+The release also contains a port of the latest version of the MPICH
+implementation of MPI on top of Portals 3.0.  This new implementation
+uses a standard two-level protocol that addresses some of the
+limitations of the previous MPI implementation.  This release has
+undergone more stringent testing than any previous releases of Cplant
+system software.  A four-phase approach to testing that covered basic
+MPI functionality, application micro-benchmarks, several real
+applications, and system stress tests (ported from ASCI Red) was used.
+The release was contingent upon satisfactory completion of this suite.
+More information and documentation on these features will be available
+at the Cplant web site:
+
+   http://www.cs.sandia.gov/cplant
+
+Highlights
+----------
+- Portals 3.0 (kernel module implementation)
+- MPICH 1.2.0 over Portals 3.0
+- PBS 2.2
+
+Bug Fixes
+---------
+- Fixed bug in Portals 2.0 buffer touching code
+- Fixed copy-on-write bug in bebopd and PCT
+- Fixed bug in RTS/CTS where send-side resources were not getting
+  freed when a message was aborted
+- Enhanced RTS/CTS so that user process gets a SIGPIPE when a receive
+  or send touches memory that the process does not own
+- Fixed a bug with using 'copy_to_user()'
+- Enhanced RTS/CTS by sending a SIGPIPE to a process whose buffer is
+  corrupt due to a lost packet
+
+Tests
+-----
+- MPICH MPI tests
+- Various developer MPI tests
+- NAS Parallel Benchmarks version 2.3
+- Applications: Granflow, MPSalsa, Zapotec (CTH and Pronto), Alegra,
+                Ladera, LAMPS
+
+Known Problems
+--------------
+- Alegra encounters message corruption after several hours of running.
+- In heavily congested network situations, it is possible for packet loss 
+  to occur. This can result in an application being terminated due to
+  MPI message truncation errors or floating point errors due to erroneous
+  data. It is also possible for the application to hang in an MPI 
+  collective operation. The Cplant team has identified the cause of this
+  problem and is working on a resolution.
+- Some applications on Alaska and Siberia have had trouble obtaining 
+  consistent runtimes. A problem with the Linux klogd and syslogd logging
+  daemons has been identified. The Cplant team is presently testing a 
+  new version of these daemons and will update the machines if they
+  resolve the problem. If not, these daemons will be turned off.
+

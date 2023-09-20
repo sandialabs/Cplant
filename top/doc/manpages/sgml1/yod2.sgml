@@ -1,0 +1,346 @@
+<!--
+    $Id: yod2.sgml,v 1.1 2001/11/25 01:33:20 lafisk Exp $
+-->
+
+<!doctype qwertz system>
+
+<manpage title="yod2" sectnum="1" date='"24 November 2001"'
+    footer='"CPLANT MANPAGE"' main='"Cplant Utilities"'>
+
+
+<sect1> NAME
+    <p>
+    <bf/yod2/ &mdash Load a Cplant parallel application
+    </p>
+
+
+
+<sect1> SYNOPSIS
+    <p>
+    <bf/yod2/ &lcub;<it/yod2-options/&rcub 
+	<bf/program-path-name/ &lcub;<it/program-arguments/&rcub 
+    </p>
+
+    <p>
+    OR
+    </p>
+
+    <p>
+    <bf/yod2/ &lcub;<it/yod2-options/&rcub <bf/load-file-name/
+    </p>
+
+    <p>
+    YOD2-OPTIONS:
+    </p>
+
+    <p>
+	&lsqb;<bf/-alloc/&rsqb &lsqb;<bf/-attach/&rsqb &lsqb;<bf/-bt/ &rsqb
+	&lsqb;<bf/-D/&rsqb &lsqb;<bf/-d/ <it/info-type/&rsqb &lsqb;<bf/-file/ <it/file-name/&rsqb 
+    </p>
+
+    <p>
+	&lsqb;<bf/-help &verbar; -vhelp/&rsqb &lsqb;<bf/-interactive &verbar; -batch/&rsqb
+	&lsqb;<bf/-kill/ &rsqb &lsqb;<bf/-list/ <it/node-list/ &rsqb
+    </p>
+
+    <p>
+	&lsqb;<bf/-Log/&rsqb &lsqb;
+	&lsqb;<bf/-NOBUF/&rsqb &lsqb;<bf/-quiet/&rsqb &lsqb;<bf/-show/&rsqb
+	&lsqb;<bf/-sleep/ <it/where/&rsqb
+    </p>
+
+    <p>
+	&lsqb;<bf/-strace/ <it/path-name/&rsqb &lsqb;<bf/-straceoptions/ <it/option-list/&rsqb &lsqb;<bf/-stracenodes/ <it/rank-list/&rsqb
+    </p>
+
+    <p>
+	&lsqb;<bf/-sz/ <it/nodes/&rsqb &lsqb;<bf/-timing/&rsqb
+    </p>
+    <p>
+	&lsqb;<bf/-history/&rsqb &lsqb;<bf/-nice/&rsqb
+    </p>
+
+<sect1> DESCRIPTION
+    <p>
+    <bf/yod2/ is a utility that loads parallel applications onto
+    a set of compute nodes and services requests from them.  
+    It has all the functionality of <bf/yod/, but in addition it
+    can process requests from the application to spawn child
+    applications, synchronize with them, and obtain information
+    about them.  See the <bf/cplant/ man page for an explanation
+    of these dynamic process creation requests.  Access to this
+    capability should be available from MPI eventually as well.
+    <p>
+    It is possible to send a SIGUSR1 or SIGUSR2 to a parallel
+    application by sending the signal to <bf/yod2/.  <bf/yod2/ will
+    forward the signal to all running applications it is
+    managing.
+    (Type <it/kill -s SIGUSR1 yod2-pid/ on the node running
+    <bf/yod2/ to send the application processes a SIGUSR1.)
+    </p>
+    <p>
+    Interrupting <bf/yod2/ with <tt/control-c/ causes it to interrupt
+    all applications with a SIGTERM.  <bf/yod2/ will await the
+    completion messages from the compute nodes.  If the applications
+    have not terminated within 10 seconds, <bf/yod2/ will terminate
+    them with a SIGKILL.  If the SIGKILL command fails to fan out
+    because of a mal-functioning compute node, <bf/yod2/ will
+    wait 10 seconds and reset all the compute nodes that were in
+    use by the applications.
+    </p>
+    <p>
+    If you try to use <bf/Totalview/ with <bf/yod2/, you will
+    only be able to debug the original application loaded by
+    <bf/yod2/, not it's descendants.
+    </p>
+
+<sect1> YOD2 OPTIONS
+    <p>
+    <descrip>
+
+    <tag/-alloc/
+	<p>
+	Choosing <it/-alloc/ was useful for compute node debugging
+	before the availability of <bf/cgdb/ or <bf/Totalview/.  
+	It displays the nodes
+	on which your application has been started and waits for you to press
+	a key before allowing the processes in your parallel application
+	to procede out of system code and into user code.  You 
+	could at this point log in to
+	a compute node and attach a debugger to your application to
+	catch it before it procedes to <it/main/.
+	Since users are discouraged from logging into compute nodes,
+	it would be better for you to use <it/-attach/ and <bf/cgdb/.
+	Also see the <it/-bt/ option of yod2.
+	</p>
+
+    <tag/-attach/
+	<p>
+        This option is essentially the same as <it/-alloc/.  It is intended
+        to hold the application processes once they have started executing
+        at an instruction prior to user code (prior to <it/main/).  You can
+        at this point start <bf/cgdb/ to attach a debugger to a process.  See
+        the <bf/cgdb/ man page for more help on debugging compute node processes.
+
+    <tag/-batch/
+	<p>
+	This option informs <bf/yod2/ that it is not being run 
+	interactively.  In this case, <bf/yod2/ will not wait for user
+        responses in certain circumstances.  For example, if one of your
+        application processes terminates abnormally (with a non-zero exit
+        code or as the result of a signal), <bf/yod2/ will automatically
+        kill your parallel application for you.  Normally your application
+        is not killed if some processes are still running.
+	The default is that you are not running in <it/batch/ mode.
+        See <it/-interactive/.
+	</p>
+
+    <tag/-bt/
+	<p>
+	This option will cause <bf/yod2/ to display a stack trace for
+        user processes that terminate abnormally.
+	<bf/yod2/ normally displays a one-line completion message for each process in your
+	parallel application, listing the exit code or terminating
+	signal if any.  If the completion message indicates that your
+	application process terminated with a
+	signal and you wish to investigate, you may rebuild your application
+	with debugging symbols and re-run it with the <it/-bt/ option of
+	<bf/yod2/.  The PCT will then attach a debugger to your process,
+	collect the stack trace when it faults, and send the stack
+	trace to <bf/yod2/ for display.
+	</p>
+
+
+    <tag/-D/
+	<p>
+	Turn on debugging of the application load.  The steps in 
+	the load protocol are displayed as the application load progresses. 
+	Application process file IO requests are displayed as <bf/yod2/
+	receives them.
+	</p>
+
+    <tag/-file <it/file-name//
+	<p>
+	When all processes in the parallel application have completed,
+	<bf/yod2/ displays a one line completion message for each process.
+	This message lists the wall-clock time elapsed from start to
+	finish for the process, and the exit code and terminating
+	signal, if any, for the process.  By default the listing goes
+	to stdout, but may be redirected to a file with this option.
+	</p>
+
+    <tag/-help/
+    <tag/-vhelp/
+	<p>
+	<it/-help/ option displays a usage message for <bf/yod2/, <it/-vhelp/
+	displays a more verbose message.
+	</p>
+
+    <tag/-history/
+	<p>
+	This option causes a history of all jobs started to be
+        displayed when <bf/yod2/ terminates.
+	</p>
+
+
+    <tag/-interactive/
+	<p>
+	This option informs <bf/yod2/ that it is being run interactively
+	by a living user.  This is the default mode.  If <bf/yod2/ is
+	being run by a script, be certain to specify <bf/-batch/ on the
+	command line.  One difference between interactive mode and
+	batch mode is that if the load fails on one node, interactive 
+	mode waits for the user to interrupt <bf/yod2/ with control-c
+	before cancelling the load on all allocated nodes.  Batch mode
+	goes ahead and cancels the load.
+	</p>
+
+    <tag/-kill/
+        <p>
+   When <bf/yod2/ is run in interactive mode (the default) and a process
+   of a parallel application terminates abnormally, <bf/yod2/ displays the
+   fact that the process terminated but does not kill the other
+   processes in the job.  The user may choose to abort the job by
+   terminating <bf/yod2/ with control-C.
+ 
+   If the user wishes <bf/yod2/ to automatically kill the application when
+   one or more processes terminates abnormally, then use the <it/-kill/
+   option to yod2.
+	</p>
+
+    <tag/-list <it/node-list//
+        <p>
+        If a <it/node-list/ is provided on the <bf/yod2/ command line, then
+        the nodes requested will be allocated out of this list.  If 
+        <tt/-sz/ <it/n/ is specified as well, then <it/n/ nodes will be allocated
+        out of the list.  If there does not exist <it/n/ free nodes in the list,
+        <bf/yod2/ will display an error message.  If no <tt/-sz/ option is
+        specified, <bf/yod2/ will assume you want all the nodes in the
+        <it/node-list/.
+        </p>
+        <p>
+	A <it/node-list/ is a list of node specifiers separated by commas.
+        A node specifier is a physical node number or
+        a node range.  A node range is specified by two physical
+        node numbers separated
+        by one or more dots.  No white space may be included in
+        the <it/node-list/.  Example: <tt/-l 25..35,112..140,160,165/
+        </p>
+ 
+    <tag/-Log/
+	<p>
+	This option causes the compute node application load protocol 
+        steps to be logged to <tt>/var/log/cplant</tt> on the compute node.
+        It is intended for use by Cplant system debuggers.
+	</p>
+
+    <tag/-nice/
+	<p>
+	This option runs your job in a low priority mode.  If a regular
+        priority job requests nodes, your job may be killed to make
+        way for it.  Your job will be signalled with a SIGTERM, and 5 minutes
+        later with a SIGKILL, if necessary.
+	</p>
+
+    <tag/-NOBUF/
+	<p>
+   <bf/yod2/ displays it's own messages and also text printed by the parallel
+   application processes while they are running.  Normally this
+   combination of buffered (yod2's status messages) and unbuffered
+   (application output and yod2's error messages) messages appear
+   sensibly on the tty that started yod2.  But if <bf/yod2/ was started
+   by an rsh from a remote node, the output appears garbled.  The
+   <it/-NOBUF/ option solves this problem by making all <bf/yod2/ output unbuffered.
+	</p>
+
+    <tag/-quiet/
+	<p>
+         <bf/yod2/, like this man page, is quite verbose.  It lists many status and
+         error messages as it loads and runs a parallel application.  If you wish to have
+         these messages suppressed, run yod2 with the <it/-quiet/ option.
+	</p>
+ 
+    <tag/-show/
+	<p>
+         Cplant parallel applications are encoded with a version string.  <bf/yod2/ will
+         not load an application encoded with the wrong version string (unless you
+         run <bf/yod2/ with the secret <it/-xxx/ option).  The <it/-show/ option lists
+         the correct version string and the version string found in your executable.
+	</p>
+
+    <tag/-sleep <it/where//
+	<p>
+        Cplant system debuggers may want to attach a debugger to a Cplant application
+        before it is in user code.  This option provides 4 different points at which a
+        the processes can be held for 60 seconds.  The options are <it/-sleep 1/ 
+        (right after the fork), <it/-sleep 2/ (just before the exec), <it/-sleep 3/
+        (right after entering system startup code), <it/-sleep 4/ (just before
+        proceeding to <it/main/).
+	</p>
+
+    <tag/-strace <it/path-name//
+	<p>
+         Yet another debugging tool.  <it/path-name/ should be a directory which
+         is mounted writable on the compute node.  This option will cause the PCT
+         to run the application process under strace which will list all
+         system calls (and their arguments) made by the application process.  By
+         default, only the rank 0 process is traced.  The strace output goes to
+         a file in directory <it/path-name/.  The file name contains the Cplant job ID
+         and the rank of the process being traced.
+	</p>
+
+    <tag/-straceoptions <it/option-list//
+	<p>
+         The PCT will invoke strace with the options you specify in the quoted
+         string <it/option-list/.   
+         You must use the <it/-strace/ option with this option.
+	</p>
+
+    <tag/-stracenodes <it/rank-list//
+	<p>
+         The PCT will invoke <it/strace/ on the processes with the ranks given in the
+         <it/rank-list/.  The format for the <it/rank-list/ is the same as the format
+         for a node list.  By default, strace is invoked only on the rank 0 process.
+         You must use the <it/-strace/ option with this option.
+	</p>
+
+    <tag/-sz <it/nodes//
+	<p>
+        The number of compute nodes required to run the parallel
+	application.  One member (process) of the application will
+	run on each node.  The default if no node list is specified
+	is <tt/-sz 1/.  The default if a node list is specified is
+	the number of nodes in the node list.
+	</p>
+
+    <tag/-timing/
+	<p>
+	Interested in how long the different stages of application
+	load are taking?  The <it/-timing/ option times them and displays
+	the results in seconds.  (If our name was <bf/mpirun/ instead
+	of <bf/yod2/ we would display it in minutes!)
+	</p>
+    </descrip>
+
+<sect1> RETURN VALUES
+       <p>
+       The return value of <bf/yod2/ indicates the result of the original
+       parallel application it loaded, not the descendants of that application.
+       <bf/yod2/ returns 0 if the original application terminated normally, 
+       1 if the application ran and terminated abnormally, and 2 if the application
+       load failed and the application never started.
+       Abnormal termination occurs if one or more of the
+       processes of parallel application exited with a non-zero exit code, or
+       was terminated by a signal.
+       </p>
+
+<sect1> SEE ALSO
+    <p>
+    <bf>yod</bf>
+    <bf>pingd</bf>
+    <bf>PCT</bf>
+    <bf>bebopd</bf>
+    <bf>cgdb</bf>
+    </p>
+
+</manpage>

@@ -1,0 +1,196 @@
+#!/usr/bin/make
+include ../../../Makefile-common
+
+#CC=gcc
+#CFLAGS=-g -O -Wall -I $(INCDIR) #-pedantic
+
+CFLAGS += -I$(INCDIR) $(INCLUDEDIRS) -I$(CPLANT_TOP)/compute/OS/linux/include
+
+SUBDIR = $(CPLANT_ARCH)-$(OS)
+
+API_CFLAGS=$(CFLAGS)
+LIB_CFLAGS=$(CFLAGS)
+IPNAL_CFLAGS=$(CFLAGS)
+
+TOPDIR=.
+BINDIR=$(TOPDIR)/bin
+IDLDIR=$(TOPDIR)/idl
+INCDIR=$(TOPDIR)/include
+APIDIR=$(TOPDIR)/api-p30
+P30DIR=$(TOPDIR)/lib-p30
+
+LIB_INSTALLTARGETS	= lib/$(SUBDIR)/libp30api.a lib/$(SUBDIR)/libp30myr.a lib/$(SUBDIR)/libp30lib.a
+P30_H_INSTALL_TARGETS   = include/p30.h
+P30_INC_INSTALL_TARGETS = include/p30/api.h include/p30/errno.h include/p30/nal.h include/p30/types.h
+
+IDL=$(BINDIR)/idl
+
+API=$(INCDIR)/p30/api.h
+
+all:	obj $(SUBDIR) api lib myrnal tests ipnal
+clean:	clean_lib	clean_ipnal	clean_myrnal	clean_tests
+clena:
+	@echo "Clean is spelled C-L-E-A-N" >&2
+
+obj:
+	-mkdir obj lib
+
+$(SUBDIR):
+	-mkdir obj/$(SUBDIR) lib/$(SUBDIR)
+
+$(INCDIR)/p30.h:	$(INCDIR)/p30/types.h $(INCDIR)/p30/api.h $(INCDIR)/p30/errno.h $(INCDIR)/p30/nal.h
+$(INCDIR)/lib-p30.h:	$(INCDIR)/p30/lib-types.h $(INCDIR)/p30/lib-nal.h $(INCDIR)/p30/errno.h	$(INCDIR)/p30/lib-dispatch.h
+
+########################
+
+
+lib:	obj $(SUBDIR) lib/$(SUBDIR)/libp30lib.a
+
+LIB_OBJS=			\
+	obj/$(SUBDIR)/lib-dispatch.o	\
+	obj/$(SUBDIR)/lib-init.o		\
+	obj/$(SUBDIR)/lib-me.o 		\
+	obj/$(SUBDIR)/lib-md.o		\
+	obj/$(SUBDIR)/lib-eq.o		\
+	obj/$(SUBDIR)/lib-pid.o		\
+	obj/$(SUBDIR)/lib-move.o		\
+	obj/$(SUBDIR)/lib-not-impl.o	\
+	obj/$(SUBDIR)/lib-msg.o		\
+	obj/$(SUBDIR)/lib-ni.o		\
+	obj/$(SUBDIR)/api-errno.o	
+
+lib/$(SUBDIR)/libp30lib.a:	lib/$(SUBDIR)/libp30lib.a( $(LIB_OBJS) )
+
+obj/$(SUBDIR)/lib-%.o:	$(P30DIR)/%.c
+	$(CC) $(LIB_CFLAGS) -c -o $@ $<
+
+obj/$(SUBDIR)/lib-dispatch.o:	$(P30DIR)/dispatch.c $(INCDIR)/lib-p30.h
+obj/$(SUBDIR)/lib-init.o:	$(P30DIR)/init.c $(INCDIR)/lib-p30.h
+obj/$(SUBDIR)/lib-me.o:	$(P30DIR)/me.c $(INCDIR)/lib-p30.h
+obj/$(SUBDIR)/lib-md.o:	$(P30DIR)/md.c $(INCDIR)/lib-p30.h
+obj/$(SUBDIR)/lib-eq.o:	$(P30DIR)/eq.c $(INCDIR)/lib-p30.h
+obj/$(SUBDIR)/lib-ni.o:	$(P30DIR)/ni.c $(INCDIR)/lib-p30.h
+obj/$(SUBDIR)/lib-pid.o:	$(P30DIR)/pid.c $(INCDIR)/lib-p30.h
+obj/$(SUBDIR)/lib-move.o:	$(P30DIR)/move.c $(INCDIR)/lib-p30.h
+obj/$(SUBDIR)/lib-not-impl.o:	$(P30DIR)/not-impl.c $(INCDIR)/lib-p30.h
+obj/$(SUBDIR)/lib-msg.o:	$(P30DIR)/msg.c	$(INCDIR)/lib-p30.h
+
+clean_lib:
+	-rm -rf $(TOPDIR)/obj $(TOPDIR)/lib
+
+
+
+########################
+
+#
+# Without the weak aliases, there should be no issues with link orders
+#
+API_OBJS=			\
+	obj/$(SUBDIR)/api-init.o		\
+	obj/$(SUBDIR)/api-errno.o		\
+	obj/$(SUBDIR)/api-ni.o		\
+	obj/$(SUBDIR)/api-me.o		\
+	obj/$(SUBDIR)/api-md.o		\
+	obj/$(SUBDIR)/api-eq.o		\
+	obj/$(SUBDIR)/api-coll.o		\
+	obj/$(SUBDIR)/api-bcast.o		\
+	obj/$(SUBDIR)/api-reduce.o	\
+	obj/$(SUBDIR)/api-wrap.o
+
+api:	lib/$(SUBDIR)/libp30api.a
+lib/$(SUBDIR)/libp30api.a:	lib/$(SUBDIR)/libp30api.a( $(API_OBJS) )
+
+obj/$(SUBDIR)/api-%.o:	$(APIDIR)/%.c
+	$(CC) $(API_CFLAGS) -c -o $@ $<
+
+obj/$(SUBDIR)/api-wrap.o:	$(APIDIR)/wrap.c $(INCDIR)/p30.h
+obj/$(SUBDIR)/api-init.o:	$(APIDIR)/init.c $(INCDIR)/p30.h
+obj/$(SUBDIR)/api-ni.o:	$(APIDIR)/ni.c $(INCDIR)/p30.h $(INCDIR)/p30/internal.h $(INCDIR)/p30/coll.h
+obj/$(SUBDIR)/api-me.o:	$(APIDIR)/me.c $(INCDIR)/p30.h $(INCDIR)/p30/internal.h
+obj/$(SUBDIR)/api-eq.o:	$(APIDIR)/eq.c $(INCDIR)/p30.h $(INCDIR)/p30/internal.h
+obj/$(SUBDIR)/api-md.o:	$(APIDIR)/eq.c $(INCDIR)/p30.h $(INCDIR)/p30/internal.h $(INCDIR)/p30/nal.h
+obj/$(SUBDIR)/api-errno.o:	$(APIDIR)/errno.c $(INCDIR)/p30/errno.h
+obj/$(SUBDIR)/api-bcast.o:	$(APIDIR)/bcast.c $(INCDIR)/p30.h $(INCDIR)/p30/coll.h
+obj/$(SUBDIR)/api-coll.o:		$(APIDIR)/coll.c $(INCDIR)/p30.h $(INCDIR)/p30/coll.h
+obj/$(SUBDIR)/api-reduce.o:	$(APIDIR)/reduce.c $(INCDIR)/p30.h $(INCDIR)/p30/coll.h
+
+########################
+ipnal:	lib/$(SUBDIR)/libp30ip.a  bin/fork
+lib/$(SUBDIR)/libp30ip.a:	lib/$(SUBDIR)/libp30ip.a( obj/$(SUBDIR)//ipnal.o obj/$(SUBDIR)/lib-ipnal.o )
+
+obj/$(SUBDIR)/%.o:	ipnal/%.c
+	$(CC) $(CFLAGS) -c -o $@ $<
+
+obj/$(SUBDIR)/ipnal.o:	ipnal/ipnal.c	$(INCDIR)/p30.h
+obj/$(SUBDIR)/lib-ipnal.o:	ipnal/lib-ipnal.c	$(INCDIR)/lib-p30.h
+
+bin/fork:	ipnal/fork.c
+	$(CC) -g -O -o $@ ipnal/fork.c
+
+
+########################
+
+myrnal:	lib/$(SUBDIR)/libp30myr.a
+lib/$(SUBDIR)/libp30myr.a:	lib/$(SUBDIR)/libp30myr.a( obj/$(SUBDIR)/myrnal.o )
+obj/$(SUBDIR)/myrnal.o:	myrnal/myrnal.c	$(INCDIR)/p30.h
+	$(CC) -c $(CFLAGS) -o $@ myrnal/myrnal.c
+
+clean_ipnal:
+	-rm -f bin/fork
+	
+clean_myrnal:
+	
+########################
+
+########################
+
+run:	all
+	./bin/fork 4 ./alltoall.ip
+
+tests:	alltoall.ip ringtest.ip
+clean_tests:
+	#-rm -f hello.ip pingpong.ip alltoall.ip
+	-rm -f *.ip
+
+%.ip:		obj/$(SUBDIR)/%.ip.o
+	$(CC) $(CFLAGS) -o $@ $< -L./lib/$(SUBDIR) -lp30ip -lp30api -lp30lib -lpthread
+obj/$(SUBDIR)/%.ip.o:	tests/%.c
+	$(CC) -c $(CFLAGS) -o $@ $< -D PTL_IFACE_DEFAULT=PTL_IFACE_IP
+	
+
+hello.ip:	obj/$(SUBDIR)/hello.ip.o api lib ipnal
+
+pingpong.ip:	obj/$(SUBDIR)/pingpong.ip.o api lib ipnal
+
+ringtest.ip:	obj/$(SUBDIR)/ringtest.ip.o api lib ipnal
+
+alltoall.ip:	obj/$(SUBDIR)/alltoall.ip.o api lib ipnal
+sendtime.ip:	obj/$(SUBDIR)/sendtime.ip.o api lib ipnal
+
+coll.ip:	obj/$(SUBDIR)/coll.ip.o api lib ipnal
+
+barrier.ip:	obj/$(SUBDIR)/barrier.ip.o api lib ipnal
+
+
+
+########################
+
+tar:
+	cd .. ; \
+	NAME="p30.`date '+%Y%m%d.%H%M%S'`.tar.gz";	\
+	tar zcvf $$NAME ./p30 ;				\
+	echo "tar file is $$NAME"
+
+########################
+
+ifdef INSTALLDIR
+install uninstall cp:	$(LIB_INSTALLTARGETS)
+	echo "Installing in $(INSTALLDIR)"
+	@$($@)
+else
+install uninstall cp:
+	$(MAKE) INSTALLDIR=$(libdir) INSTALLTARGETS='$(LIB_INSTALLTARGETS)' $@
+	$(MAKE) INSTALLDIR=$(includedir) INSTALLTARGETS='$(P30_H_INSTALL_TARGETS)' $@
+	$(MAKE) INSTALLDIR=$(p30includedir) INSTALLTARGETS='$(P30_INC_INSTALL_TARGETS)' $@
+endif
+

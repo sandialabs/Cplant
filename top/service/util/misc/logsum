@@ -1,0 +1,164 @@
+#!/usr/bin/perl
+#
+#  $Id: logsum,v 1.1.2.4 2002/10/02 18:25:13 jrstear Exp $
+#
+# this script is very useful in summarizing runtime logs (ie- on our
+# systems we centrally collect all syslogs, and filter facility7
+# messages (cplant logs using facility7) into seperate files, which we
+# can then analyze with this script to help identify problems, etc).
+
+# this list is almost certainly missing some people who should be
+# ignored by default  :)  (ie- default is a "user summary")
+$developers = " jrstear ktpedre galagun spgoudy jjohnst rklundt jhlaros dwdoerf rolf edrusse rbbrigh jsotto root galagun mgcarif nwdauch mrepper donjohn gmcgir ";
+$nodev = 1;
+
+# parse ARGV
+while ($ARGV[0] =~ /^-/) {
+   $arg = shift;
+   $nodev    = 0    if ($arg=~/-devs/ );     # developer jobs requested
+   $withnids = 1    if ($arg=~/-nids/ );     # nid lists requested
+   exec "perldoc $0" if ($arg=~/-h/ || $arg=~/-u/); # help me help me!
+}
+
+# handy for redirection to a file or pager, ie `logsum 2002.07.* | less`
+print "#  StartDATE-TIME  Loaded Runtime(s) YodNode   PBS   JOB  YodPID Size  User   Program        [Nids]\n";
+# handy for piped greps, ie `logsum < 2002.* | grep " 0 "`
+print STDERR "#  StartDATE-TIME  Loaded Runtime(s) YodNode   PBS   JOB  YodPID Size  User   Program        [Nids]\n";
+
+while (<>) {
+    # process yod summary lines
+    &yod_summary if /yod\[\d+\]: \d\d\/\d\d\/\d\d\d\d /;  
+
+    $lines++;
+    # all other lines are effectively ignored (for now...)
+}
+
+
+sub yod_summary() {
+
+    # grab the prefix provided by syslog-ng
+    my ($logdate, $logsrcnode, $yodpid, $msg) =
+	/(\S+\s+\S+\s+\S+)\s+(\S+)\s+yod\[(\d+)\]: (.+)/;
+    die "this version requires a cplant syslog stream as input" unless $msg;
+    $_ = $msg; # dump the prefix
+    ($yodnode) = $logsrcnode=~/\/if-\d+\.(\S+)\//; # squelch noise
+
+    # now for the yod message
+    my ($startdate, $enddate, $duration, $nproc, $user, $prog, $rem) =
+      /(\S+\s+\S+)\s+(\S+\s+\S+)\s+(\S+)\s+(\d+)\s+(\S+)\s+(\S+),\s+(.+)/;
+    next if ($nodev && $developers=~/ $user /);	# skip developers
+
+    # determine job attributes
+    my ($pbs, $job, $nids, $ran, $secs, $failed, $status, $job_label);
+    ($pbs)    = /PBS\s+#(\d+) ,/;  $pbs=-1 unless $pbs;
+    ($job)    = /Cplant #(\d+) ,/; $job=-1 unless $job;
+    ($nids)   = /Cplant #\d+ , (\d+\S+)/ if ($withnids);
+    $loaded = /load failed/ ? 0 : 1 ; # 1=loaded, 0=load failed
+
+    # make a unique lable for this yod job
+    $job_label = sprintf "%12s %5d %5d %5d %4d %8s %s", 
+    			$yodnode, $pbs, $job, $yodpid, $nproc, $user, $prog;
+    
+    # it hasn't failed until four attempts are made (three retries)
+    next if ($loaded==0 && ++$job_start_attempts{"$job_label"} < 4);
+
+    # reset counter (it's either succeeded or failed four times)
+    # matching Staring/Finished messages will catch other notable cases...
+    delete $job_start_attempts{"$job_label"};
+
+    # compute a job run duration in seconds
+    if ($duration=~/00:00:00/) { $secs = 0; }
+    else {
+	@t = split /:/, $duration;
+	$secs = 60*($t[0]*60 + $t[1]) + $t[2];
+    }
+
+    # we'll be plotting with grace, which doesn't like whitespace
+    # in the time field, so join the date and time into one field
+    $startdate=~s/ /-/; 
+
+    # print the result of this yod
+    printf "%s  %d  %7d  $job_label  $nids\n", $startdate, $loaded, $secs;
+}
+
+=head1 NAME
+
+logsum - a cplant syslog summarizer
+
+=head1 SYNOPSIS
+
+logsum [-devs] [-nids] [file(s) or STDIN] [|sort]
+
+    -devs  includes developer jobs (ommitted by default)
+    -nids  includes job nid lists  (ommitted by default)
+
+
+Each yod job found (takes into account retries) generates a line of
+output with the following columns:
+
+ StartDATE-TIME Indicates when yod started
+ Loaded         0 indicates "load failed", 1 indicates success
+ Runtime(s)     Indicates job runtime in seconds
+ YodNode        Indicates the node on which yod ran
+ PBS            The PBS job number (-1 if an interactive job)
+ JOB            The Cplant job number (-1 if yod couldn't contact bebopd)
+ YodPID         The ProcessID of the yod (same for all retries!)
+ Size           The number of compute nodes in the job
+ User           The username of the user using yod
+ Program        The Fullpath to the binary being yodded
+ [Nids]         The NodeID list of nodes selected to participate
+                in the job (only present if -nids given)
+
+Since logsum output is used to generate plots of user load success
+rates (load first two columns as Block data into grace and then
+generate running averages), by default "developer" jobs are ommitted
+from the summary.  To include them, just supply the -devs argument.
+
+Since nid lists are generally very long and difficult to correllate,
+they are ommitted from the summary unless -nids argument is given.
+Another script is in the works which performs correllations between
+the various columns of logsum output (viz- "every job which has
+failed has had node 789 (aka n-7.t-29) in its nid list (PRUNE IT!!!)").
+
+=head1 CAVEATS
+
+logsum (currently) only utilizes yod summary lines, which are generated
+upon job completion.  This presents two caveats:
+
+1. currently running jobs or violently interrupted jobs do not appear
+in the summary (ie- logsum reports what has happened, not what
+is happening).
+
+2. since logsum prints lines as they are found, the output is
+generally not perfectly sorted by StartDATE-TIME (rather, by
+EndDATE-TIME which is not in the summary but MAY be significant).  In
+order to get proper StartDATE-TIME sorting, just pipe the output
+through `sort`.  :)
+
+=head1 EXAMPLES
+
+here's the column header, them some example output with commentary:
+  # StartDATE-TIME   Loaded Runtime(s) YodNode   PBS   JOB  YodPID Size  User   Program        [Nids]
+
+(sorry for the yucky wrapping, too much info...)
+
+this 27-node pbs job loaded successfully at 9:42 on n-4.y-3, and ran
+for 1051 seconds - woohoo!
+  07/19/2002-09:42:55  1     1051       n-4.y-3  2519  2210 17034   27  gsgrest /home/gsgrest/polym/src_2001/lmp_ross
+
+this interactive job loaded successfully, but ran for only 0 seconds,
+hmmm...  unless the job is supposed to be *really* quick, it
+indicates a failure after job load, probably out in the compute
+partition (ie- one of the compute node gave up the ghost, etc).
+  07/19/2002-12:47:31  1        0       n-4.y-1    -1   135  2963   10  mrepper /cluster/rte/nfs-cplant/test/mpi_routecheck  1791..1782
+
+this (single) pbs job attempted two yods, both of which failed to
+load.  the fact that they did not even get a Cplant JOB id indicates
+that there was a failure during communication with the bebopd node.
+In this case, the nid list (ie, -nids) is probably empty (but if not,
+that's significant), indicating that yod did not even get a nid list
+on which to run the job  :(
+  07/19/2002-02:58:44  0        0       n-4.y-3  2390    -1 15487  512  wcmclen /home/wcmclen/work/pSCC/tamu/bin/pSCC  
+  07/19/2002-03:04:32  0        0       n-4.y-3  2390    -1 15500  512  wcmclen /home/wcmclen/work/pSCC/tamu/bin/pSCC  
+
+ 

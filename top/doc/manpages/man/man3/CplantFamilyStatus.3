@@ -1,0 +1,110 @@
+.if n .ds Q \&"
+.if t .ds Q ``
+.if n .ds U \&"
+.if t .ds U ''
+.TH FAMILYSTATUS 3 "20 November 2001" "CPLANT MANPAGE" "Cplant Runtime Libraries"
+.tr \&
+.nr bi 0
+.nr ll 0
+.nr el 0
+.de Pp
+.ie \\n(ll>0 \{\
+.ie \\n(bi=1 \{\
+.nr bi 0
+.if \\n(t\\n(ll=0 \{.IP \\(bu\}
+.if \\n(t\\n(ll=1 \{.IP \\n+(e\\n(el.\}
+.\}
+.el .sp 
+.\}
+.el \{\
+.ie \\nh=1 \{\
+.LP
+.nr h 0
+.\}
+.el .PP 
+.\}
+..
+.SH NAME
+    
+
+.Pp
+CplantFamilyStatus, CplantFamilyStatusGrp
+.SH SYNOPSIS
+    
+
+.Pp
+\fB#include <cplant.h>\fP
+.Pp
+\fBint CplantFamilyStatus(jobFamilyInfo *\fP\fIjob\fP\fB)\fP
+.Pp
+\fBint CplantFamilyStatusGrp(jobFamilyInfo *\fP\fIjob\fP\fB, int \fP\fInMembers\fP\fB, int *\fP\fIrankList\fP\fB, int \fP\fItmout\fP\fB)\fP
+.SH DESCRIPTION
+    
+
+.Pp
+The function \fBCplantFamilyStatus\fP sends a request to \fByod2\fP
+for the current status of the job specified by \fIjob\fP.  \fIjob\fP
+is a handle returned by \fBCplantSpawnJob\fP, \fBCplantMyParent\fP
+or \fBCplantMySelf\fP.  It is a pointer to a structure that contains 
+a status field and an error indicator,
+and these field are updated when the call returns.
+.Pp
+The function \fBCplantFamilyStatusGrp\fP is a collective job status call.
+Every process that participates in the
+status request operation must make the call with the same list of participants.
+\fInMembers\fP is the number of processes participating in the call,
+\fIrankList\fP is the list of participating process ranks, and \fItmout\fP
+is the number of seconds to wait before judging a collective operation
+among the pariticpants to be a failure.  In our implementation of this
+call, the first process in the \fIrankList\fP makes the request to \fByod2\fP
+and broadcasts the results to the others.
+.Pp
+If \fInMembers\fP is zero, or \fIrankList\fP is NULL, then this is taken
+to mean that all processes in the application are participating.
+.SH RETURN VALUE
+    
+
+.Pp
+Both functions return -1 on error, and 0 on success.  On success,
+the fields in the \fIjob\fP structure are updated.  This is the
+\fBjobFamilyInfo\fP structure:
+.Pp
+\f(CRtypedef struct _jobFamilyInfo{    
+.br
+int job_id;      /* Cplant job id */    
+.br
+int yodHandle;   /* yod2 needs this */  
+.br
+int status;      /* bit map of JOB_* values */    
+.br
+int nprocs ;     /* number of processes*/
+.br
+int error;       /* normally 0, -1 if an error occurred */
+.br
+void *callerHandle;  /* caller can use this, we don't */    
+.br
+}\fBjobFamilyInfo\fP;    
+.br\fR
+.Pp
+\f(CR#define JOB_NODE_REQUEST_BUILT  ( 1 << 0) 
+.br
+#define JOB_PCT_LIST_ALLOCATED  ( 1 << 1) 
+.br
+#define JOB_REQUESTED_TO_LOAD   ( 1 << 2) 
+.br
+#define JOB_GOT_OK_TO_LOAD      ( 1 << 3) 
+.br
+#define JOB_APP_STARTED         ( 1 << 4) 
+.br
+#define JOB_APP_FINISHED        ( 1 << 5) 
+.br
+#define JOB_APP_MASS_MURDER     ( 1 << 30) 
+.br\fR
+.SH SEE ALSO
+    
+
+.Pp
+\fByod2\fP
+\fBCplantSpawnJob\fP
+\fBCplantMyParent\fP
+\fBCplantMySelf\fP

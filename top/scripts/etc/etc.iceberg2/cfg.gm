@@ -1,0 +1,12 @@
+##### Bebop,Service,PBS
+ node.n-0.i2-0 : local_disk portals=ethernet user-env=bebopd default_route=132.175.55.51 mount_nfs=132.175.55.20:/home,/home
+# enfs_client=10.0.0.9 sshd 
+
+##### IO proxy node
+ node.n-0.i2-1 : ram_disk=16384 portals=ethernet set_mtu=eth2,9000 enfsd_config=172.28.10.1:/enfs/tmp,/
+
+##### compute nodes
+ default : ram_disk=16384 portals=ethernet enfs_client=10.0.0.9 user-env=pct 
+
+##### disabled nodes
+ disabled : node.n-4.i2-0

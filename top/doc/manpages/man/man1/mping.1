@@ -1,0 +1,33 @@
+.TH MPING 1 "Cplant Myrinet Utilities" "Cplant" \" -*- nroff -*-
+.SH NAME
+.B mping 
+\- utility (for verifying myrinet routes on Cplant)
+.SH SYNOPSIS
+.B mping 
+\ machine-list
+
+.SH DESCRIPTION
+.B mping 
+must be run as the superuser.
+
+.B mping
+is a two-way ping utility for myrinet on Cplant. It is run 
+on a service or compute node to test the myrinet connection to
+other machines. It takes as argument a space-separated list 
+of machine names of the form c-X.SU-Y. 
+.B mping 
+is a perl wrapper that translates machines names into
+node ids and calls vping (a C program) with each node id.
+.B mping 
+relies on the Cplant rtscts myrinet driver/module running on the
+machines in question.
+
+.B mping 
+must be run as the superuser.
+
+.SH EXIT CODE
+Zero if correct non-null command line arguments are given.
+Nonzero otherwise.
+
+.SH SEE ALSO
+vping(1)

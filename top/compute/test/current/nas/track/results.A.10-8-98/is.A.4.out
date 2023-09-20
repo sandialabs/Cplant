@@ -1,0 +1,68 @@
+
+
+ NAS Parallel Benchmarks 2.3 -- IS Benchmark
+
+ Size:  8388608  (class A)
+ Iterations:   10
+ Number of processes:     4
+
+   iteration
+        1
+        2
+        3
+        4
+        5
+        6
+        7
+        8
+        9
+        10
+
+
+ IS Benchmark Completed
+ Class           =                        A
+ Size            =                  8388608
+ Iterations      =                       10
+ Time in seconds =                     7.36
+ Total processes =                        4
+ Compiled procs  =                        4
+ Mop/s total     =                    11.40
+ Mop/s/process   =                     2.85
+ Operation type  =              keys ranked
+ Verification    =               SUCCESSFUL
+ Version         =                      2.3
+ Compile date    =              08 Oct 1998
+
+ Compile options:
+    MPICC        = /Net/mp/cplant/bin/cc
+    CLINK        = $(MPICC)
+    CMPI_LIB     = -L$(MPIPATH) -lmpi
+    CMPI_INC     = -I$(MPIPATH)/include
+    CFLAGS       = -O3
+    CLINKFLAGS   = (none)
+
+
+ Please send the results of this run to:
+
+ NPB Development Team
+ Internet: npb@nas.nasa.gov
+ 
+ If email is not available, send this to:
+
+ MS T27A-1
+ NASA Ames Research Center
+ Moffett Field, CA  94035-1000
+
+ Fax: 415-604-3957
+
+Contacting node allocation daemon...
+4 nodes are allocated to your job ID 3650
+Compute partition synchronized
+Application processes begin user code.
+
+   Node name     Rank  Node   PID   Elapsed  Exit Code  Terminating Signal
+---------------- ----  ----  -----  -------  ---------  ------------------
+SU-003 node-0003    0    17   4511  0:00:13       0       none
+SU-003 node-0005    1    18   4435  0:00:13       0       none
+SU-003 node-0007    2    19   4398  0:00:13       0       none
+SU-003 node-0009    3    20   4394  0:00:13       0       none

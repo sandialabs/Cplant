@@ -1,0 +1,85 @@
+.if n .ds Q \&"
+.if t .ds Q ``
+.if n .ds U \&"
+.if t .ds U ''
+.TH cfg 5 "28 August 2002" "Cplant" "Cplant System Manager's Manual"
+.tr \&
+.nr bi 0
+.nr ll 0
+.nr el 0
+.de Pp
+.ie \\n(ll>0 \{\
+.ie \\n(bi=1 \{\
+.nr bi 0
+.if \\n(t\\n(ll=0 \{.IP \\(bu\}
+.if \\n(t\\n(ll=1 \{.IP \\n+(e\\n(el.\}
+.\}
+.el .sp 
+.\}
+.el \{\
+.ie \\nh=1 \{\
+.LP
+.nr h 0
+.\}
+.el .PP 
+.\}
+..
+.SH NAME
+    
+
+.Pp
+\fBcfg\fP -- Cplant node-configuration file
+.SH DESCRIPTION
+    
+
+.Pp
+\fBcfg\fP is the file which the init.d/cplant script examines to
+determine node configurations.  It contains lines of the format:
+.Pp
+hostname [hostname2]... : script[=args]
+[script[=args]]...
+.Pp
+where hostname is the output of `hostname` on a node in the
+cluster, and script[=args] is the name of a script in
+cplant/init.d and the arguments that should be passed to it.  
+.Pp
+IMPORTANT: due to the way cfg is parsed, all hostnames MUST BE
+padded with whitespace on both sides.  Ie- even if there is only
+a single hostname listed, it must have a space before and after it
+in order for the \fBcplant\fP script to identify it correctly (ie- 
+no spaces, the line won't be matched and the node may come up with
+the \*Qdefault\*U configuration!).
+.Pp
+There are three special configuration cases: 
+.Pp
+1) a line with the string \*Q default \*U before the colon instead of a
+hostname list indicates the (default) configuration of any node(s)
+which are not explicitly listed in the file.  This is typically
+used for compute nodes, as their configuration is the same and
+they are (generally) the most numerous type of node in the
+cluster.  Only the first \*Qdefault\*U line in the cfg file is
+significant.
+.Pp
+2)  a line with the string \*Q disabled \*U after the colon instead of a
+script[=args] list identifies node(s) which are disabled
+from the cplant perspective and should not attempt to start
+cplant.  This is typically used to temporarily disable nodes with
+known hardware problems etc.  There can be any number of disabled
+lines, as well as any number of hostnames listed before the colon
+of such a line.
+.Pp
+3) the third case is a line which has \*Q bebopd_arguments \*U before
+the colon.  after the colon should appear the verbatim arguments
+that should be given to bebopd when it is run (by the
+init.d/user_env script in the event that it is run with \*Qbebopd\*U
+as an argument).  This appears in the cfg file in order to remove
+it from the user_env which should be cluster-independant (and the
+arguments can easily be too long and problematic to deal with as
+the regular script=args format).
+.Pp
+.SH SEE ALSO
+    
+
+.Pp
+\fBcplant\fP, 
+Guide to building and installing Cplant

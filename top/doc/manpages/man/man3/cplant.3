@@ -1,0 +1,377 @@
+.if n .ds Q \&"
+.if t .ds Q ``
+.if n .ds U \&"
+.if t .ds U ''
+.TH CPLANT 3 "20 November 2001" "CPLANT MANPAGE" "Cplant Runtime Libraries"
+.tr \&
+.nr bi 0
+.nr ll 0
+.nr el 0
+.de Pp
+.ie \\n(ll>0 \{\
+.ie \\n(bi=1 \{\
+.nr bi 0
+.if \\n(t\\n(ll=0 \{.IP \\(bu\}
+.if \\n(t\\n(ll=1 \{.IP \\n+(e\\n(el.\}
+.\}
+.el .sp 
+.\}
+.el \{\
+.ie \\nh=1 \{\
+.LP
+.nr h 0
+.\}
+.el .PP 
+.\}
+..
+.SH NAME
+    
+
+.Pp
+Cplant* functions - access to Cplant runtime environment for a parallel application
+.SH SYNOPSIS
+    
+
+.Pp
+\fB#include <cplant.h>\fP
+.SH DESCRIPTION
+    
+
+.Pp
+Cplant applications are automatically linked with a library of functions
+that provide information about the current runtime environment of the
+application and of the cluster as a whole.  Other functions permit a
+Cplant application to spawn a new application, synchronize with it, and
+obtain the node ID/process ID map required to communicate with it.
+.Pp
+The functions are summarized here.  See the individual man page for each
+function for more detail.
+.SH SEE ALSO
+    
+
+.Pp
+\fBbebopd\fP
+\fByod\fP
+\fByod2\fP
+.SH BUGS
+    
+
+.Pp
+The node ID map and process ID map returned by
+\fBCplantJobNidMap\fP  and \fBCplantJobPidMap\fP 
+respectively are not necessarily in process rank order, they are in
+physical node number order.
+.Pp
+The functions that query the bebopd to obtain information about
+other jobs or about the PBS queues are not fully tested.
+In addition they appear to allocate much more memory than they need
+to hold the returned information.
+.SH LIST OF FUNCTIONS
+
+.Pp
+The following functions return information about the calling application.  They
+are satisfied locally without sending a request to a remote node.
+.Pp
+.PP
+.nr ll +1
+.nr t\n(ll 2
+.TP
+.I "CplantMyNid"
+.nr bi 1 
+.Pp
+returns your physical node ID
+
+.TP
+.I "CplantMyPpid"
+.nr bi 1 
+.Pp
+returns your portals process ID
+
+.TP
+.I "CplantMyRank"
+.nr bi 1 
+.Pp
+returns your rank in the application, zero based
+
+.TP
+.I "CplantMyPid"
+.nr bi 1 
+.Pp
+returns your the Linux system pid (same result as \fBgetpid()\fP)
+
+.TP
+.I "CplantMySize"
+.nr bi 1 
+.Pp
+returns the number of processes in your parallel application
+
+.TP
+.I "CplantMyJobId"
+.nr bi 1 
+.Pp
+returns your Cplant job ID (a Cplant job is a single Cplant parallel application)
+
+.TP
+.I "CplantMyPBSid"
+.nr bi 1 
+.Pp
+returns your PBS job ID (a PBS job is a job script that may start many Cplant jobs)
+
+.TP
+.I "CplantMyNidMap"
+.nr bi 1 
+.Pp
+returns the physical Node ID map for all processes in your parallel application
+
+.TP
+.I "CplantMyPidMap"
+.nr bi 1 
+.Pp
+returns the portals process ID map for all processes in your parallel application
+.nr ll -1
+.PP
+.Pp
+.Pp
+The following functions return information about other Cplant jobs, or
+about the PBS queues.  These queries are satisfied by sending a
+request for information to the bebopd.
+.Pp
+.PP
+.nr ll +1
+.nr t\n(ll 2
+.TP
+.I "CplantJobSize"
+.nr bi 1 
+.Pp
+returns the number of processes in another parallel application
+
+.TP
+.I "CplantJobNidMap"
+.nr bi 1 
+.Pp
+returns the physical node ID map for another parallel application - warning, it's
+not in process rank order
+
+.TP
+.I "CplantJobPidMap"
+.nr bi 1 
+.Pp
+returns the portals process ID map for another parallel application - warning, it's
+not in process rank order
+
+.TP
+.I "CplantJobStatus"
+.nr bi 1 
+.Pp
+returns an array of status structures describing another parallel application
+
+.TP
+.I "CplantPBSQueue"
+.nr bi 1 
+.Pp
+returns the status of a PBS queue, as given by the \fBqmgr -c "l q <queue-name>"\fP
+command
+
+.TP
+.I "CplantPBSqstat"
+.nr bi 1 
+.Pp
+returns the information given by the PBS command \fBqstat -a\fP
+
+.TP
+.I "CplantPBSqueues"
+.nr bi 1 
+.Pp
+returns the information given by the PBS command \fBqstat -q\fP 
+
+.TP
+.I "CplantPBSserver"
+.nr bi 1 
+.Pp
+returns the information given by the PBS command \fBqmgr -c "l s"\fP 
+.nr ll -1
+.PP
+.Pp
+.Pp
+The following functions may be used to spawn new applications and interact with them.
+They send requests to a special version of \fByod\fP (called \fByod2\fP) which is capable
+of managing a \fIfamily\fP of applications.  A \fIfamily\fP refers all the jobs started
+by the original Cplant application and it's descendants.
+.Pp
+.PP
+.nr ll +1
+.nr t\n(ll 2
+.TP
+.I "CplantSpawnJob"
+.nr bi 1 
+.Pp
+A request to spawn a new application.  A handle is returned.  The handle is a 
+pointer to a structure containing status information for
+the new application. 
+A collective version of the call (\fBCplantSpawnJobGrp\fP) is available, wherein
+node 0 sends the request to \fByod2\fP, and broadcasts
+the results to the other processes.
+
+.TP
+.I "CplantFamilyStatus"
+.nr bi 1 
+.Pp
+A request for the latest status information for a job in my family.
+A collective version of the call (\fBCplantFamilyStatusGrp\fP) is available, wherein
+node 0 sends the request to \fByod2\fP, and broadcasts
+the results to the other processes.
+
+
+.TP
+.I "CplantFamilyMap"
+.nr bi 1 
+.Pp
+This call returns the physical node ID map and the portals process ID map for
+a job in my family.
+A collective version of the call (\fBCplantFamilyMapGrp\fP) is available, wherein
+node 0 sends the request to \fByod2\fP, and broadcasts
+the results to the other processes.
+
+.TP
+.I "CplantFamilyTermination"
+.nr bi 1 
+.Pp
+This call returns any or all of the following information about 
+a job in my family: whether or not each process has terminated,
+the exit code for each process, the terminating signal for
+each process, and the terminator for each process (i.e. terminated by owner or
+terminated by system administrator or not terminated by an outside action).
+A collective version of the call (\fBCplantFamilyTerminationGrp\fP) is available, 
+wherein node 0 sends the request to \fByod2\fP, and broadcasts
+the results to the other processes.
+
+.TP
+.I "CplantMyParent"
+.nr bi 1 
+.Pp
+This call returns the handle for the application that spawned me, or NULL if
+I was not spawned by another Cplant application.
+A collective version of the call (\fBCplantMyParentGrp\fP) is available, wherein
+node 0 sends the request to \fByod2\fP, and broadcasts
+the results to the other processes.
+
+.TP
+.I "CplantMySelf"
+.nr bi 1 
+.Pp
+This call returns the handle for my application, in the event I may want to send
+it to another application in my family that wishes to query \fByod2\fP about me.
+A collective version of the call (\fBCplantMySelfGrp\fP) is available, wherein
+node 0 sends the request to \fByod2\fP, and broadcasts
+the results to the other processes.
+
+.TP
+.I "CplantInterjobBarrier"
+.nr bi 1 
+.Pp
+This call begins a barrier between my job and one other in my family.  It returns
+a status indicating that either the barrier is in progress, or the barrier is completed.
+A collective version of the call (\fBCplantInterjobBarrierGrp\fP) is available, wherein
+node 0 sends the request to \fByod2\fP, and broadcasts
+the results to the other processes.
+
+.TP
+.I "CplantBarrierStatus"
+.nr bi 1 
+.Pp
+This call sends a query to \fByod2\fP to find out if an inter-job barrier has
+completed.  It returns a status indicating that the barrier is still in progress
+or that it has completed.
+A collective version of the call (\fBCplantBarrierStatusGrp\fP) is available, wherein
+node 0 sends the request to \fByod2\fP, and broadcasts
+the results to the other processes.
+
+.TP
+.I "CplantSignalJob"
+.nr bi 1 
+.Pp
+This call sends a request to \fByod2\fP to send a signal to a job in my family.
+
+.TP
+.I "CplantNodesRemaining"
+.nr bi 1 
+.Pp
+For PBS jobs only, this call sends a request to \fByod2\fP to reply with the difference
+between the number of nodes allocated me by PBS, and the number of nodes in use by
+\fByod2\fP.  Note that if your PBS script started other \fByod\fP or \fByod2\fP processes
+this difference is less than the number of nodes you have remaining to use. 
+
+.TP
+.I "CplantInitCollective"
+.nr bi 1 
+.Pp
+Applications that wish to use the \fB*Grp\fP collective functions, must first
+initialize the server library group communication function.  Each process in
+the application must call this, and it contains a barrier.
+
+.TP
+.I "CplantDoneCollective"
+.nr bi 1 
+.Pp
+This call frees the structures required for server library group communication.
+.nr ll -1
+.PP
+.Pp
+.SH LIST OF STRUCTURES AND DEFINED VALUES
+
+.Pp
+The handle returned by job spawn/status functions has the following structure:
+.Pp
+\f(CRtypedef struct _jobFamilyInfo{ 
+.br
+int job_id;          /* Cplant job id */
+.br
+int yodHandle;       /* a handle for requests to yod */
+.br
+int status;          /* bit map of JOB_* values */
+.br
+int nprocs;          /* number of processes in the application */
+.br
+int error;           /* normally 0, non-0 if an error occured */
+.br
+void *callerHandle;  /* caller can use this, we don't */
+.br
+}jobFamilyInfo;
+.br\fR
+.Pp
+The status bits in the status field have the following values:
+.Pp
+\f(CR#define JOB_NODE_REQUEST_BUILT  ( 1 << 0) 
+.br
+#define JOB_PCT_LIST_ALLOCATED  ( 1 << 1) 
+.br
+#define JOB_REQUESTED_TO_LOAD   ( 1 << 2) 
+.br
+#define JOB_GOT_OK_TO_LOAD      ( 1 << 3) 
+.br
+#define JOB_APP_STARTED         ( 1 << 4) 
+.br
+#define JOB_APP_FINISHED        ( 1 << 5) 
+.br
+#define JOB_APP_MASS_MURDER     ( 1 << 30) 
+.br\fR
+.Pp
+The values for the terminator of a job, provided by the \fBCplantFamilyTermination\fP query, are:
+.Pp
+\f(CR#define PCT_TERMINATOR_UNSET (0)   /* job hasn't terminated */ 
+.br
+#define PCT_NO_TERMINATOR    (1)   /* job was not terminated from the outside */ 
+.br
+#define PCT_JOB_OWNER        (2)   /* job was terminated because owner interrupted it */ 
+.br
+#define PCT_ADMINISTRATOR    (3)   /* job was terminated because sys admin interrupted it */ 
+.br\fR
+.Pp
+The values for status of an inter-job barrier are:
+.Pp
+\f(CR#define SYNC_COMPLETED   1  
+.br
+#define SYNC_IN_PROGRESS 0 
+.br
+#define SYNC_ERROR      (-1) 
+.br\fR

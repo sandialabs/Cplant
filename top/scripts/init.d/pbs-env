@@ -1,0 +1,172 @@
+#!/bin/bash
+#
+# arguments:  start|stop|restart [mom|server|scheduler|bebopd-support-only]*
+#
+#   Any or all of the pbs components may be requested like so:
+#
+#       pbs-env start server scheduler bebopd-support-only
+#
+#       pbs-env restart mom server scheduler
+#
+echo "-->> Executing $0 " $*
+
+PATH=$PATH:/sbin
+
+PBSENVWORK=no
+
+#
+# PBS is compiled to find it's runtime files at /tmp/pbs/working.
+#
+# /tmp/pbs/working can be on service node local disk or it can
+# be a mount point in RAM disk that links to a directory (WORKDIR) 
+# in a shared file system.
+#
+# TEMPLATE contains a template of the working directory
+#
+TEMPLATE=/enfs/tmp/pbs/working
+
+function setWorkingDirectory(){
+
+   if [ -e /tmp/pbs/working/PBSserver ]
+   then
+       # working directory is already set up 
+       return
+   fi
+
+   if ! [ -e /tmp/pbs ]
+   then
+       mkdir /tmp/pbs
+   fi
+
+   if [ -e $TEMPLATE/PBSserver ]
+   then
+      # need to create a working directory
+      cp -rp $TEMPLATE  /tmp/pbs
+      
+   else
+
+      echo "Can't create PBS working directory.  Fatal error."
+      exit -1
+     
+   fi
+
+   return
+   
+}
+
+case "$1" in
+    start) 
+
+    if ! [ -e /tmp/pbs/working/PBSserver ] ; then
+        setWorkingDirectory
+    fi
+
+    for i in $* ; do
+
+        if [ $i = "mom" ] || [ $i = "MOM" ] ; then
+ 
+             echo "starting pbs_mom"
+             pbs_mom
+             PBSENVWORK=yes
+
+        elif [ $i = "scheduler" ] || [ $i = "SCHEDULER" ] ; then
+
+             echo "starting pbs_sched"
+             pbs_sched
+             PBSENVWORK=yes
+
+        elif [ $i = "server" ] || [ $i = "SERVER" ] ; then
+
+             echo "starting pbs_server"
+             pbs_server
+             PBSENVWORK=yes
+
+#
+#  If bebopd is running on a node, then it will be invoking the PBS
+#  client "qmgr", and hence needs a PBS runtime directory.  So we need
+#  to invoke setWorkingDirectory, that's all.
+#
+#  No need to specify bebopd-support-only if you're already running PBS
+#  server, scheduler or mom on the node.  The runtime directory will already
+#  be set up for that deamon.
+#
+        elif [ $i = "bebopd-support-only" ] || [ $i = "BEBOPD-SUPPORT-ONLY" ] ; then
+
+             echo "PBS runtime directory is now available for bebopd"
+             PBSENVWORK=yes
+
+        fi
+
+    done
+
+    ;;
+
+    stop)
+
+    for i in $* ; do
+
+        if [ $i = "mom" ] || [ $i = "MOM" ] ; then
+ 
+             echo "stopping pbs_mom"
+             killall pbs_mom
+             PBSENVWORK=yes
+
+        elif [ $i = "scheduler" ] || [ $i = "SCHEDULER" ] ; then
+
+             echo "stopping pbs_sched"
+             killall pbs_sched
+             PBSENVWORK=yes
+
+        elif [ $i = "server" ] || [ $i = "SERVER" ] ; then
+
+             echo "stopping pbs_server"
+             qterm -t quick
+             PBSENVWORK=yes
+
+        fi
+
+    done
+
+	;;
+
+    restart)
+
+    for i in $* ; do
+
+        if [ $i = "mom" ] || [ $i = "MOM" ] ; then
+ 
+             echo "restarting pbs_mom, please wait"
+             killall pbs_mom
+             sleep 5
+             pbs_mom -p
+             PBSENVWORK=yes
+
+        elif [ $i = "scheduler" ] || [ $i = "SCHEDULER" ] ; then
+
+             echo "restarting pbs_sched, please wait"
+             killall pbs_sched
+             sleep 5
+             pbs_sched
+             PBSENVWORK=yes
+
+        elif [ $i = "server" ] || [ $i = "SERVER" ] ; then
+
+             echo "restarting pbs_server, please wait"
+             qterm -t quick
+             sleep 5
+             pbs_server
+             PBSENVWORK=yes
+
+        fi
+
+    done
+
+	;;
+
+esac
+
+if [ $PBSENVWORK = no ] ; then
+	echo "Usage: [start|stop|restart] [mom|server|scheduler]*" 
+fi
+
+echo "-->> Done with $0 $1"

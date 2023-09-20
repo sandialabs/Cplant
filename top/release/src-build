@@ -1,0 +1,261 @@
+#! /bin/bash
+
+# script for building a Cplant/source release
+# we use the files begin_comment, end_comment, release-date,
+# version and license
+# this script copies the checked out repository tree (you check out
+# by hand the parts you want for the src dist), adds some
+# release/licensing info to the Cplant source files (it excludes
+# source files that seemed to be owned by other interests from 
+# this "tagging") and removes the CVS dirs
+# in the copy (it does not alter the original repository). the copy
+# is called "../../top-release", which may then be archived...
+# the following checkouts are recommended for a src release:
+#  -- top
+#  -- bench
+#  -- linux-patches
+#  -- lanai
+#  -- man
+#  -- latex
+
+# to build a binary distribution, compile the linux binaries 
+# and the MCP
+# and then use make-tbal
+
+function visit()
+{
+  for file in "$@" ; do
+     if [ ! -d "$file" ] ; then
+#       echo $file
+       extension=${file##*.}
+
+       if [ $extension = c ] || [ $extension = h ] || [ $extension = S ] ; then
+         exclude="no"
+         for fname in $file_exclusion_list ; do
+           if [ "$cplant"/top-release/"$fname" = "$PWD"/"$file" ] ; then
+             exclude="yes"
+           fi
+         done
+
+         if [ $exclude != "yes" ] ; then
+#          echo "copying release data to $file"
+           cp $file $release_dir/tmpfile
+           cat $begin_comment $version $datefile $license $end_comment $release_dir/tmpfile > $file
+         else 
+           echo "excluding file \"$file\""
+         fi
+       fi
+     else
+       exclude="no"
+       for dir in $dir_exclusion_list ; do
+#         if [ $file = $dir ] ; then
+
+#echo "-----------------------------------one"
+#         echo "$cplant"/top-release/"$dir"
+#         echo "$PWD"/"$file"
+#echo "-----------------------------------two"
+         if [ "$cplant"/top-release/"$dir" = "$PWD"/"$file" ] ; then
+           exclude="yes"
+         fi
+       done
+         if [ $exclude != "yes" ] ; then
+           echo "visiting $PWD/$file"
+           cd $file
+           rm -rf CVS
+           visit $(ls)
+           cd ..
+         else
+           echo "excluding directory \"$file\""
+         fi
+     fi
+  done
+}
+
+function rmCVS()
+{
+  for file in "$@" ; do
+     if [ -d "$file" ] ; then
+       echo "removing CVS dir in $PWD/$file"
+       cd $file
+       rm -rf CVS
+       rmCVS $(ls)
+       cd ..
+     fi
+  done
+}
+
+dir_exclusion_list="release compute/test/current/mplinpack compute/test/current/nas compute/OS/Myrinet/lib compute/OS/Myrinet/include compute/lib/mpi compute/lib/mpich-1.2.0 IO/util/nexus/rpc IO/util/nexus/tests IO/util/nexus/tools IO/util/nexus/include/rpc"
+file_exclusion_list="compute/OS/Myrinet/rtscts/myri.h compute/OS/Myrinet/rtscts/myri.c compute/OS/Myrinet/rtscts/mlanai.c compute/OS/Myrinet/rtscts/init.c IO/util/nexus/include/queue.h IO/util/nexus/fs/nfs/clnt/client.c IO/util/nexus/cmn/heap.c"
+
+release_dir=$PWD
+
+cd ../..
+cplant=$PWD
+cd $release_dir
+
+begin_comment=$release_dir/begin_comment
+end_comment=$release_dir/end_comment
+license=$release_dir/license
+version=$release_dir/version
+datefile=$release_dir/release-date
+
+#this one prepends stuff to date...
+#echo " * `date '+%B %d, %Y'`" > $datefile
+#date '+%B %d, %Y' > $datefile
+
+if [ ! -e $begin_comment ] ; then
+  echo "cannot build release w/o begin_comment file"
+  exit 1
+fi
+
+if [ ! -e $end_comment ] ; then
+  echo "cannot build release w/o end_comment file"
+  exit 1
+fi
+
+if [ ! -e $datefile ] ; then
+  echo "cannot build release w/o date file"
+  exit 1
+fi
+
+if [ ! -e $license ] ; then
+  echo "cannot build release w/o license file"
+  exit 1
+fi
+
+if [ ! -e $version ] ; then
+  echo "cannot build release w/o version info file"
+  exit 1
+fi
+
+cat $license
+cat $version
+cat $datefile
+
+#if [ -z $1 ] ; then
+#  echo "Cannot build release from null directory."
+#  exit 1
+#fi
+
+#if [ ! -e $1 ] || [ ! -d $1 ] ; then
+#  echo "Cannot find a directory named $1." 
+#  exit 1
+#fi
+
+echo ""
+echo "Current version string:"
+echo "---------------------------------------"
+cat $version
+echo "---------------------------------------"
+echo ""
+
+echo "Generate a new version string? (yes,no)"
+read newstr
+if [ $newstr = "yes" ] ; then
+  echo ""
+  echo "Enter the new version string:"
+  read newstr
+  echo ""
+  echo "Use" 
+  echo ""
+  echo \"$newstr\" 
+  echo ""
+  echo "as the new version string and overwrite the old"
+  echo "version string after copying it to version.bak ? (yes,no)"
+  read useit
+  if [ $useit = "yes" ] ; then
+    cp $version $release_dir/version.bak
+    echo $newstr > $version
+  else
+    echo ""
+    echo "Well, get back to me when you've made up your mind."
+    exit 1
+  fi
+else
+  echo ""
+  echo "WARNING: Building release w/ old version string."
+  echo "         Do you want to continue? (yes,no)"
+  read cont
+  if [ $cont != "yes" ] ; then
+    echo "OK, get back to me when you've made up your mind."
+    exit 1
+  fi
+fi
+
+echo ""
+echo "Date string :"
+echo "---------------------------------------"
+cat $datefile
+echo "---------------------------------------"
+echo ""
+
+echo "Is this the right date to use? (yes,no)"
+read useit
+if [ $useit != "yes" ] ; then
+  echo ""
+  echo "OK, get back to me when you've fixed the"
+  echo "problem with the date."
+  echo ""
+  exit 1
+fi
+
+echo ""
+echo "Current license :"
+echo "---------------------------------------"
+cat $license
+echo "---------------------------------------"
+echo ""
+
+echo "Use the above license? (yes,no)"
+read useit
+if [ $useit != "yes" ] ; then
+  echo ""
+  echo "OK, get back to me when you've modified the"
+  echo "license in $license."
+  echo ""
+  exit 1
+fi
+
+echo ""
+echo "Ready to copy cvs tree to new release tree."
+echo "Do you want to continue? (yes,no)"
+read useit
+if [ $useit != "yes" ] ; then
+  echo ""
+  echo "OK, get back to me when you're ready to proceed."
+  echo ""
+  exit 1
+fi
+
+if [ -e ../../top-release ] ; then
+  echo ""
+  echo "Removing old top-release (../../top-release)."
+  rm -rf ../../top-release
+fi
+
+echo ""
+echo "Copying directory tree into new top-release"
+cp -r ../../top ../../top-release
+echo ""
+
+cd ../../top-release
+rm -rf CVS
+
+rmCVS $(ls)
+
+echo "-------------------------------------------------"
+
+visit  $(ls)
+
+rm $release_dir/tmpfile
+
+echo ""
+echo "Release placed in ../../top-release"
+echo "If a new release was made successfully"
+echo "you may want to cvs commit the following:"
+echo ""
+echo "      $datefile"
+echo "      $license"
+echo "      $version"
+echo ""
+echo ""

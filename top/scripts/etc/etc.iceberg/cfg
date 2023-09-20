@@ -1,0 +1,19 @@
+##### Bebop,Service,PBS
+ node.n-7.i-3 : local_disk portals user_env=bebopd pbs-env=bebopd-support-only
+##### bebopd arguments
+ bebopd_arguments :  -PBSupdate -PBSlist 0..2 -d
+
+##### PBS server node
+ node.n-7.i-2 : local_disk portals default_route=134.253.138.254 pbs-env=scheduler pbs-env=server mount_nfs=sana017g:/vol/cplant_home/home,/home user_env=yod enfs_client=10.0.0.8
+
+##### Login nodes
+ node.n-7.i-4 node.n-7.i-5 node.n-7.i-6 node.n-7.i-7 node.n-7.i-8 : local_disk portals default_route=134.253.138.254 pbs-env=mom mount_nfs=sana017g:/vol/cplant_home/home,/home user_env=yod enfs_client=10.0.0.8 ntpd lbcd sshd
+
+##### IO proxy node
+ node.n-7.i-1 : ram_disk portals set_mtu=eth1,9000 enfsd_config=172.28.3.1:/enfs/tmp,/cnx/endeavor/enfs/tmp 
+
+##### compute nodes
+ default : ram_disk portals enfs_client=10.0.0.8 user_env=pct
+
+##### disabled nodes
+# node.n-4.i-0 : disabled

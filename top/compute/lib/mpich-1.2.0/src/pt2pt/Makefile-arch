@@ -1,0 +1,83 @@
+#
+# $Id: Makefile-arch,v 1.4.2.1 2002/04/09 17:16:40 galagun Exp $
+#
+
+include ../../../../../../Makefile-common
+ 
+CFLAGS  +=  -DHAVE_MPICHCONF_H -DMPID_DEVICE_CODE
+
+ifeq ($(OS),osf)
+CFLAGS  +=  -DFORTRANUNDERSCORE
+endif
+
+ifeq ($(OS),linux)
+ifeq ($(NO2UNDERSCORE),yes)
+  include ../../../Makefile-no2underscore
+endif
+ifeq ($(NO2UNDERSCORE),no)
+  CFLAGS  +=  -DFORTRANDOUBLEUNDERSCORE
+endif
+ifndef NO2UNDERSCORE
+  CFLAGS  +=  -DFORTRANDOUBLEUNDERSCORE
+endif
+ifeq ($(PMPI),yes)
+  CFLAGS  +=  -DMPI_BUILD_PROFILING
+endif
+endif
+ 
+INCLUDEDIRS += -I../ -I../../../build/cplant/p30/include -I../../../include \
+               -I../../../src/util -I../../../mpid/$(MPI_P3_ADI) -I../../coll \
+               -I../../../../p30/include
+
+CSOURCES     = mperror.c isend.c irecv.c wait.c test.c \
+               address.c cancel.c commreq_free.c probe.c \
+               start.c testany.c waitall.c send.c recv.c \
+	       sendrecv.c iprobe.c testall.c waitany.c create_recv.c \
+	       create_send.c sendrecv_rep.c getcount.c \
+	       bsend.c ssend.c rsend.c bufattach.c buffree.c \
+	       ibsend.c issend.c irsend.c \
+	       waitsome.c testsome.c testcancel.c bsend_init.c \
+	       rsend_init.c ssend_init.c sendutil.c \
+	       startall.c \
+	       type_commit.c type_contig.c \
+	       type_extent.c type_free.c type_hind.c \
+	       type_hvec.c type_ind.c type_lb.c type_size.c \
+	       type_struct.c type_ub.c type_util.c \
+	       type_vec.c getelements.c pack_size.c pack.c unpack.c
+
+WSOURCES     = isendf.c irecvf.c waitf.c testf.c \
+	       addressf.c cancelf.c commreqfreef.c probef.c \
+	       startf.c testanyf.c waitallf.c sendf.c recvf.c \
+	       sendrecvf.c iprobef.c testallf.c waitanyf.c create_recvf.c \
+	       create_sendf.c sendrecvrepf.c getcountf.c \
+	       bsendf.c ssendf.c rsendf.c bufattachf.c buffreef.c \
+	       ibsendf.c issendf.c irsendf.c waitsomef.c testsomef.c \
+	       testcancelf.c bsend_initf.c rsend_initf.c ssend_initf.c \
+	       startallf.c \
+	       type_commitf.c type_contigf.c \
+	       type_extentf.c type_freef.c type_hindf.c \
+	       type_hvecf.c type_indf.c type_lbf.c type_sizef.c \
+	       type_structf.c type_ubf.c type_vecf.c getelementsf.c \
+	       pack_sizef.c packf.c unpackf.c
+
+COBJECTS     = $(CSOURCES:.c=.o)
+
+WOBJECTS     = $(WSOURCES:.c=.o)
+
+ALLOBJECTS   = $(COBJECTS) $(WOBJECTS)
+
+LIBDIR   = ../../../$(CPLANT_ARCH)-$(OS)
+LIB      = $(LIBDIR)/libmpi.a
+ 
+all: $(LIB)
+ 
+$(LIB): $(LIBDIR) $(LIB)($(COBJECTS)) $(LIB)($(WOBJECTS))
+ 
+$(LIBDIR):
+	@-mkdir $(LIBDIR)
+ 
+$(COBJECTS) $(WOBJECTS): %.o : ../%.c
+	$(CC) $(CFLAGS) $(INCLUDEDIRS) -c $<
+
+clean:
+	@rm -f $(ALLOBJECTS)

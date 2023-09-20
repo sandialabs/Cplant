@@ -1,0 +1,41 @@
+<!--
+    $Id: portals.sgml,v 1.1.2.2 2002/10/04 16:27:36 jrstear Exp $
+-->
+
+<!doctype qwertz system>
+
+<manpage title="portals" sectnum="1M" date='"28 August 2002"'
+    footer='"Cplant"' main='"Cplant System Manager&quot;s Manual"'>
+
+
+<sect1> NAME
+    <p>
+    <bf/portals/ &mdash Cplant portals startup script
+    </p>
+
+<sect1> SYNOPSIS
+    <p>
+    <bf/portals/ start|stop|restart &lsqb;ethernet&rsqb;
+    </p>
+
+<sect1> DESCRIPTION<p>
+    <bf/portals/ is the script in the init.d/ directory which is used
+    to start or stop cplant portals on a node.  
+    
+    Without the "ethernet" argument, it loads cplant's custom MCP and
+    all cplant kernel modules.
+    
+    It "ethernet" is given as an argument, the script will not attempt
+    to load the custom cplant mcp, and the rtscts_eth.mod kernel
+    module will be loaded (instead of rtscts.mod).  By default it will
+    use the myri0 device, if a different device should be used 
+    (like if you're running over standard Ethernet ie eth1), just
+    supply the device name after a comma (ie- ethernet,eth1).
+
+<sect1> SEE ALSO
+    <p>
+    <bf>cfg</bf>, <bf>cplant</bf>,
+    Guide to building and installing Cplant
+    </p>
+
+</manpage>

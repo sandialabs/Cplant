@@ -1,0 +1,60 @@
+<!--
+    $Id: PtlEQCount.sgml,v 1.2 2001/01/11 00:22:11 rbbrigh Exp $
+-->
+
+<!doctype qwertz system>
+
+<manpage title="PtlEQCount" sectnum="3" date='"04 Jan 2001"'
+    footer='"Portals 3.0"' main='"Portals 3.0 Library"'>
+
+<sect1> NAME
+    <p>
+    <bf/PtlEQCount/ &mdash Discover the number of events in an event
+    queue
+    </p>
+
+<sect1> SYNOPSIS
+    <p>
+     #include "p30.h"
+
+     int PltEQCount( ptl_handle_eq_t eventq, ptl_size_t* count );
+    </p>
+
+<sect1> PARAMETERS
+    <p>
+     <descrip>
+     <tag /eventq/
+     event queue handle
+     <tag /count/
+     on successful return, this location will contain the number of
+     events in the event queue
+     </descrip>
+
+<sect1> DESCRIPTION
+    <p> 
+    <bf /PtlEQCount/ returns the number of events in an event queue that
+    have not been consumed.
+    </p>
+
+<sect1> RETURN VALUES
+    <p>
+    <descrip>
+    <tag /PTL_OK/
+    success
+    <tag /PTL_NOINIT/
+    Portals API has not been successfully initialized
+    <tag /PTL_INV_EQ/
+    <bf /eventq/ is not a valid event queue handle.
+    <tag /PTL_SEGV/
+    <bf /count/ is not a legal address.
+    </descrip>
+    </p>
+
+<sect1> SEE ALSO
+    <p>
+    <bf /PtlEQAlloc(3)/, <bf /PtlEQFree(3)/, <bf /PtlEQGet(3)/,
+    <bf /PtlEQWait(3)/ <newline>
+    <bf /Portals 3.0 Message Passing Interface document/
+    </p>
+
+</manpage>

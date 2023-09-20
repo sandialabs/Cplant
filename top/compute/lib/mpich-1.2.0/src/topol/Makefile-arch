@@ -1,0 +1,63 @@
+#
+# $Id: Makefile-arch,v 1.4.2.1 2002/04/09 17:16:41 galagun Exp $
+#
+
+include ../../../../../../Makefile-common
+ 
+CFLAGS  +=  -DHAVE_MPICHCONF_H -DMPID_DEVICE_CODE
+
+ifeq ($(OS),osf)
+CFLAGS  +=  -DFORTRANUNDERSCORE
+endif
+
+ifeq ($(OS),linux)
+ifeq ($(NO2UNDERSCORE),yes)
+  include ../../../Makefile-no2underscore
+endif
+ifeq ($(NO2UNDERSCORE),no)
+  CFLAGS  +=  -DFORTRANDOUBLEUNDERSCORE
+endif
+ifndef NO2UNDERSCORE
+  CFLAGS  +=  -DFORTRANDOUBLEUNDERSCORE
+endif
+ifeq ($(PMPI),yes)
+  CFLAGS  +=  -DMPI_BUILD_PROFILING
+endif
+endif
+ 
+INCLUDEDIRS += -I../ -I../../../build/cplant/p30/include -I../../../include \
+               -I../../../src/util -I../../../mpid/$(MPI_P3_ADI) -I../../coll \
+               -I../../../../p30/include
+
+CSOURCES    = topo_test.c graphdimsget.c graph_get.c cartdim_get.c \
+              cart_get.c dims_create.c cart_map.c graph_map.c cart_create.c \
+              graphcreate.c cart_rank.c cart_coords.c graphnbrcnt.c \
+              graph_nbr.c cart_shift.c cart_sub.c topo_util.c
+
+WSOURCES    = topo_testf.c graphdimsgtf.c graph_getf.c cartdim_getf.c \
+              cart_getf.c dims_createf.c cart_mapf.c graph_mapf.c \
+              cart_createf.c \
+              graphcreatef.c cart_rankf.c cart_coordsf.c graphnbrcntf.c \
+              graph_nbrf.c cart_shiftf.c cart_subf.c
+
+COBJECTS     = $(CSOURCES:.c=.o)
+
+WOBJECTS     = $(WSOURCES:.c=.o)
+
+ALLOBJECTS   = $(COBJECTS) $(WOBJECTS)
+
+LIBDIR   = ../../../$(CPLANT_ARCH)-$(OS)
+LIB      = $(LIBDIR)/libmpi.a
+ 
+all: $(LIB)
+ 
+$(LIB): $(LIBDIR) $(LIB)($(COBJECTS)) $(LIB)($(WOBJECTS))
+ 
+$(LIBDIR):
+	@-mkdir $(LIBDIR)
+ 
+$(COBJECTS) $(WOBJECTS): %.o : ../%.c
+	$(CC) $(CFLAGS) $(INCLUDEDIRS) -c $<
+
+clean:
+	@rm -f $(ALLOBJECTS)

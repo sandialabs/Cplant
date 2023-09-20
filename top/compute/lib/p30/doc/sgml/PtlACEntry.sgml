@@ -1,0 +1,52 @@
+<!--
+    $Id: PtlACEntry.sgml,v 1.1 2001/01/10 21:42:52 rbbrigh Exp $
+-->
+
+<!doctype qwertz system>
+
+<manpage title="PtlACEntry" sectnum="3" date='"04 Jan 2001"'
+    footer='"Portals 3.0"' main='"Portals 3.0 Library"'>
+
+<sect1> NAME
+    <p>
+    <bf/PtlACEntry/ &mdash Update a Portals 3.0 access control entry
+    </p>
+
+<sect1> SYNOPSIS
+    <p>
+     #include "p30.h"
+
+     int PtlACEntry( ptl_handle_ni_t interface, ptl_ac_index_t index,
+                     ptl_process_id_t matchid, ptl_pt_index_t portal );
+    </p>
+
+<sect1> DESCRIPTION
+    <p>
+    <bf /PtlACEntry/ can be used to update an entry in the
+    access control table for an interface.
+    </p>
+
+<sect1> RETURN VALUES
+    <p>
+    <descrip>
+     <tag /PTL_OK/
+     on success
+     <tag /PTL_NOINIT/
+     library has not been successfully initialized
+     <tag /PTL_INV_NI/
+     invalid network interface handle
+     <tag /PTL_AC_INV_INDEX/
+     invalid access control table index
+     <tag /PTL_INV_PROC/
+     invalid process identifier
+     <tag /PTL_PT_INV_INDEX/
+     invalid portal table index
+    </descrip>
+    </p>
+
+<sect1> SEE ALSO
+    <p>
+    <bf /Portals 3.0 Message Passing Interface document/
+    </p>
+
+</manpage>

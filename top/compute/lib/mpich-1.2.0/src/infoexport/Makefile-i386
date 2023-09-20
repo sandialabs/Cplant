@@ -1,0 +1,115 @@
+# Generated automatically from Makefile.in by configure.
+# Make file for the MPI DLL
+CC          = cc
+prefix      = /home/u/rbbrigh/cplant/src/new/top/compute/lib/mpi
+top_srcdir  = /home/u/rbbrigh/cplant/src/new/top/compute/lib/mpi
+srcdir      = /home/u/rbbrigh/cplant/src/new/top/compute/lib/mpi/src/infoexport
+libbuild_dir      = /Net/pecos/puma/home/rbbrigh/cplant/src/dnsands/mpich-1.2.0/lib
+
+DEFS        = -DHAVE_CONFIG_H ${MPIPROFILE} -I. -I${srcdir} -I/home/u/rbbrigh/cplant/src/new/top/compute/lib/mpi/include -I/Net/pecos/puma/home/rbbrigh/cplant/src/dnsands/mpich-1.2.0/include -I/Net/pecos/puma/home/rbbrigh/cplant/src/dnsands/mpich-1.2.0/mpid/ch_p4 -I/home/u/rbbrigh/cplant/src/new/top/compute/lib/mpi/mpid/ch_p4
+CFLAGS      = -g   -DUSE_SIZE_T_FOR_SOCKLEN_T -DUSE_U_INT_FOR_XDR -DFORTRANUNDERSCORE -DHAVE_MPICHCONF_H
+
+VPATH=.:$(srcdir)
+
+SHELL       = /bin/sh
+
+.SUFFIXES:
+.SUFFIXES: .o .c .f
+
+
+# Target library
+LIB = libtvmpich.so
+
+#
+# The rules for regenerating things
+#
+.c.o:
+	-${CC} ${DEFS} ${CFLAGS} ${INCLUDES} -c $<
+
+# Compilers and flags
+
+REMOVER = /bin/rm -f
+LN  = ln -s
+CPP = /lib/cpp
+
+# *******************************************************************
+# Set up flags to build position independent code and link a shared
+# library. Very target specific
+#	
+
+LINKER = ${CC} ${CFLAGS} 
+LDFLAGS= -G
+
+# *******************************************************************
+# The actual definitions.  This is the part which must be maintained.
+# *******************************************************************
+
+#
+# Objects to build
+#
+SRCS		= dll_mpich.c
+OBJS		= dll_mpich.o
+
+all update:	${LIB}
+
+#
+# For the moment, we build both with the original makefile, and with
+# the makesharedlib script
+# Use so* to handle so.<versioninfo>
+#
+${libbuild_dir}/${LIB}: ${LIB}
+	@-if test -f ${LIB} ; then cp ${LIB} ${libbuild_dir}/${LIB} ; fi
+	 -if test -f ${LIB} ; then cp libtvmpich.so* ${libbuild_dir} ; fi
+
+# Because this is an optional library, we don't stop if there is an error
+# The following works for Solaris and some other systems
+#	${LINKER} ${LDFLAGS} -o ${LIB} ${OBJS} ${LIBS} ; \
+# Several makes could not handle these expansions, so we have replaced the
+# filenames directly
+#${LIB}: ${OBJS}
+libtvmpich.so: dll_mpich.o
+	-if test "ignore" != "ignore" ; then \
+	${REMOVER} ${LIB}; \
+	( CC="${CC}" ; export CC ; CLINKER="cc" ; export CLINKER ; \
+	${top_srcdir}/util/makesharedlib -lib=libtvmpich.a -obj="${OBJS}" \
+		 -kind=ignore -local ; ) fi
+
+compile: ${OBJS}
+
+# ****************************************************************
+# Some other entrypoints.
+# ****************************************************************
+MPI_COBJECTS = 
+MPI_CSOURCES = 
+MPI_TSOURCES = 
+MPI_WSOURCES = 
+MPI_WOBJECTS = 
+
+MPI_SOURCES = ${MPI_CSOURCES} ${MPI_WSOURCES}
+MPI_OBJECTS = ${MPI_COBJECTS} ${MPI_WOBJECTS}
+
+default: ${libbuild_dir}/${LIB}
+
+profile: 
+
+# default_all is the same as default, but without the RANLIB.  This
+# can speed up the build (ranlibs can take a LONG time).  profile_all 
+# is the same, but for the profile library
+default_all: ${libbuild_dir}/${LIB}
+profile_all: ${MPI_OBJECTS}
+wrapperlib: ${MPI_WOBJECTS}
+
+source_names:
+	@echo ${MPI_CSOURCES}
+
+clean:
+	-${REMOVER} *.o
+	-${REMOVER} *.i
+	-${REMOVER} *.s
+	-${REMOVER} *.cxx.log
+	-${REMOVER} *.cxx.errors
+	-${REMOVER} ${LIB}
+	-${REMOVER} libtvmpich.so*
+	-${REMOVER} ${srcdir}/*.o
+
+rebuild: clean ${LIB}

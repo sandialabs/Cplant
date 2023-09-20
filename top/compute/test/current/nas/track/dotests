@@ -1,0 +1,120 @@
+#!/bin/bash 
+#
+#  The tests to be run are listed in suite.def, which is
+#  read by the makefile that builds the tests
+#
+
+#
+# build test suite
+#
+#NASDIR=/machines/compile/usr/local/lafisk/Cplant/top/compute/test/current/nas
+#SUITE=$NASDIR/config/suite.def
+#EXECS=$NASDIR/binDU
+#
+
+#
+# run tests, save results to plottable text file
+#
+EXECS=../binDU
+RESULTS=../results
+PLOTS=../plots
+RUN=/cplant/bin/yod
+
+CURRENT_TEST_ID=0
+
+#
+# signal handler
+#
+SIGTERM=15
+SIGINT=2
+
+abortTests()
+{
+    echo "Aborting tests"
+    if [ $CURRENT_TEST_ID != 0 ] ; then
+       echo "kill -2 $CURRENT_TEST_ID"
+       kill -2 $CURRENT_TEST_ID
+       mv $RESULTS/$TNAME.out $RESULTS/bad.$TNAME.out
+    fi
+    exit
+}
+
+trap abortTests $SIGINT $SIGTERM
+
+#
+# verifySuccess output-file-name
+#
+verifySuccess()
+{
+    if grep -q SUCCESS $1; then
+        echo DONE: successful
+        TESTOK=1
+    else
+        echo DONE: FAILURE
+        TESTOK=0
+    fi
+}
+#
+# testSuite  test-name  test-class  test-sizes
+#
+#
+#    we run one test at a time to get the best performance possible
+#
+testSuite()
+{
+TESTNAME=$1
+TESTCLASS=$2
+TESTSIZES=$3
+PASS=0
+
+echo "Running $TESTNAME tests:"
+
+for i in $TESTSIZES ;
+  do
+    TNAME=$TESTNAME.$TESTCLASS.$i
+
+    echo ">> $i node test"
+
+    $RUN -sz $i -batch $EXECS/$TNAME > $RESULTS/$TNAME.out 2>&1  &
+
+    CURRENT_TEST_ID=$!
+
+    wait
+
+    CURRENT_TEST_ID=0
+
+    if grep -q SUCCESS $RESULTS/$TNAME.out ; then
+        echo ">> DONE: successful"
+        PASS=1
+    else
+        echo ">> DONE: failure"
+        mv $RESULTS/$TNAME.out $RESULTS/bad.$TNAME.out
+    fi
+
+    echo
+  done
+
+if [ $PASS = 1 ] ; then
+    echo "Generate plot data for $TESTNAME tests"
+    getResults $TESTNAME $TESTCLASS $RESULTS $PLOTS
+    echo
+fi
+}
+
+################################################################################
+# the tests
+################################################################################
+#
+#        TEST  CLASS  SIZES
+#
+export MPI_HEAP_SIZE=10000000
+
+testSuite  ep    A    "2 4 8 16 32"
+testSuite  mg    A    "2 4 8 16 32"
+testSuite  cg    A    "2 4 8 16 32"
+testSuite  is    A    "2 4 8 16 32"
+testSuite  lu    A    "2 4 8 16 32"
+testSuite  ft    A    "2 4 8 16 32"
+testSuite  sp    A    "4 9 16 36 49"
+testSuite  bt    A    "4 9 16 36 49" 
+

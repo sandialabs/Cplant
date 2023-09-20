@@ -1,0 +1,78 @@
+#!/bin/sh
+
+TMPFILE=/tmp/bootptab.tmp.$$
+BOOTPTAB=/etc/bootptab
+
+if [ $# -lt 1 ]; then
+cat 1>&2 << EOM
+Usage:
+	$0 Node-Number [-mac MAC-addr] [-kernel kernel file]
+	New nodes default to using /boot/alpha/vmlinux
+EOM
+exit
+fi
+
+
+#
+# Fix the node number to the full length (padded)
+#
+node="`echo $1 | /bin/awk '{printf "%04d", $1}'`"
+node_info="`/bin/grep '^node-'$node $BOOTPTAB | /bin/sed -n '1p' `"
+shift
+
+#
+# If the node is not already in the database, fill in the fields with
+# a reasonable default configuration.  Otherwise, fetch the old values
+# and retain them.
+#
+if [ "$node_info" = "" ]; then
+  macaddr=""
+  kf="default"
+  kernel="tc=.21143"
+else
+  macaddr="`echo $node_info | /usr/bin/cut -d: -f 2 | /usr/bin/cut -d= -f2`"
+  kernel="`echo $node_info | /usr/bin/cut -d: -f3- | /bin/sed 's/:$//' `"
+  kf="`echo $kernel | /usr/bin/cut -d: -f1 | /usr/bin/cut -d= -f2`"
+  old_macaddr=$macaddr
+  old_kernel=$kernel
+fi
+
+
+while [ $# -gt 0 ]; do
+  if [ "$1" = "-mac" ]; then
+    macaddr="`echo $2 | /bin/sed 's/[^0-9A-Fa-f]//g'`"
+    shift ; shift
+  fi
+
+  if [ "$1" = "-kernel" ]; then
+    if [ "$2" = "default" ]; then
+	kf="default"
+	kernel="tc=.21143"
+    else
+	kf="$2"
+	kernel="bf=$2:tc=.alpha"
+    fi
+    shift ; shift
+  fi
+
+  if [ "$1" = "-remove" ]; then
+    echo "Removing node $node: ha=$macaddr kf=$kernel"
+    /bin/grep -v '^node-'${node} $BOOTPTAB > $TMPFILE
+    mv $TMPFILE $BOOTPTAB
+    exit
+  fi
+done
+
+if [ "$macaddr" = "" -o "$kf" = "" ]; then
+  echo "MAC address or kernel must be specified for node $node"
+  exit
+fi
+
+echo "Node ${node}: kernel=$kf mac=$macaddr"
+
+/bin/grep -v '^node-'${node}  $BOOTPTAB > $TMPFILE
+echo "node-${node}:ha=${macaddr}:${kernel}:" >> $TMPFILE
+
+mv $TMPFILE $BOOTPTAB
+#chgrp puma /etc/bootptab
+chmod g+w /etc/bootptab

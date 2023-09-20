@@ -1,0 +1,117 @@
+    GEMM compatible routine.       98/09/27
+
+                                by Kazushige Goto
+					<goto@statabo.rim.or.jp>
+
+Explanation of containing files.
+
+COPYING         : GPL2 licence
+Makefile 
+README          : This file.
+gemm_k.S	: main assembler routine. It's very fast.
+		  Including technical document to achieve fast routine.
+		  Also, it includes C version routine.
+gemm.c		: Front end routine.
+
+
+** Discriptions **
+
+This package includes gemm(dgemm, sgemm) compatible routine both C and
+Fortran version. and this GEMM routine is optimzed for Alpha 21164(A).
+It takes about 20 to 30 times faster than generic GEMM routine with
+gcc. The following table shows my routine's ability.
+
+   table 1.The ability of FORTRAN SGEMM routine
+			(21164A 600MHz + 2MB L3 cache, MFLOPS)
+	   ---------------------------------------------
+	   Matrix Sizes | N x N | N x T | T x N | T x T
+	   -------------+-------+-------+-------+-------
+	     200 x  200 |  952  |  956  |  952  |  941
+	     400 x  400 |  955  |  941  |  948  |  941
+	     600 x  600 |  954  |  954  |  954  |  947
+	    1000 x 1000 |  957  |  951  |  951  |  942
+	    2000 x 2000 |  955  |  953  |  949  |  946
+	    3000 x 3000 |  949  |  952  |  949  |  945
+	    4000 x 4000 |  953  |  954  |  948  |  947
+	   ---------------------------------------------
+                    note: There are maximal value for several times.
+
+
+   table 2.The ability of FORTRAN DGEMM routine
+			(21164A 600MHz + 2MB L3 cache, MFLOPS)
+	   ---------------------------------------------
+	   Matrix Sizes | N x N | N x T | T x N | T x T
+	   -------------+-------+-------+-------+-------
+	     200 x  200 |  800  |  842  |  842  |  800
+	     400 x  400 |  815  |  810  |  710  |  815
+	     600 x  600 |  815  |  809  |  812  |  817
+	    1000 x 1000 |  819  |  817  |  808  |  820
+	    2000 x 2000 |  806  |  811  |  808  |  803
+ 	    3000 x 3000 |  798  |  804  |  804  |  803
+	   ---------------------------------------------
+                    note: There are maximal value for several times.
+
+
+** Usage **
+
+<Fortran Version>
+
+It's entirely comatible with dgemm.f(sgemm.f) and please type "make".
+My object file name is "libgemm.a".  So you must remove original
+dgemm.f(sgemm.f) and link libgemm.a instead.  If you type "make
+check1", you can get how speed my routine runs(please change size.h
+file).
+
+<C version>
+
+C version's dgemm is similar to Fotran's.  To make C version dgemm,
+please check Makefile.
+
+#CVERSION = -DC_VERSION
+
+to
+
+CVERSION = -DC_VERSION
+
+The interface is
+
+void dgemm(char *TRANSA, char *TRANSB,
+	    int m, int n, int k,
+	    double alpha,
+	    double *a, int lda,
+	    double *b, int ldb,
+	    double beta,
+	    double *c, int ldc);
+
+
+** Compatibility **
+
+I made sure of this routine on Linux/Alpha, but maybe work on Digital
+Unix box. 
+
+Now, I'm trying to work on NT/Alpha.  Acording to the document, it
+seems no serious difference assembler interface between Digital UNIX
+and NT.  But it fails handling of stack.  I don't know why.  Does
+anyone knows??
+
+
+** Distributions  **
+
+Based on GPL2.
+
+If you have any suggestions, comments or questions, please let me know.
+
+
+Special thanks to 
+
+Naohiko Shimizu <nshimizu@et.u-tokai.ac.jp>
+               for advising MAF and prefetch strategy.
+
+MAENO Toshinori <tmaeno@hpcl.titech.ac.jp>
+               for advising internal block copy method.
+
+Robert Williams <bob@bob.usuf2.usuhs.mil>
+               for checking and benchmarking my routine.
+
+
+                                               goto@statabo.rim.or.jp

@@ -1,0 +1,48 @@
+#
+# $Id: Makefile-i386,v 1.1 2001/02/12 22:05:01 rbbrigh Exp $
+#
+
+include ../../../../../../Makefile-common
+
+CFLAGS      += #-DDEBUG
+
+INCLUDEDIRS  = -I$(CPLANT_TOP)/compute/lib/p30/include
+
+CSOURCES     = eqsearch.c
+
+COBJECTS     = $(CSOURCES:.c=.o)
+
+LIBDIR       = ../../lib/$(CPLANT_ARCH)-$(OS)
+LIB          = $(LIBDIR)/libeqsearch.a
+
+CTESTSOURCES     = eqsearchtest.c
+CTESTOBJECTS     = $(CTESTSOURCES:.c=.o)
+CTESTEXECS       = $(CTESTSOURCES:.c=)
+
+CTESTINCLUDEDIRS = -I../ $(INCLUDEDIRS)
+CTESTLIBDIRS     = -L$(LIBDIR) -L$(CPLANT_TOP)/compute/lib/p30/lib/$(CPLANT_ARCH)-$(OS)
+CTESTLIBS        = -leqsearch -lp30ip -lp30api -lp30lib -lglib -lpthread
+
+all: $(LIB) $(CTESTEXECS)
+
+$(LIB): $(LIBDIR) $(LIB)($(COBJECTS))
+
+$(LIBDIR):
+	@-mkdir ../../lib
+	@-mkdir $(LIBDIR)
+
+$(COBJECTS): %.o : ../%.c
+	$(CC) $(CFLAGS) $(INCLUDEDIRS) -c $<
+
+$(CTESTOBJECTS): %.o : ../%.c $(LIB)
+	$(CC) $(CFLAGS) $(CTESTINCLUDEDIRS) -c $<
+
+$(CTESTEXECS): % : %.o
+	$(CC) $(CTESTLIBDIRS) -o $@ $^ $(CTESTLIBS)
+
+install uninstall:
+	@$(MAKE) -C ../../../ $@
+
+clean:
+	@rm -f $(CTESTOBJECTS) $(CTESTEXECS) $(COBJECTS) $(LIB)
+

@@ -1,0 +1,110 @@
+.if n .ds Q \&"
+.if t .ds Q ``
+.if n .ds U \&"
+.if t .ds U ''
+.TH INTERJOBBARRIER 3 "20 November 2001" "CPLANT MANPAGE" "Cplant Runtime Libraries"
+.tr \&
+.nr bi 0
+.nr ll 0
+.nr el 0
+.de Pp
+.ie \\n(ll>0 \{\
+.ie \\n(bi=1 \{\
+.nr bi 0
+.if \\n(t\\n(ll=0 \{.IP \\(bu\}
+.if \\n(t\\n(ll=1 \{.IP \\n+(e\\n(el.\}
+.\}
+.el .sp 
+.\}
+.el \{\
+.ie \\nh=1 \{\
+.LP
+.nr h 0
+.\}
+.el .PP 
+.\}
+..
+.SH NAME
+    
+
+.Pp
+CplantInterjobBarrier, CplantInterjobBarrierGrp 
+.br
+CplantBarrierStatus, CplantBarrierStatusGrp
+.SH SYNOPSIS
+    
+
+.Pp
+\fB#include <cplant.h>\fP
+.Pp
+\fBint CplantInterjobBarrier(jobFamilyInfo *\fP\fIotherjob\fP\fB)\fP
+.Pp
+\fBint CplantBarrierStatus(jobFamilyInfo *\fP\fIotherjob\fP\fB)\fP
+.Pp
+\fBint CplantInterjobBarrierGrp(jobFamilyInfo *\fP\fIotherjob\fP\fB, int \fP\fInMembers\fP\fB, int *\fP\fIrankList\fP\fB, int \fP\fItmout\fP\fB)\fP
+.Pp
+\fBint CplantBarrierStatusGrp(jobFamilyInfo *\fP\fIotherjob\fP\fB, int \fP\fInMembers\fP\fB, int *\fP\fIrankList\fP\fB, int \fP\fItmout\fP\fB)\fP
+.SH DESCRIPTION
+    
+
+.Pp
+When a Cplant application spawns a child application, it will probably
+be neccesary to synchronize the two them before message passing can commence.  
+These
+calls can be used to create a non-blocking barrier between two jobs in
+the same family.  (A \fIfamily\fP is all jobs started by one original
+Cplant application and it's descendants.)
+.Pp
+The barrier is implemented through \fByod2\fP, the utility that launched
+both applications and remains running on the service node to service
+their requests.  When \fByod2\fP receives a request from one process in
+a job (call it \fIjob1\fP) to synchronize with another job (\fIjob2\fP),
+it notes that the synchronization is in progress, and replies to \fIjob1\fP
+with this fact.  
+When it receives a request
+from \fIjob2\fP to synchronize with \fIjob1\fP, it notes that the synchronization
+is complete, and replies with this fact to \fIjob2\fP, and notes that it has
+informed \fIjob2\fP that the synchronization is complete.  When the next 
+status request is received from \fIjob1\fP, \fByod2\fP replies
+that the synchronization request is complete.  Now since \fByod2\fP has told
+each job that the synchronization is complete, it forgets about the
+synchronization request.
+.Pp
+This means that the synchronization
+operation is identified by the two job IDs, so only one synchronization
+per job ID pair can be in progress at any time.  Only one process
+in each job should request the synchronization, and only one should
+receive the reply that the synchronization is completed.
+.Pp
+The function \fBCplantInterjobBarrier\fP sends the request to \fByod2\fP
+to provide a synchronziation point for the calling job and the
+\fIotherjob\fP.
+The function \fBCplantBarrierStatus\fP requests the current status
+of the effort to synchronize with the job \fIotherjob\fP.
+.Pp
+The functions \fBCplantInterjobBarrierGrp\fP and \fBCplantBarrierStatusGrp\fP
+are collective calls.
+Every process that participates in the synchronization
+request must make the call with the same list of participants.
+\fInMembers\fP is the number of processes participating in the call,
+\fIrankList\fP is the list of participating process ranks, and \fItmout\fP
+is the number of seconds to wait before judging a collective operation
+among the pariticpants to be a failure.  In our implementation of this
+call, the first process in the \fIrankList\fP makes the request to \fByod2\fP
+and broadcasts the results to the others.
+.Pp
+If \fInMembers\fP is zero, or \fIrankList\fP is NULL, then this is taken
+to mean that all processes in the application are participating.
+.SH RETURN VALUE
+    
+
+.Pp
+Both functions return SYNC_COMPLETED if the synchronization is
+complete, SYNC_IN_PROGRESS if the synchronization is in progress,
+or SYNC_ERROR if the synchronization request failed.
+.SH SEE ALSO
+    
+
+.Pp
+\fByod2\fP
+\fBCplantSpawnJob\fP

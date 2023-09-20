@@ -1,0 +1,132 @@
+.if n .ds Q \&"
+.if t .ds Q ``
+.if n .ds U \&"
+.if t .ds U ''
+.TH CPLANTJOBSIZE 3 "20 November 2001" "CPLANT MANPAGE" "Cplant Runtime Libraries"
+.tr \&
+.nr bi 0
+.nr ll 0
+.nr el 0
+.de Pp
+.ie \\n(ll>0 \{\
+.ie \\n(bi=1 \{\
+.nr bi 0
+.if \\n(t\\n(ll=0 \{.IP \\(bu\}
+.if \\n(t\\n(ll=1 \{.IP \\n+(e\\n(el.\}
+.\}
+.el .sp 
+.\}
+.el \{\
+.ie \\nh=1 \{\
+.LP
+.nr h 0
+.\}
+.el .PP 
+.\}
+..
+.SH NAME
+    
+
+.Pp
+CplantJobSize, CplantJobNidMap,  CplantJobPidMap, CplantJobStatus 
+.SH SYNOPSIS
+    
+
+.Pp
+\fB#include <cplant.h>\fP
+.Pp
+\fBint CplantJobSize(int \fP\fIjob-id\fP\fB)\fP    
+.br
+\fBint CplantJobNidMap(int \fP\fIjob-id\fP \fB, int **\fP \fInid-map\fP \fB)\fP   
+.br
+\fBint CplantJobPidMap(int \fP\fIjob-id\fP \fB, int **\fP \fIpid-map\fP \fB)\fP   
+.br
+\fBint CplantJobStatus(int \fP\fIjob-id\fP \fB, job_info **\fP \fIstatus\fP \fB)\fP   
+.br
+.SH DESCRIPTION
+    
+
+.Pp
+These functions may be called by Cplant parallel applications to obtain 
+information about any running Cplant job.  The information is obtained by
+sending a request to the \fBbebopd\fP.
+.Pp
+The function \fBCplantJobSize\fP returns the number of processes in the
+Cplant application identified by job number \fIjob-id\fP.
+.Pp
+The functions \fBCplantJobNidMap\fP and \fBCplantJobPidMap\fP allocate
+memory for a physical node ID map and portals process ID map respectively
+for the
+Cplant application identified by job number \fIjob-id\fP.  The address
+of the map is written to \fInid-map\fP or \fIpid-map\fP respectively, and
+may be freed by the caller when it is no longer needed.
+.Pp
+The function \fBCplantJobStatus\fP returns a array of status structures
+for the Cplant job identified by \fIjob-id\fP.  The \fBjob_info\fP structure
+looks like this:
+.Pp
+\f(CRtypedef struct{ 
+.br
+short rank;       /* process rank */   
+.br
+short job_id;     /* cplant job id */   
+.br
+int   nid;        /* physical node id */   
+.br
+int   u_stat;     /* process status   */   
+.br
+int   session_id; /* job's PBS job id */   
+.br
+int   parent_id;  /* cplant job ID of spawning parent */   
+.br
+int   job_pid;    /* process' system pid  */   
+.br
+time_t       elapsed;    /* seconds since fork        */   
+.br
+int   niceKillCountdown; /* non-zero if job is being killed */   
+.br
+int         priority;    /* 1 - regular, 2 - scavenger */   
+.br
+} \fBjob_info\fP;  
+.br\fR
+.Pp
+The \fIu_stat\fP status bits that may be of interest to callers are these:
+.Pp
+\f(CR#define  NEW_JOB            (1 << 0) /* PCT is still setting up */
+.br
+#define  STARTED            (1 << 1)   /* user's executable has started */
+.br
+#define  SENT_TO_MAIN       (1 << 9)   /* it has begun executing user code */
+.br
+#define  CHILD_DONE         (1 << 10)  /* process completed normally */
+.br
+#define  CHILD_NACK         (1 << 11)  /* process exited before entering user code*/
+.br
+#define  SENT_KILL_1        (1 << 12)  /* process was sent a SIGTERM */
+.br
+#define  SENT_KILL_2        (1 << 13)  /* process was sent a SIGKILL */
+.br
+#define  NICE_KILL_JOB_STARTED  (1 << 16)  /* process is being "nice-killed" */
+.br\fR
+.Pp
+The \fIstatus\fP array should be freed by the caller when it is no longer needed.
+See the \fBpingd\fP man page for an explanation of the \fInice-kill\fP operation.
+.SH ERRORS
+    
+
+.Pp
+All functions return -1 on error, and 0 on success.
+.SH BUGS
+    
+
+.Pp
+\fBCplantJobNidMap\fP and \fBCplantJobPidMap\fP return maps in physical
+node number order rather than process rank order.  This is being
+corrected.  The array returned by \fBCplantJobStatus\fP also need not
+be in process rank order.
+.SH SEE ALSO
+    
+
+.Pp
+\fBbebopd\fP
+\fBpingd\fP

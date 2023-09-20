@@ -1,0 +1,362 @@
+#!/usr/bin/perl -w
+use strict;
+use IO::Socket;
+use FileHandle;
+
+my $port = shift || 1090;
+my $node = shift || 0;
+my $my_rank = '???';
+my $hostname;
+
+my $process_sock;
+my @my_nodes;
+my @all_nodes;
+my $image;
+
+
+my $sock = IO::Socket::INET->new(
+	LocalPort	=> $port,
+	Listen		=> 5,
+	Reuse		=> 1,
+) or die "$0: Unable to get port $port: $@\n";
+
+$SIG{INT} = sub { warn "$0: Closing down\n"; close $sock };
+
+print "$node: $$: Daemon started on port $port.\n";
+
+sub fanout
+{
+	my ($sub,@nodes)	= @_;
+
+	unshift @nodes, 'me';
+
+	my $sub_nodes		= @nodes;
+	my $mid			= $sub_nodes;
+	my $high_index		= $mid - 1;
+	my @all_ids;
+
+	while( $mid >>= 1 ) {
+		$sub->( $mid + $my_rank, @nodes[$mid..$high_index] );
+		$high_index = $mid - 1;
+	}
+}
+
+
+sub fanout_map
+{
+	my $his_rank	= shift;
+	my $him		= shift;
+	my @his_nodes	= @_;
+
+	print "$node: $$: $my_rank: Sending map $his_rank ($him->{host})\n";
+
+	my $sock = IO::Socket::INET->new( 
+		PeerAddr	=> $him->{host},
+		Timeout		=> 3,
+	);
+
+	unless( $sock ) {
+		warn "$node: $$: $my_rank: Unable to contact $him->{host} (rank=$his_rank): $@\n";
+		$@ = "$him->{host} failed";
+		return;
+	}
+
+	print $sock "map $his_rank ",
+		join( ' ', map { $_->{host} } @his_nodes ),
+		"\n";
+
+	my @nodes;
+	while( <$sock> ) {
+		if( /^ABORT/ ) {
+			$@ = $_;
+			return;
+		}
+
+		next unless /^pidmap/;
+
+		print "$node: $$: $my_rank: Read $_\n";
+		while( /\[(.*?)\]/g ) {
+			my ($nid,$pid,$hostname,$port) = split /:\s*/, $1;
+			push @nodes, [$nid,$pid,$hostname,$port];
+		}
+
+		last;
+	}
+
+	print "$node: $$: $my_rank: Read map from $his_rank\n";
+	($sock,@nodes);
+		
+}
+
+sub connect_pidmap
+{
+	use integer;
+	my $rank	= 0;
+	@all_nodes	= map {
+		my ($nid,$pid,$port) = /\[(\d+):(\d+):(.*?)\]/;
+		{
+			nid	=> $nid,
+			pid	=> $pid,
+			port	=> $port,
+			rank	=> $rank++,
+		};
+	} @_;
+
+	my $size	= @all_nodes;
+	my $offset	= 0;
+
+	while( $size /= 2 ) {
+		if( $my_rank < $offset + $size ) {
+			# Send this round
+			for my $i ($size .. 2*$size-1) {
+				my $dest_rank = $i + $offset;
+				my $dest = $all_nodes[$dest_rank];
+				print "$my_rank: Sending to $dest_rank ($dest->{port})\n";
+				my $sock = $dest->{sock} = IO::Socket::INET->new(
+					PeerAddr	=> $dest->{port},
+					Timeout		=> 2,
+				) or die "$my_rank: $dest_rank ($dest->{port}): $@\n";
+				print $sock "$my_rank\n";
+			}
+		} else {
+			# Receive this round
+			$offset += $size;
+
+			for( my $rest = $size ; $rest ; $rest-- ) {
+				print "$my_rank: Waiting for a connection\n";
+				my $sock	= $process_sock->accept;
+
+				print "$my_rank: Incoming!\n";
+				my $source_rank	= <$sock>;
+				my $source	= $all_nodes[$source_rank];
+
+				$source->{sock} = $sock;
+			}
+		}
+	}
+
+	$ENV{PTL_NUM_NODES}	= @all_nodes;
+	$ENV{PTL_MAX_NODES}	= 8;
+	$ENV{PTL_MY_GID}	= 113;
+
+	my $me			= $all_nodes[$my_rank];
+	pipe READ, WRITE
+		or die "$0: Unable to open pipe: $!\n";
+
+	$me->{sock} = $me->{to_me} = \*WRITE;
+	$ENV{PTL_TO_NODES} = join '',
+		map { chr( $_->{sock} ? fileno( $_->{sock} ) : 99 ) } @all_nodes;
+
+	$me->{sock} = $me->{from_me} = \*READ;
+	$ENV{PTL_FROM_NODES} = join '',
+		map { chr( $_->{sock} ? fileno( $_->{sock} ) : 99 ) } @all_nodes;
+
+	print "$my_rank: fds: ",
+	join( ', ', map { $_->{sock} ? fileno( $_->{sock} ) : 0 } @all_nodes),
+	"\n";
+
+	print "$my_rank: Done\n";
+}
+
+my %commands = (
+	quit	=> sub {
+		my ($sock,$cmd,@args) = @_;
+		print $sock "$node: $$: Bye now\n";
+		return;
+	},
+
+	help	=> sub {
+		my ($sock,$cmd,@args) = @_;
+		print $sock "Commands: map pidmap image run abort quit\n";
+
+		return 1;
+	},
+
+	map	=> sub {
+		use integer;
+		my ($sock,$cmd,$new_rank,@nodes) = @_;
+
+		$my_rank = $new_rank;
+		$ENV{'PTL_MY_NODE'} = $node;
+		$ENV{'PTL_MY_RANK'} = $my_rank;
+		
+		@my_nodes = map { { host => $_ } } @nodes;
+
+		my @all_ids;
+		fanout( sub {
+			my ($his_rank,$him,@nodes) = @_;
+
+			print "$node: $$: $my_rank: Fanning out to $his_rank ($him)\n";
+			my ($new_sock,@node_ids) = fanout_map(
+				$his_rank, $him, @nodes
+			);
+
+			unless ($new_sock) {
+				print $sock "ABORT $nodes[$his_rank]: $@\n";
+				return 1;
+			}
+
+			$him->{sock} = $new_sock;
+			unshift @all_ids, @node_ids;
+		}, @my_nodes );
+		
+		do {
+			$port = int( rand(4096) + 1024 );
+			$process_sock = IO::Socket::INET->new(
+				LocalPort	=> $port,
+				Listen		=> 5,
+				Reuse		=> 1,
+			) or warn "$node: $$: port $port: $@\n";
+		} until $process_sock;
+
+		print "$my_rank: We're using port $port\n";
+
+		print $sock "pidmap ",
+			join( ', ',
+				"[$node:$$:$hostname:$port]", # That's me!
+				map { "[" . join(':',@$_) . "]" } @all_ids
+			),
+			"\n";
+
+		return 1;
+	},
+
+	abort	=> sub {
+		my ($sock,$cmd,@args) = @_;
+
+		print "$node: $$: $my_rank: Load failure -- aborting\n";
+		fanout( sub {
+			my ($his_rank, $him, @nodes) = @_;
+			my $sock = $him->{sock}
+				or return;
+
+			print $sock "abort\n";
+			close $sock;
+			delete $him->{sock};
+		}, @my_nodes );
+
+		print "$node: $$: $my_rank: Aborted\n";
+		return 0;
+	},
+
+	pidmap	=> sub {
+		my ($sock,$cmd,@args) = @_;
+
+		print "$node: $$: $my_rank: Received pid map\n";
+
+		fanout( sub {
+			my ($his_rank, $him, @nodes) = @_;
+			my $sock = $him->{sock};
+			print $sock "pidmap ", join(' ', @args), "\n";
+			while( <$sock> ) {
+				last if /^pidmap sent/;
+				print "$node: $$: $my_rank: Unknown: $_\n";
+			}
+		}, @my_nodes );
+
+		print "$node: $$: $my_rank: Faned out pid map\n";
+		print $sock "pidmap sent\n";
+
+		connect_pidmap( @args );
+
+		fanout( sub {
+			my ($his_rank, $him, @nodes) = @_;
+			my $sock = $him->{sock};
+			while( <$sock> ) {
+				last if /^pidmap connected/;
+				print "$node: $$: $my_rank: Unknown: $_\n";
+			}
+		}, @my_nodes );
+
+		print $sock "pidmap connected\n";
+
+		return 1;
+	},
+
+	image	=> sub {
+		my ($sock, $cmd, @args) = @_;
+		$image = $args[0];
+
+		unless( defined $image and -x $image ) {
+			print $sock "ABORT no such file\n";
+			return 1;
+		}
+
+		print "$node: $$: $my_rank: Image is $args[0]\n";
+
+		fanout( sub {
+			my ($his_rank, $him, @nodes) = @_;
+			my $sock = $him->{sock};
+			print $sock "image $args[0]\n";
+			while( <$sock> ) {
+				last if /^image sent/;
+				if( /^ABORT/ ) {
+					print $sock "ABORT: $_\n";
+					return 1;
+				}
+				print "$node: $$: $my_rank: Unknown: $_\n";
+			}
+		}, @my_nodes );
+
+		print $sock "image sent\n";
+		return 1;
+	},
+		
+	run	=> sub {
+		my ($sock,$cmd,@args) = @_;
+
+		fanout( sub {
+			my ($his_rank,$him, @nodes) = @_;
+			my $sock = $him->{sock};
+
+			print $sock "run ", join( ' ', @args ), "\n";
+		}, @my_nodes );
+
+		exec $image, @args;
+		die "$node: $$: $my_rank: Unable to exec $image: $!\n";
+	},
+);
+
+sub handle_incoming
+{
+	my $sock = shift;
+
+	print "$node: $$: Handling incoming connection\n";
+	print $sock "$node: $$: Hi there\n";
+
+	while( <$sock> ) {
+		s/[\r\n]+$//;
+		#print "$node: $$: read '$_'\n";
+		my ($cmd,@args) = split;
+		my $handler = $commands{$cmd} || sub {
+			my ($sock,$cmd,@args) = @_;
+			print $sock "$node: $$: Unknown command '$cmd'\n";
+		};
+
+		print "$my_rank: Calling $cmd\n";
+		$handler->( $sock, $cmd, @args )
+			or last;
+	}
+
+	print "$node: $$: Lost connection\n";
+	close $sock;
+	0;
+}
+
+
+while( my ($new_sock,$peer) = $sock->accept ) {
+	print "$node: $$: Incoming connection\n";
+	if( my $child = fork ) {
+		close $new_sock;
+		next;
+	}
+
+	close $sock;
+	
+	$hostname = $new_sock->sockhost;
+	handle_incoming( $new_sock );
+	close $new_sock;
+	exit;
+}
+
+

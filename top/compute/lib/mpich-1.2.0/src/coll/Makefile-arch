@@ -1,0 +1,64 @@
+
+#
+# $Id: Makefile-arch,v 1.4.2.1 2002/04/09 17:16:39 galagun Exp $
+#
+
+include ../../../../../../Makefile-common
+ 
+CFLAGS  +=  -DHAVE_MPICHCONF_H -DMPID_DEVICE_CODE
+
+ifeq ($(OS),osf)
+CFLAGS  +=  -DFORTRANUNDERSCORE
+endif
+
+ifeq ($(OS),linux)
+ifeq ($(NO2UNDERSCORE),yes)
+  include ../../../Makefile-no2underscore
+endif
+ifeq ($(NO2UNDERSCORE),no)
+  CFLAGS  +=  -DFORTRANDOUBLEUNDERSCORE
+endif
+ifndef NO2UNDERSCORE
+  CFLAGS  +=  -DFORTRANDOUBLEUNDERSCORE
+endif
+ifeq ($(PMPI),yes)
+  CFLAGS  +=  -DMPI_BUILD_PROFILING
+endif
+endif
+ 
+INCLUDEDIRS += -I../ -I../../../build/cplant/p30/include -I../../../include \
+               -I../../../src/util -I../../../mpid/$(MPI_P3_ADI) -I../../coll \
+               -I../../../../p30/include
+
+CSOURCES     = barrier.c bcast.c gather.c gatherv.c scatter.c scatterv.c \
+               allgather.c allgatherv.c alltoall.c alltoallv.c reduce.c \
+               allreduce.c red_scat.c scan.c global_ops.c \
+	       opcreate.c opfree.c oputil.c intra_fns.c inter_fns.c \
+	       intra_scan.c
+
+WSOURCES     = barrierf.c bcastf.c gatherf.c gathervf.c scatterf.c scattervf.c\
+               allgatherf.c allgathervf.c alltoallf.c alltoallvf.c reducef.c \
+               allreducef.c red_scatf.c scanf.c \
+	       opcreatef.c opfreef.c
+
+COBJECTS     = $(CSOURCES:.c=.o)
+
+WOBJECTS     = $(WSOURCES:.c=.o)
+
+ALLOBJECTS   = $(COBJECTS) $(WOBJECTS) $(TOBJECTS)
+
+LIBDIR   = ../../../$(CPLANT_ARCH)-$(OS)
+LIB      = $(LIBDIR)/libmpi.a
+ 
+all: $(LIB)
+ 
+$(LIB): $(LIBDIR) $(LIB)($(COBJECTS)) $(LIB)($(WOBJECTS))
+ 
+$(LIBDIR):
+	@-mkdir $(LIBDIR)
+ 
+$(COBJECTS) $(WOBJECTS): %.o : ../%.c
+	$(CC) $(CFLAGS) $(INCLUDEDIRS) -c $<
+
+clean:
+	@rm -f $(ALLOBJECTS)

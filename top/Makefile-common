@@ -1,0 +1,343 @@
+# $Id: Makefile-common,v 1.145.2.11 2002/10/03 17:28:38 jrstear Exp $
+#
+
+################################################################################
+# Default site for which to compile. This may be overridden 
+# by the environment variable SITE. Default is SNL-NM.
+################################################################################
+SITE_DEFAULT=SNL-NM
+ifndef SITE
+    SITE = $(SITE_DEFAULT)
+endif
+
+
+################################################################################
+# Get OS type
+################################################################################
+ifndef OS_TYPE
+    OS_TYPE = $(shell uname -s)
+endif
+
+################################################################################
+# Get location
+################################################################################
+ifndef CPLANT_TOP
+    CPLANT_TOP=$(HOME)/Cplant/top
+endif
+
+# full path to header file that defines CPLANT_PATH
+CPLANT_H = $(CPLANT_TOP)/include/config/cplant.h
+
+################################################################################
+# Set the architecture
+# In order to set ARCH properly, we need to define the shell 
+# to be used. 
+# Later (see below), the SHELL is set according to what ARCH 
+# has been set to. 
+# On a sun4u without setting SHELL first, ARCH would be set 
+# to " sparc", which is not the same as "sparc". 
+################################################################################
+SHELL = /bin/sh
+CPLANT_ARCH = $(shell $(CPLANT_TOP)/config/arch.sh)
+
+
+################################################################################
+# Common definitions
+################################################################################
+MAKE        = gmake
+MAKEFLAGS   = --no-print-directory
+ARFLAGS     = crl
+CFLAGS = -DLINUX_PORTALS 
+
+# currently this pertains mainly to how apps
+# are built...
+LINUX_COMPILE = compaq
+
+# Kernel Build ######################
+# options used in automated kernel build -- "./Make kernel"
+# KERNEL_VER    -- determines which subdirectory of linux-patches
+#                  to build kernel in
+# CPLANT_TARGET -- determines which kernel config file from the
+#                  Cplant kernel patch to use... this option could
+#                  be used as a flag in Makefile-$ARCH in top/lib/puma
+#                  to allow varying the choice of default (configured)
+#                  headers the link top/compute/OS/linux points to. 
+#                  however, it is currently the case that the Cplant build
+#                  is independent of the architecture specific features
+#                  of the configured headers. therefore, the choice of
+#                  configured headers in the Makefile is currently hardcoded.
+KERNEL_VER = 2.2.21
+CPLANT_TARGET = ROSS
+#CPLANT_TARGET = SIBERIA
+#CPLANT_TARGET = ANTARCTICA
+#CPLANT_TARGET = WEST
+
+# System Build Version ##############
+#SYSTEM = REDHAT_5
+# or if building system components (yod) on a RedHat 6.x
+# host then the following should be set when building
+# applications on a DEC/OSF box...this is so that the app
+# build will use the correct version of the linux stat
+# struct (top/compute/lib/apps/alt-osf/linux-stat.h)
+SYSTEM = REDHAT_6
+
+# a local Makefile may want to test for RELIABLE
+RELIABLE = yes
+
+# a local Makefile may want to test for KERNEL_ADDR_CACHE
+KERNEL_ADDR_CACHE = no
+
+# a local Makefile may want to test for RTSCTS_ERROR_CORRECTION
+RTSCTS_ERROR_CORRECTION = yes
+
+# a local Makefile may want to test for EXTENDED_P3_RTSCTS
+EXTENDED_P3_RTSCTS = yes
+
+STRIPDOWN = yes
+ifeq ($(STRIPDOWN),yes)
+CFLAGS += -DSTRIPDOWN
+endif
+
+REMAP = yes
+ifeq ($(REMAP),yes)
+CFLAGS += -DREMAP
+endif
+
+LINUX24 = no
+ifeq ($(LINUX24),yes)
+CFLAGS += -DLINUX24
+endif
+
+# which Portals 3.0 ADI device to use (p30 or p31)
+MPI_P3_ADI = p31
+
+# rman is used to convert nroff to html in
+# doc/manpages/man/manX dirs, but some
+# systems may not have it installed... if
+# yours has it, set this to 'yes'
+HAVE_RMAN = no
+# should really automate this decision...
+
+INCLUDEDIRS = -I$(CPLANT_TOP)\
+              -I$(CPLANT_TOP)/include\
+              -I$(CPLANT_TOP)/include/config\
+              -I$(CPLANT_TOP)/include/sys\
+              -I$(CPLANT_TOP)/include/portals\
+              -I$(CPLANT_TOP)/include/IO\
+              -I$(CPLANT_TOP)/include/load\
+              -I$(CPLANT_TOP)/include/srvr\
+              -I$(CPLANT_TOP)/compute/lib/p30/include \
+              -I$(CPLANT_TOP)/compute/OS/linux/include \
+              -I$(CPLANT_TOP)/compute/OS
+
+# test for compaq compile
+#ifeq ($(LINUX_COMPILE),compaq)
+#CFLAGS += -D__CPQC__ -std -std0
+#INCLUDEDIRS += -I/usr/lib/$(CPLANT_ARCH)-$(OS)
+#endif
+
+INSTALL     = install
+CPCC        =$(CPLANT_TOP)/compute/bin/$(CPLANT_ARCH)-$(OS)/cpcc
+CPF77       =$(CPLANT_TOP)/compute/bin/$(CPLANT_ARCH)-$(OS)/cpf77
+
+
+################################################################################
+# OS Specific definitions 
+################################################################################
+ifeq ($(OS_TYPE),Linux)
+    OS           = linux
+    CFLAGS      += -Wall
+    GCCFLAGS     = -Wall
+
+ifeq ($(LINUX_COMPILE),compaq)
+#    CC           = ccc
+#    CSTATICFLAG  = -non_shared
+    F77          = fort
+    FSTATICFLAG  = -non_shared
+endif
+
+ifeq ($(LINUX_COMPILE),gnu)
+    CC           = gcc
+    CSTATICFLAG  = -static
+    F77          = f77
+    FSTATICFLAG  = -static
+endif
+
+endif
+
+ifeq ($(OS_TYPE),OSF1)
+    OS           = osf
+    CC           = cc
+    CFLAGS      += -D__alpha__ -O2 -strong_volatile -std0 -D__STDC__ -D__TMP_V40_OBJ_COMPAT
+    F77          = f77
+#   STATICFLAG   = -non_shared
+    FSTATICFLAG  = -non_shared
+    CSTATICFLAG  = -non_shared
+endif
+
+##################################################################################
+# Architecture Specific definitions 
+################################################################################
+ifeq ($(CPLANT_ARCH),i386)
+ifneq ($(CC),gcc)
+    CFLAGS      += -D__i386__ 
+endif
+endif
+
+################################################################################
+# Common functions
+################################################################################
+# For targets which cannot be built
+define target-error
+  @echo "The following targets cannot be built on this $(OS) platform:"
+  @echo "     $(TARGETS)"
+endef
+
+# For traversing specific subdirectories.
+# We'd like this to terminate if one of the "make"s returns
+# an error -- however, that happens all over the place when
+# we do "make target" and the Makefile does not handle
+# the given target. Typically we don't want to stop
+# in that situation, so instead we only terminate in the case
+# that no target is given, i.e., the target defaults to "all".
+# This seems to work under Linux and OSF although OSF Makefiles
+# need to abnormal exit with a POSITIVE code...
+
+define do-subdirs
+  for dir in $(SUBDIRS); \
+  do \
+  echo "---------------------------------------------------------"; \
+  echo "----- doing $(MAKE) $@ in $$dir"; \
+  echo "---------------------------------------------------------"; \
+  $(MAKE) -C $$dir $@; \
+  if [ $$? -ne 0 -a "$@" = all ] ; then exit 1 ; fi ; \
+  done
+endef
+
+
+################################################################################
+# Installation variables
+################################################################################
+prefix         = $(subst /top,,$(CPLANT_TOP))/$(CPLANT_ARCH)-$(OS)
+prefix_doc     = $(subst /top,,$(CPLANT_TOP))/doc
+prefix_sys     = $(prefix)/system
+prefix_bld     = $(prefix)/build
+bindir_sys     = $(prefix_sys)/bin
+bindir_bld     = $(prefix_bld)/bin
+sbindir        = $(prefix_sys)/sbin
+initdir        = $(prefix_sys)/init.d
+libdir_sys     = $(prefix_sys)/lib
+libdir         = $(prefix_bld)/lib
+includedir     = $(prefix_bld)/include
+p30includedir  = $(prefix_bld)/include/p30
+htmldir        = $(prefix_doc)/html
+psdir          = $(prefix_doc)/ps
+mandir         = $(prefix_sys)/man
+man1dir        = $(mandir)/man1
+man8dir        = $(mandir)/man8
+manndir        = $(mandir)/mann
+man3dir        = $(mandir)/man3
+testdir        = $(prefix_sys)/test
+moduledir      = $(prefix_sys)/modules
+mcpdir         = $(prefix_sys)/mcps
+allinstalldirs = $(prefix) $(bindir_sys) $(bindir_bld) \
+                 $(htmldir) $(sbindir) $(initdir) $(libdir) $(includedir) \
+                 $(libdir_sys)/linux $(libdir_sys)/osf $(psdir) \
+                 $(mandir) $(man1dir) $(man8dir) $(manndir) \
+                 $(testdir) $(moduledir) $(mcpdir) $(p30includedir)
+
+################################################################################
+# Installation functions
+################################################################################
+# install program works differently on Linux and OSF
+
+ifeq ($(OS_TYPE),Linux)
+define install
+   # make sure installation directories are there
+   $(CPLANT_TOP)/tool/mkinstalldirs $(allinstalldirs)
+   for target in $(INSTALLTARGETS); \
+   do \
+      install $$target $(INSTALLDIR); \
+      if [ $$? = 0 ]; then \
+          echo $$target installed as $(INSTALLDIR)/$$target; \
+      else \
+          echo install of $$target in $(INSTALLDIR) failed; \
+      fi \
+   done
+endef
+endif
+
+ifeq ($(OS_TYPE),OSF1)
+
+ifndef GROUP
+  GROUP=$(shell groups | cut -f 1 -d ' ')
+endif
+
+define install
+   # make sure installation directories are there
+   $(CPLANT_TOP)/tool/mkinstalldirs $(allinstalldirs)
+   for target in $(INSTALLTARGETS); \
+   do \
+      install -s -f $(INSTALLDIR) -g $(GROUP) -u $(USER) $$target; \
+      if [ $$? = 0 ]; then \
+          echo $$target installed as $(INSTALLDIR)/$$target; \
+      else \
+          echo install of $$target in $(INSTALLDIR) failed; \
+      fi ;\
+   done
+endef
+endif
+
+# rm works the same on both
+define uninstall
+   for target in $(INSTALLTARGETS); \
+   do \
+      echo removing $(INSTALLDIR)/$$target; \
+      rm -f $(INSTALLDIR)/$$target; \
+   done
+endef
+
+# Instead of "make install" we also allow the shorthand "make cp"
+define cp
+    make install $$target
+endef
+
+################################################################################
+# Variable for controlling dependency file generation
+################################################################################
+#MAKE_DEPS = yes
+################################################################################
+# Target for generating a dependency file from an object 
+# file
+################################################################################
+
+# Linux does it right
+ifeq ($(OS),linux)
+%.d: %.c
+	$(SHELL) -ec '$(CC) -M $(CFLAGS) $(INCLUDEDIRS) $< \
+	| sed '\''s,\($*\.o\),\1 $*\.d,g'\'' > $@'
+endif
+
+# OSF prepends the filename to every line
+ifeq ($(OS),osf)
+%.d: %.c
+	$(SHELL) -ec '$(CC) -M $(CFLAGS) $(INCLUDEDIRS) $< \
+        | sed -e '\''1s,\($*\.o\),\1 $*\.d,g'\'' -e '\''s,$*\.o:,,g'\'' -e '\''s,$$,\\,g'\'' \
+	> $@'
+endif
+
+# Do "make .stat" or "make -f ../../Makefile-common .stat" to have cvs
+# go recursively see what's been modified by you, or needs to be updated.
+.PHONY: .stat
+.stat:
+	@for i in `find . -type d -name CVS -print |\
+	  sed 's/\/CVS$$//'` ; do \
+	    if [ $$i != "." ] ; then i=`echo $$i | sed 's/^..//'` ; fi ;\
+	    cvs -nQ status -l $$i | sed "/^=*$$/d; /^[ ]*Working revision:/d;\
+	      /^[ ]*Repository revision:/d; /Up-to-date$$/d;\
+	      /^[ ]*Sticky Options:[ 	]*-k[bo]$$/d;\
+	      s@^\(File: \)@\1$$i/@" ;\
+	 done
+
+# ignore errors when cleaning
+.IGNORE: clean

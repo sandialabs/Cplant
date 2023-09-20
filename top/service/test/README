@@ -1,0 +1,36 @@
+/* $Id: README,v 1.5 2001/11/04 20:10:44 lafisk Exp $ */
+
+yod*, pingd*, pbs*:
+
+These tests were created by Don Moore to test Cplant utilities.
+
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * 
+ts_srvr_ctl, ts_srvr_put, ts_srvr_get:
+
+These tests (the sources are in top/compute/test/current/general)
+use the comm routines in libsrvr.a.  The routines were 
+designed for cplant distributed servers (PCTs) and client/servers
+(yod/bebopd), but can be used by Cplant apps as well.  In fact, the 
+app pre-main startup protocol uses these functions to get data from 
+the PCT, and the IO protocol through yod/fyod uses it as well.
+
+In this directory the tests are built as Cplant servers.  In the
+top/compute/test/current/general directory, they are built as
+Cplant apps.  We want to be sure the tests work in both runtime
+environments.
+
+Don't "install" these.  The tests in the installation directory
+are the Cplant application versions.
+
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * 
+ts_srvr_coll_comm:
+
+This test tests the server library's group membership and group
+collective communication operations.  It should be built (in this
+directory) and run as a standalone server.
+
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * 
+yod2:
+
+This guy tests the job initialization/service/termination functions in
+libjob.a.

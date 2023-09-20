@@ -1,0 +1,112 @@
+#
+# Create queues and set their attributes.
+#
+#
+# Create and define queue default
+#
+#       Set resources_max.size to the maximum compute nodes
+#       permitted to be allocated to jobs in the default
+#       queue.
+#
+create queue default
+set queue default queue_type = Execution
+set queue default resources_max.size = 120
+set queue default resources_default.size = 1
+set queue default resources_default.walltime = 00:10:00
+set queue default enabled = True
+set queue default started = True
+#
+# Create and define queue dedicated
+#
+#      Set the resources_min.size to the minimum compute nodes
+#      permitted to be allocated to dedicated time jobs.
+#
+create queue dedicated
+set queue dedicated queue_type = Execution
+set queue dedicated resources_min.size = 100
+set queue dedicated enabled = True
+set queue dedicated started = True
+#
+# Create and define queue prime
+#
+#      The old system had a prime queue.  Convert this to
+#      a routing queue.  All jobs in this queue will be
+#      routed by the PBS server to the default queue if
+#      possible, and to the dedicated queue otherwise.
+#
+create queue prime
+unset queue prime resources_default.walltime
+unset queue prime resources_default.size
+unset queue prime resources_max.walltime
+set queue prime queue_type = Route
+set queue prime route_destinations = default
+set queue prime route_destinations += dedicated
+set queue prime enabled = True
+set queue prime started = True
+#
+# Create and define queue nonprime
+#
+#      The old system had a nonprime queue.  Convert this to
+#      a routing queue.  All jobs in this queue will be
+#      routed by the PBS server to the default queue if
+#      possible, and to the dedicated queue otherwise.
+#
+create queue nonprime
+unset queue nonprime resources_default.walltime
+unset queue nonprime resources_default.size
+set queue nonprime queue_type = Route
+set queue nonprime route_destinations = default
+set queue nonprime route_destinations += dedicated
+set queue nonprime enabled = True
+set queue nonprime started = True
+#
+# Set server attributes.
+#
+#       scheduling - true if the server should invoke the scheduler, 
+#       false if the server should not invoke the scheduler.  Setting
+#       to true at runtime (even if it's already true) forces
+#       server to invoke scheduler to evaluate queues.
+#
+set server scheduling = True
+#
+#       acl_hosts - list all hosts permitted to submit requests to
+#       the server.  That's all hosts running MOMs, the host running
+#       the scheduler, and the host running the bebopd.
+#
+set server acl_host_enable = True
+set server acl_hosts = sservice-8.sandia.gov
+set server acl_hosts += sservice-6.sandia.gov
+set server acl_hosts += sservice-4.sandia.gov
+set server acl_hosts += sservice-12.sandia.gov
+set server acl_hosts += sservice-2.sandia.gov
+set server acl_hosts += sservice-10.sandia.gov
+#
+#       managers - all users permitted to submit commands changing
+#       queue and server attributes.  Include root on bebopd node
+#       because bebopd sets the server's resources_available.size and
+#       resources_max.size.
+#
+set server managers = gmcgir@*
+set server managers += jhlaros@*
+set server managers += jjohnst@*
+set server managers += lafisk@*
+set server managers += root@sservice-0.sandia.gov
+#
+#       set "size" limits to anything, bebopd will update them with
+#       the actual number of live compute nodes
+#
+set server resources_available.size = 200
+set server resources_max.size = 200
+#
+#        scheduler_iteration - server will invoke the scheduler
+#        after this many seconds have elapsed, also when new
+#        jobs are submitted and when jobs complete.
+#
+set server scheduler_iteration = 120
+set server default_queue = default
+set server log_events = 511
+set server mail_from = adm
+set server query_other_jobs = True
+set server resources_default.size = 1
+set server resources_default.walltime = 00:10:00
+

@@ -1,0 +1,1243 @@
+# $Id: patch,v 1.1.2.2 2002/10/04 16:27:08 jrstear Exp $
+#
+# This patch contains the linux kernel modifications neccessary to run
+# cplant on our alpha nodes (compaq 500au, XP1000, DS10L) at Sandia
+# National Laboratories.  It applies cleanly to 2.2.18 and 2.2.21.  To
+# apply: `cd your-virgin-linux-tree; patch -Np1 <this_patch_file`
+#
+diff -Naur linux/drivers/char/serial.c linux.cplant/drivers/char/serial.c
+--- linux/drivers/char/serial.c	Wed Jun  7 15:26:42 2000
++++ linux.cplant/drivers/char/serial.c	Tue Dec 11 12:29:53 2001
+@@ -382,10 +382,25 @@
+ 	unsigned char ch;
+ 	int ignored = 0;
+ 	struct	async_icount *icount;
++#ifdef CONFIG_MAGIC_SYSRQ
++	static int sysrq_escape_seen = 0;
++#endif
+ 
+ 	icount = &info->state->icount;
+ 	do {
+ 		ch = serial_inp(info, UART_RX);
++#ifdef CONFIG_MAGIC_SYSRQ
++		if (sysrq_escape_seen) {
++			sysrq_escape_seen = 0;
++			if ((ch & 0x7f) != '\024') {
++				handle_sysrq(ch & 0x7f, NULL, NULL, NULL);
++				goto ignore_char;
++			}
++		} else if ((ch & 0x7f) == '\024') {
++			sysrq_escape_seen = 1;
++			goto ignore_char;
++		}
++#endif
+ 		if (tty->flip.count >= TTY_FLIPBUF_SIZE)
+ 			break;
+ 		*tty->flip.char_buf_ptr = ch;
+diff -Naur linux/drivers/char/sysrq.c linux.cplant/drivers/char/sysrq.c
+--- linux/drivers/char/sysrq.c	Wed May  3 18:16:39 2000
++++ linux.cplant/drivers/char/sysrq.c	Tue Dec 11 12:29:54 2001
+@@ -24,6 +24,8 @@
+ 
+ #include <asm/ptrace.h>
+ 
++#include <linux/nfs_fs.h>
++
+ #ifdef CONFIG_MAGIC_SYSRQ
+ int sysrq_enabled = 1;
+ #endif
+@@ -114,6 +116,12 @@
+ 		printk("Show Memory\n");
+ 		show_mem();
+ 		break;
++#ifdef NFS_DEBUG
++	case 'n':					    /* N -- NFS client debug to NFSDBG_ALL */
++		nfs_debug = !nfs_debug ? NFSDBG_ALL : 0;
++		printk("NFS client debug set to 0x%x\n", nfs_debug);
++		break;
++#endif
+ 	case '0' ... '9':				    /* 0-9 -- set console logging level */
+ 		orig_log_level = key - '0';
+ 		printk("Log level set to %d\n", orig_log_level);
+diff -Naur linux/drivers/net/Makefile linux.cplant/drivers/net/Makefile
+--- linux/drivers/net/Makefile	Sun Dec 10 17:49:42 2000
++++ linux.cplant/drivers/net/Makefile	Tue Dec 11 12:32:37 2001
+@@ -8,12 +8,12 @@
+ ALL_SUB_DIRS := $(SUB_DIRS) hamradio irda fc sk98lin lmc skfp
+ 
+ L_TARGET := net.a
+-L_OBJS   :=
++L_OBJS   := auto_irq.o pci-scan.o
+ ifneq ($(ARCH),s390)  
+ L_OBJS   += auto_irq.o
+ endif
+ 
+-M_OBJS   :=
++M_OBJS   := pci-scan.o
+ MOD_LIST_NAME := NET_MODULES
+ 
+ # Need these to keep track of whether the 7990 (LANCE), 8390, PPP and SLHC 
+diff -Naur linux/drivers/net/kern_compat.h linux.cplant/drivers/net/kern_compat.h
+--- linux/drivers/net/kern_compat.h	Wed Dec 31 17:00:00 1969
++++ linux.cplant/drivers/net/kern_compat.h	Tue Dec 11 12:32:38 2001
+@@ -0,0 +1,233 @@
++#ifndef _KERN_COMPAT_H
++#define _KERN_COMPAT_H
++/* kern_compat.h: Linux PCI network adapter backward compatibility code. */
++/*
++	$Revision: 1.1.2.2 $ $Date: 2002/10/04 16:27:08 $
++
++	Kernel compatibility defines.
++	This file provides macros to mask the difference between kernel versions.
++	It is designed primarily to allow device drivers to be written so that
++	they work with a range of kernel versions.
++
++	Written 1999-2001 Donald Becker, Scyld Computing Corporation
++	This software may be used and distributed according to the terms
++	of the GNU General Public License (GPL), incorporated herein by
++	reference.  Drivers interacting with these functions are derivative
++	works and thus are covered the GPL.  They must include an explicit
++	GPL notice.
++
++	This code also provides inline scan and activate functions for PCI network
++	interfaces.  It has an interface identical to pci-scan.c, but is
++	intended as an include file to simplify using updated drivers with older
++	kernel versions.
++	This code version matches pci-scan.c:v0.05 9/16/99
++
++	The author may be reached as becker@scyld.com, or
++	Donald Becker
++	Scyld Computing Corporation
++	410 Severn Ave., Suite 210
++	Annapolis MD 21403
++
++	Other contributers:
++	<none>
++*/
++
++/* We try to use defined values to decide when an interface has changed or
++   added features, but we must have the kernel version number for a few. */
++#if ! defined(LINUX_VERSION_CODE)  ||  (LINUX_VERSION_CODE < 0x10000)
++#include <linux/version.h>
++#endif
++/* Older kernel versions didn't include modversions automatically. */
++#if LINUX_VERSION_CODE < 0x20300  &&  defined(MODVERSIONS)
++#include <linux/modversions.h>
++#endif
++
++/* There was no support for PCI address space mapping in 2.0, but the
++   Alpha needed it.  See the 2.2 documentation. */
++#if LINUX_VERSION_CODE < 0x20100  &&  ! defined(__alpha__)
++#define ioremap(a,b)\
++    (((unsigned long)(a) >= 0x100000) ? vremap(a,b) : (void*)(a))
++#define iounmap(v)\
++    do { if ((unsigned long)(v) >= 0x100000) vfree(v);} while (0)
++#endif
++
++/* Support for adding info about the purpose of and parameters for kernel
++   modules was added in 2.1. */
++#if LINUX_VERSION_CODE < 0x20115
++#define MODULE_AUTHOR(name)  extern int nonesuch
++#define MODULE_DESCRIPTION(string)  extern int nonesuch
++#define MODULE_PARM(varname, typestring)  extern int nonesuch
++#endif
++
++/* SMP and better multiarchitecture support were added.
++   Using an older kernel means we assume a little-endian uniprocessor.
++*/
++#if LINUX_VERSION_CODE < 0x20123
++#define hard_smp_processor_id() smp_processor_id()
++#define test_and_set_bit(val, addr) set_bit(val, addr)
++#define cpu_to_le16(val) (val)
++#define cpu_to_le32(val) (val)
++#define le16_to_cpu(val) (val)
++#define le16_to_cpus(val)		/* In-place conversion. */
++#define le32_to_cpu(val) (val)
++#define cpu_to_be16(val) ((((val) & 0xff) << 8) +  (((val) >> 8) & 0xff))
++#define cpu_to_be32(val) ((cpu_to_be16(val) << 16) + cpu_to_be16((val) >> 16))
++typedef long spinlock_t;
++#define SPIN_LOCK_UNLOCKED 0
++#define spin_lock(lock)
++#define spin_unlock(lock)
++#define spin_lock_irqsave(lock, flags)	save_flags(flags); cli();
++#define spin_unlock_irqrestore(lock, flags) restore_flags(flags);
++#endif
++
++#if LINUX_VERSION_CODE <= 0x20139
++#define	net_device_stats enet_statistics
++#else
++#define NETSTATS_VER2
++#endif
++
++/* These are used by the netdrivers to report values from the
++   MII (Media Indpendent Interface) management registers.
++*/
++#ifndef SIOCGMIIPHY
++#define SIOCGMIIPHY (SIOCDEVPRIVATE)		/* Get the PHY in use. */
++#define SIOCGMIIREG (SIOCDEVPRIVATE+1) 		/* Read a PHY register. */
++#define SIOCSMIIREG (SIOCDEVPRIVATE+2) 		/* Write a PHY register. */
++#endif
++#ifndef SIOCGPARAMS
++#define SIOCGPARAMS (SIOCDEVPRIVATE+3) 		/* Read operational parameters. */
++#define SIOCSPARAMS (SIOCDEVPRIVATE+4) 		/* Set operational parameters. */
++#endif
++
++#if !defined(HAVE_NETIF_MSG)
++enum {
++	NETIF_MSG_DRV           = 0x0001,
++	NETIF_MSG_PROBE         = 0x0002,
++	NETIF_MSG_LINK          = 0x0004,
++	NETIF_MSG_TIMER         = 0x0008,
++	NETIF_MSG_IFDOWN        = 0x0010,
++	NETIF_MSG_IFUP          = 0x0020,
++	NETIF_MSG_RX_ERR        = 0x0040,
++	NETIF_MSG_TX_ERR        = 0x0080,
++	NETIF_MSG_TX_QUEUED     = 0x0100,
++	NETIF_MSG_INTR          = 0x0200,
++	NETIF_MSG_TX_DONE       = 0x0400,
++	NETIF_MSG_RX_STATUS     = 0x0800,
++	NETIF_MSG_PKTDATA       = 0x1000,
++};
++#endif
++
++#if LINUX_VERSION_CODE < 0x20155
++#include <linux/bios32.h>
++#define PCI_SUPPORT_VER1
++/* A minimal version of the 2.2.* PCI support that handles configuration
++   space access.
++   Drivers that actually use pci_dev fields must do explicit compatibility.
++   Note that the struct pci_dev * "pointer" is actually a byte mapped integer!
++*/
++#if LINUX_VERSION_CODE < 0x20020
++struct pci_dev { int not_used; };
++#endif
++
++#define pci_find_slot(bus, devfn) (struct pci_dev*)((bus<<8) | devfn | 0xf0000)
++#define bus_number(pci_dev) ((((int)(pci_dev))>>8) & 0xff)
++#define devfn_number(pci_dev) (((int)(pci_dev)) & 0xff)
++
++#ifndef CONFIG_PCI
++extern inline int pci_present(void) { return 0; }
++#else
++#define pci_present pcibios_present
++#endif
++
++#define pci_read_config_byte(pdev, where, valp)\
++	pcibios_read_config_byte(bus_number(pdev), devfn_number(pdev), where, valp)
++#define pci_read_config_word(pdev, where, valp)\
++	pcibios_read_config_word(bus_number(pdev), devfn_number(pdev), where, valp)
++#define pci_read_config_dword(pdev, where, valp)\
++	pcibios_read_config_dword(bus_number(pdev), devfn_number(pdev), where, valp)
++#define pci_write_config_byte(pdev, where, val)\
++	pcibios_write_config_byte(bus_number(pdev), devfn_number(pdev), where, val)
++#define pci_write_config_word(pdev, where, val)\
++	pcibios_write_config_word(bus_number(pdev), devfn_number(pdev), where, val)
++#define pci_write_config_dword(pdev, where, val)\
++	pcibios_write_config_dword(bus_number(pdev), devfn_number(pdev), where, val)
++#else
++#define PCI_SUPPORT_VER2
++#endif
++
++/* The arg count changed, but function name did not.
++   We cover that bad choice by defining a new name.
++*/
++#if LINUX_VERSION_CODE < 0x20159
++#define dev_free_skb(skb) dev_kfree_skb(skb, FREE_WRITE);
++#define dev_free_skb_irq(skb) dev_kfree_skb(skb, FREE_WRITE);
++#elif LINUX_VERSION_CODE < 0x20400
++#define dev_free_skb(skb) dev_kfree_skb(skb);
++#define dev_free_skb_irq(skb) dev_kfree_skb(skb);
++#else
++#define dev_free_skb(skb) dev_kfree_skb(skb);
++#define dev_free_skb_irq(skb) dev_kfree_skb_irq(skb);
++#endif
++
++/* Added at the suggestion of Jes Sorensen. */
++#if LINUX_VERSION_CODE > 0x20153
++#include <linux/init.h>
++#else
++#define __init
++#define __initdata
++#define __initfunc(__arginit) __arginit
++#endif
++
++/* The old 'struct device' used a too-generic name. */
++#if LINUX_VERSION_CODE < 0x2030d
++#define net_device device
++#endif
++
++/* The 2.2 kernels added the start of capability-based security for operations
++   that formerally could only be done by root.
++*/
++#if ! defined(CAP_NET_ADMIN)
++#define capable(CAP_XXX) (suser())
++#endif
++
++#if ! defined(HAVE_NETIF_QUEUE)
++#define netif_wake_queue(dev)   do { clear_bit( 0, (void*)&(dev)->tbusy); mark_bh(NET_BH); } while (0)
++#define netif_start_tx_queue(dev) do { (dev)->tbusy = 0; dev->start = 1; } while (0)
++#define netif_stop_tx_queue(dev) do { (dev)->tbusy = 1; dev->start = 0; } while (0)
++#define netif_queue_paused(dev) ((dev)->tbusy != 0)
++/* Splitting these lines exposes a bug in some preprocessors. */
++#define netif_pause_tx_queue(dev) (test_and_set_bit( 0, (void*)&(dev)->tbusy))
++#define netif_unpause_tx_queue(dev) do { clear_bit( 0, (void*)&(dev)->tbusy); } while (0)
++#define netif_resume_tx_queue(dev) do { clear_bit( 0, (void*)&(dev)->tbusy); mark_bh(NET_BH); } while (0)
++
++#define netif_running(dev) ((dev)->start != 0)
++#define netif_device_attach(dev) do {; } while (0)
++#define netif_device_detach(dev) do {; } while (0)
++#define netif_device_present(dev) (1)
++#define netif_set_tx_timeout(dev, func, deltajiffs)   do {; } while (0)
++#define netif_link_down(dev)  (dev)->flags &= ~IFF_RUNNING;
++#define netif_link_up(dev)  (dev)->flags |= IFF_RUNNING
++
++#else
++
++#define netif_start_tx_queue(dev) netif_start_queue(dev)
++#define netif_stop_tx_queue(dev) netif_stop_queue(dev)
++#define netif_queue_paused(dev) netif_queue_stopped(dev)
++#define netif_resume_tx_queue(dev) netif_wake_queue(dev)
++/* Only used in transmit path.  No function in 2.4. */
++#define netif_pause_tx_queue(dev)  0
++#define netif_unpause_tx_queue(dev) do {; } while (0)
++
++#define netif_link_down(dev)  (dev)->flags &= ~IFF_RUNNING;
++#define netif_link_up(dev)  (dev)->flags |= IFF_RUNNING
++
++#endif
++
++#endif
++/*
++ * Local variables:
++ *  c-indent-level: 4
++ *  c-basic-offset: 4
++ *  tab-width: 4
++ * End:
++ */
+diff -Naur linux/drivers/net/pci-scan.c linux.cplant/drivers/net/pci-scan.c
+--- linux/drivers/net/pci-scan.c	Wed Dec 31 17:00:00 1969
++++ linux.cplant/drivers/net/pci-scan.c	Tue Dec 11 12:32:38 2001
+@@ -0,0 +1,580 @@
++/* pci-scan.c: Linux PCI network adapter support code. */
++/*
++	Originally written 1999-2001 by Donald Becker.
++
++	This software may be used and distributed according to the terms
++	of the GNU General Public License (GPL), incorporated herein by
++	reference.  Drivers interacting with these functions are derivative
++	works and thus are covered the GPL.  They must include an explicit
++	GPL notice.
++
++	This code provides common scan and activate functions for PCI network
++	interfaces.
++
++	The author may be reached as becker@scyld.com, or
++	Donald Becker
++	Scyld Computing Corporation
++	410 Severn Ave., Suite 210
++	Annapolis MD 21403
++
++	Other contributers:
++*/
++static const char version[] =
++"pci-scan.c:v1.08 9/28/2001  Donald Becker <becker@scyld.com>"
++" http://www.scyld.com/linux/drivers.html\n";
++
++/* A few user-configurable values that may be modified when a module. */
++
++static int debug = 1;			/* 1 normal messages, 0 quiet .. 7 verbose. */
++static int min_pci_latency = 32;
++
++#if ! defined(__KERNEL__)
++#define __KERNEL__ 1
++#endif
++#if !defined(__OPTIMIZE__)
++#warning  You must compile this file with the correct options!
++#warning  See the last lines of the source file.
++#error You must compile this driver with the proper options, including "-O".
++#endif
++
++#if defined(MODULE) && ! defined(EXPORT_SYMTAB)
++#define EXPORT_SYMTAB
++#endif
++
++#include <linux/config.h>
++#if defined(CONFIG_SMP) && ! defined(__SMP__)
++#define __SMP__
++#endif
++#if defined(MODULE) && defined(CONFIG_MODVERSIONS) && ! defined(MODVERSIONS)
++#define MODVERSIONS
++#endif
++
++#include <linux/version.h>
++#include <linux/module.h>
++/* Older kernels do not include this automatically. */
++#if LINUX_VERSION_CODE < 0x20300  &&  defined(MODVERSIONS)
++#include <linux/modversions.h>
++#endif
++
++#include <linux/kernel.h>
++#include <linux/mm.h>
++#include <linux/errno.h>
++#include <linux/types.h>
++#include <linux/pci.h>
++#include <linux/ioport.h>
++#include <linux/malloc.h>
++#include <asm/io.h>
++#include "pci-scan.h"
++#include "kern_compat.h"
++#if defined(CONFIG_APM)  &&  LINUX_VERSION_CODE < 0x20400 
++#include <linux/apm_bios.h>
++#endif
++
++#if (LINUX_VERSION_CODE >= 0x20100) && defined(MODULE)
++char kernel_version[] = UTS_RELEASE;
++#endif
++#if (LINUX_VERSION_CODE < 0x20100)
++#define PCI_CAPABILITY_LIST	0x34	/* Offset of first capability list entry */
++#define PCI_STATUS_CAP_LIST	0x10	/* Support Capability List */
++#define PCI_CAP_ID_PM		0x01	/* Power Management */
++#endif
++
++int (*register_cb_hook)(struct drv_id_info *did);
++void (*unregister_cb_hook)(struct drv_id_info *did);
++
++#if LINUX_VERSION_CODE > 0x20118  &&  defined(MODULE)
++MODULE_PARM(debug, "i");
++MODULE_PARM(min_pci_latency, "i");
++#if defined(EXPORT_SYMTAB)
++EXPORT_SYMBOL_NOVERS(pci_drv_register);
++EXPORT_SYMBOL_NOVERS(pci_drv_unregister);
++EXPORT_SYMBOL_NOVERS(acpi_wake);
++EXPORT_SYMBOL_NOVERS(acpi_set_pwr_state);
++EXPORT_SYMBOL_NOVERS(register_cb_hook);
++EXPORT_SYMBOL_NOVERS(unregister_cb_hook);
++#endif
++#endif
++
++/* List of registered drivers. */
++static struct drv_id_info *drv_list;
++/* List of detected PCI devices, for APM events. */
++static struct dev_info {
++	struct dev_info *next;
++	void *dev;
++	struct drv_id_info *drv_id;
++	int flags;
++} *dev_list;
++
++/*
++  This code is not intended to support every configuration.
++  It is intended to minimize duplicated code by providing the functions
++  needed in almost every PCI driver.
++
++  The "no kitchen sink" policy:
++  Additional features and code will be added to this module only if more
++  than half of the drivers for common hardware would benefit from the feature.
++*/
++
++/*
++  Ideally we would detect and number all cards of a type (e.g. network) in
++  PCI slot order.
++  But that does not work with hot-swap card, CardBus cards and added drivers.
++  So instead we detect just the each chip table in slot order.
++
++  This routine takes a PCI ID table, scans the PCI bus, and calls the
++  associated attach/probe1 routine with the hardware already activated and
++  single I/O or memory address already mapped.
++
++  This routine will later be supplemented with CardBus and hot-swap PCI
++  support using the same table.  Thus the pci_chip_tbl[] should not be
++  marked as __initdata.
++*/
++
++#if LINUX_VERSION_CODE >= 0x20200
++/* Grrrr.. complex abstaction layers with negative benefit. */
++int pci_drv_register(struct drv_id_info *drv_id, void *initial_device)
++{
++	int chip_idx, cards_found = 0;
++	struct pci_dev *pdev = NULL;
++	struct pci_id_info *pci_tbl = drv_id->pci_dev_tbl;
++	struct drv_id_info *drv;
++	void *newdev;
++
++
++	/* Ignore a double-register attempt. */
++	for (drv = drv_list; drv; drv = drv->next)
++		if (drv == drv_id)
++			return -EBUSY;
++
++	while ((pdev = pci_find_class(drv_id->pci_class, pdev)) != 0) {
++		u32 pci_id, pci_subsys_id, pci_class_rev;
++		u16 pci_command, new_command;
++		int pci_flags;
++		long pciaddr;			/* Bus address. */
++		long ioaddr;			/* Mapped address for this processor. */
++
++		pci_read_config_dword(pdev, PCI_VENDOR_ID, &pci_id);
++		/* Offset 0x2c is PCI_SUBSYSTEM_ID aka PCI_SUBSYSTEM_VENDOR_ID. */
++		pci_read_config_dword(pdev, 0x2c, &pci_subsys_id);
++		pci_read_config_dword(pdev, PCI_REVISION_ID, &pci_class_rev);
++
++		if (debug > 3)
++			printk(KERN_DEBUG "PCI ID %8.8x subsystem ID is %8.8x.\n",
++				   pci_id, pci_subsys_id);
++		for (chip_idx = 0; pci_tbl[chip_idx].name; chip_idx++) {
++			struct pci_id_info *chip = &pci_tbl[chip_idx];
++			if ((pci_id & chip->id.pci_mask) == chip->id.pci
++				&& (pci_subsys_id&chip->id.subsystem_mask) == chip->id.subsystem
++				&& (pci_class_rev&chip->id.revision_mask) == chip->id.revision)
++				break;
++		}
++		if (pci_tbl[chip_idx].name == 0) 		/* Compiled out! */
++			continue;
++
++		pci_flags = pci_tbl[chip_idx].pci_flags;
++#if LINUX_VERSION_CODE >= 0x2030C
++		/* Wow. A oversized, hard-to-use abstraction. Bogus. */
++		pciaddr = pdev->resource[(pci_flags >> 4) & 7].start;
++#else
++		pciaddr = pdev->base_address[(pci_flags >> 4) & 7];
++#if defined(__alpha__)			/* Really any machine with 64 bit addressing. */
++		if (pci_flags & PCI_ADDR_64BITS)
++			pciaddr |= ((long)pdev->base_address[((pci_flags>>4)&7)+ 1]) << 32;
++#endif
++#endif
++		if (debug > 2)
++			printk(KERN_INFO "Found %s at PCI address %#lx, mapped IRQ %d.\n",
++				   pci_tbl[chip_idx].name, pciaddr, pdev->irq);
++
++		if ( ! (pci_flags & PCI_UNUSED_IRQ)  &&
++			 (pdev->irq == 0 || pdev->irq == 255)) {
++			if (pdev->bus->number == 32) 	/* Broken CardBus activation. */
++				printk(KERN_WARNING "Resources for CardBus device '%s' have"
++					   " not been allocated.\n"
++					   KERN_WARNING "Activation has been delayed.\n",
++					   pci_tbl[chip_idx].name);
++			else
++				printk(KERN_WARNING "PCI device '%s' was not assigned an "
++					   "IRQ.\n"
++					   KERN_WARNING "It will not be activated.\n",
++				   pci_tbl[chip_idx].name);
++			continue;
++		}
++		if ((pci_flags & PCI_BASE_ADDRESS_SPACE_IO)) {
++			ioaddr = pciaddr & PCI_BASE_ADDRESS_IO_MASK;
++			if (check_region(ioaddr, pci_tbl[chip_idx].io_size))
++				continue;
++		} else if ((ioaddr = (long)ioremap(pciaddr & PCI_BASE_ADDRESS_MEM_MASK,
++										   pci_tbl[chip_idx].io_size)) == 0) {
++			printk(KERN_INFO "Failed to map PCI address %#lx for device "
++				   "'%s'.\n", pciaddr, pci_tbl[chip_idx].name);
++			continue;
++		}
++		if ( ! (pci_flags & PCI_NO_ACPI_WAKE))
++			acpi_wake(pdev);
++		pci_read_config_word(pdev, PCI_COMMAND, &pci_command);
++		new_command = pci_command | (pci_flags & 7);
++		if (pci_command != new_command) {
++			printk(KERN_INFO "  The PCI BIOS has not enabled the"
++				   " device at %d/%d!  Updating PCI command %4.4x->%4.4x.\n",
++				   pdev->bus->number, pdev->devfn, pci_command, new_command);
++			pci_write_config_word(pdev, PCI_COMMAND, new_command);
++		}
++
++		newdev = drv_id->probe1(pdev, initial_device,
++								ioaddr, pdev->irq, chip_idx, cards_found);
++		if (newdev == NULL)
++			continue;
++		initial_device = 0;
++		cards_found++;
++		if (pci_flags & PCI_COMMAND_MASTER) {
++			pci_set_master(pdev);
++			if ( ! (pci_flags & PCI_NO_MIN_LATENCY)) {
++				u8 pci_latency;
++				pci_read_config_byte(pdev, PCI_LATENCY_TIMER, &pci_latency);
++				if (pci_latency < min_pci_latency) {
++					printk(KERN_INFO "  PCI latency timer (CFLT) is "
++						   "unreasonably low at %d.  Setting to %d clocks.\n",
++						   pci_latency, min_pci_latency);
++					pci_write_config_byte(pdev, PCI_LATENCY_TIMER,
++										  min_pci_latency);
++				}
++			}
++		}
++		{
++			struct dev_info *devp =
++				kmalloc(sizeof(struct dev_info), GFP_KERNEL);
++			if (devp == 0)
++				continue;
++			devp->next = dev_list;
++			devp->dev = newdev;
++			devp->drv_id = drv_id;
++			dev_list = devp;
++		}
++	}
++
++	if (((drv_id->flags & PCI_HOTSWAP)
++		 && register_cb_hook && (*register_cb_hook)(drv_id) == 0)
++		|| cards_found) {
++		MOD_INC_USE_COUNT;
++		drv_id->next = drv_list;
++		drv_list = drv_id;
++		return 0;
++	} else
++		return -ENODEV;
++}
++#else
++int pci_drv_register(struct drv_id_info *drv_id, void *initial_device)
++{
++	int pci_index, cards_found = 0;
++	unsigned char pci_bus, pci_device_fn;
++	struct pci_dev *pdev;
++	struct pci_id_info *pci_tbl = drv_id->pci_dev_tbl;
++	void *newdev;
++
++	if ( ! pcibios_present())
++		return -ENODEV;
++
++	for (pci_index = 0; pci_index < 0xff; pci_index++) {
++		u32 pci_id, subsys_id, pci_class_rev;
++		u16 pci_command, new_command;
++		int chip_idx, irq, pci_flags;
++		long pciaddr;
++		long ioaddr;
++		u32 pci_busaddr;
++		u8 pci_irq_line;
++
++		if (pcibios_find_class (drv_id->pci_class, pci_index,
++								&pci_bus, &pci_device_fn)
++			!= PCIBIOS_SUCCESSFUL)
++			break;
++		pcibios_read_config_dword(pci_bus, pci_device_fn,
++								  PCI_VENDOR_ID, &pci_id);
++		/* Offset 0x2c is PCI_SUBSYSTEM_ID aka PCI_SUBSYSTEM_VENDOR_ID. */
++		pcibios_read_config_dword(pci_bus, pci_device_fn, 0x2c, &subsys_id);
++		pcibios_read_config_dword(pci_bus, pci_device_fn,
++								  PCI_REVISION_ID, &pci_class_rev);
++
++		for (chip_idx = 0; pci_tbl[chip_idx].name; chip_idx++) {
++			struct pci_id_info *chip = &pci_tbl[chip_idx];
++			if ((pci_id & chip->id.pci_mask) == chip->id.pci
++				&& (subsys_id & chip->id.subsystem_mask) == chip->id.subsystem
++				&& (pci_class_rev&chip->id.revision_mask) == chip->id.revision)
++				break;
++		}
++		if (pci_tbl[chip_idx].name == 0) 		/* Compiled out! */
++			continue;
++
++		pci_flags = pci_tbl[chip_idx].pci_flags;
++		pdev = pci_find_slot(pci_bus, pci_device_fn);
++		pcibios_read_config_byte(pci_bus, pci_device_fn,
++								 PCI_INTERRUPT_LINE, &pci_irq_line);
++		irq = pci_irq_line;
++		pcibios_read_config_dword(pci_bus, pci_device_fn,
++								  ((pci_flags >> 2) & 0x1C) + 0x10,
++								  &pci_busaddr);
++		pciaddr = pci_busaddr;
++#if defined(__alpha__)
++		if (pci_flags & PCI_ADDR_64BITS) {
++			pcibios_read_config_dword(pci_bus, pci_device_fn,
++									  ((pci_flags >> 2) & 0x1C) + 0x14,
++									  &pci_busaddr);
++			pciaddr |= ((long)pci_busaddr)<<32;
++		}
++#endif
++
++		if (debug > 2)
++			printk(KERN_INFO "Found %s at PCI address %#lx, IRQ %d.\n",
++				   pci_tbl[chip_idx].name, pciaddr, irq);
++
++		if ( ! (pci_flags & PCI_UNUSED_IRQ)  &&
++			 (irq == 0 || irq == 255)) {
++			if (pci_bus == 32) 	/* Broken CardBus activation. */
++				printk(KERN_WARNING "Resources for CardBus device '%s' have"
++					   " not been allocated.\n"
++					   KERN_WARNING "It will not be activated.\n",
++					   pci_tbl[chip_idx].name);
++			else
++				printk(KERN_WARNING "PCI device '%s' was not assigned an "
++					   "IRQ.\n"
++					   KERN_WARNING "It will not be activated.\n",
++				   pci_tbl[chip_idx].name);
++			continue;
++		}
++
++		if ((pciaddr & PCI_BASE_ADDRESS_SPACE_IO)) {
++			ioaddr = pciaddr & PCI_BASE_ADDRESS_IO_MASK;
++			if (check_region(ioaddr, pci_tbl[chip_idx].io_size))
++				continue;
++		} else if ((ioaddr = (long)ioremap(pciaddr & PCI_BASE_ADDRESS_MEM_MASK,
++										   pci_tbl[chip_idx].io_size)) == 0) {
++			printk(KERN_INFO "Failed to map PCI address %#lx.\n",
++				   pciaddr);
++			continue;
++		}
++
++		if ( ! (pci_flags & PCI_NO_ACPI_WAKE))
++			acpi_wake(pdev);
++		pcibios_read_config_word(pci_bus, pci_device_fn,
++								 PCI_COMMAND, &pci_command);
++		new_command = pci_command | (pci_flags & 7);
++		if (pci_command != new_command) {
++			printk(KERN_INFO "  The PCI BIOS has not enabled the"
++				   " device at %d/%d!  Updating PCI command %4.4x->%4.4x.\n",
++				   pci_bus, pci_device_fn, pci_command, new_command);
++			pcibios_write_config_word(pci_bus, pci_device_fn,
++									  PCI_COMMAND, new_command);
++		}
++
++		newdev = drv_id->probe1(pdev, initial_device,
++							   ioaddr, irq, chip_idx, cards_found);
++
++		if (newdev  && (pci_flags & PCI_COMMAND_MASTER)  &&
++			! (pci_flags & PCI_NO_MIN_LATENCY)) {
++			u8 pci_latency;
++			pcibios_read_config_byte(pci_bus, pci_device_fn,
++									 PCI_LATENCY_TIMER, &pci_latency);
++			if (pci_latency < min_pci_latency) {
++				printk(KERN_INFO "  PCI latency timer (CFLT) is "
++					   "unreasonably low at %d.  Setting to %d clocks.\n",
++					   pci_latency, min_pci_latency);
++				pcibios_write_config_byte(pci_bus, pci_device_fn,
++										  PCI_LATENCY_TIMER, min_pci_latency);
++			}
++		}
++		if (newdev) {
++			struct dev_info *devp =
++				kmalloc(sizeof(struct dev_info), GFP_KERNEL);
++			if (devp) {
++				devp->next = dev_list;
++				devp->dev = newdev;
++				devp->drv_id = drv_id;
++				dev_list = devp;
++			}
++		}
++		initial_device = 0;
++		cards_found++;
++	}
++
++	if (((drv_id->flags & PCI_HOTSWAP)
++		 && register_cb_hook && (*register_cb_hook)(drv_id) == 0)
++		|| cards_found) {
++		MOD_INC_USE_COUNT;
++		drv_id->next = drv_list;
++		drv_list = drv_id;
++		return 0;
++	} else
++		return cards_found ? 0 : -ENODEV;
++}
++#endif
++
++void pci_drv_unregister(struct drv_id_info *drv_id)
++{
++	struct drv_id_info **drvp;
++	struct dev_info **devip = &dev_list;
++
++	if (unregister_cb_hook)
++		(*unregister_cb_hook)(drv_id);
++
++	for (drvp = &drv_list; *drvp; drvp = &(*drvp)->next)
++		if (*drvp == drv_id) {
++			*drvp = (*drvp)->next;
++			MOD_DEC_USE_COUNT;
++			break;
++		}
++	while (*devip) {
++		struct dev_info *thisdevi = *devip;
++		if (thisdevi->drv_id == drv_id) {
++			*devip = thisdevi->next;
++			kfree(thisdevi);
++		} else
++			devip = &(*devip)->next;
++	}
++
++	return;
++}
++
++/*
++  Search PCI configuration space for the specified capability registers.
++  Return the index, or 0 on failure.
++*/
++int pci_find_capability(struct pci_dev *pdev, int findtype)
++{
++	u16 pci_status, cap_type;
++	u8 pci_cap_idx;
++	int cap_idx;
++
++	pci_read_config_word(pdev, PCI_STATUS, &pci_status);
++	if ( ! (pci_status & PCI_STATUS_CAP_LIST))
++		return 0;
++	pci_read_config_byte(pdev, PCI_CAPABILITY_LIST, &pci_cap_idx);
++	cap_idx = pci_cap_idx;
++	for (cap_idx = pci_cap_idx; cap_idx; cap_idx = (cap_type >> 8) & 0xff) {
++		pci_read_config_word(pdev, cap_idx, &cap_type);
++		if ((cap_type & 0xff) == findtype)
++			return cap_idx;
++	}
++	return 0;
++}
++
++
++/* Change a device from D3 (sleep) to D0 (active).
++   Return the old power state.
++   This is more complicated than you might first expect since most cards
++   forget all PCI config info during the transition! */
++int acpi_wake(struct pci_dev *pdev)
++{
++	u32 base[5], romaddr;
++	u16 pci_command, pwr_command;
++	u8  pci_latency, pci_cacheline, irq;
++	int i, pwr_cmd_idx = pci_find_capability(pdev, PCI_CAP_ID_PM);
++
++	if (pwr_cmd_idx == 0)
++		return 0;
++	pci_read_config_word(pdev, pwr_cmd_idx + 4, &pwr_command);
++	if ((pwr_command & 3) == 0)
++		return 0;
++	pci_read_config_word(pdev, PCI_COMMAND, &pci_command);
++	for (i = 0; i < 5; i++)
++		pci_read_config_dword(pdev, PCI_BASE_ADDRESS_0 + i*4,
++								  &base[i]);
++	pci_read_config_dword(pdev, PCI_ROM_ADDRESS, &romaddr);
++	pci_read_config_byte( pdev, PCI_LATENCY_TIMER, &pci_latency);
++	pci_read_config_byte( pdev, PCI_CACHE_LINE_SIZE, &pci_cacheline);
++	pci_read_config_byte( pdev, PCI_INTERRUPT_LINE, &irq);
++
++	pci_write_config_word(pdev, pwr_cmd_idx + 4, 0x0000);
++	for (i = 0; i < 5; i++)
++		if (base[i])
++			pci_write_config_dword(pdev, PCI_BASE_ADDRESS_0 + i*4,
++									   base[i]);
++	pci_write_config_dword(pdev, PCI_ROM_ADDRESS, romaddr);
++	pci_write_config_byte( pdev, PCI_INTERRUPT_LINE, irq);
++	pci_write_config_byte( pdev, PCI_CACHE_LINE_SIZE, pci_cacheline);
++	pci_write_config_byte( pdev, PCI_LATENCY_TIMER, pci_latency);
++	pci_write_config_word( pdev, PCI_COMMAND, pci_command | 5);
++	return pwr_command & 3;
++}
++
++int acpi_set_pwr_state(struct pci_dev *pdev, enum acpi_pwr_state new_state)
++{
++	u16 pwr_command;
++	int pwr_cmd_idx = pci_find_capability(pdev, PCI_CAP_ID_PM);
++
++	if (pwr_cmd_idx == 0)
++		return 0;
++	pci_read_config_word(pdev, pwr_cmd_idx + 4, &pwr_command);
++	if ((pwr_command & 3) == ACPI_D3  &&  new_state != ACPI_D3)
++		acpi_wake(pdev);		/* The complicated sequence. */
++	pci_write_config_word(pdev, pwr_cmd_idx + 4,
++							  (pwr_command & ~3) | new_state);
++	return pwr_command & 3;
++}
++
++#if defined(CONFIG_APM)  &&  LINUX_VERSION_CODE < 0x20400 
++static int handle_apm_event(apm_event_t event)
++{
++	static int down = 0;
++	struct dev_info *devi;
++
++	if (debug > 1)
++		printk(KERN_DEBUG "pci-scan: Handling APM event %d for driver "
++			   "list %s...\n",
++			   event, drv_list->name);
++	return 0;
++	switch (event) {
++	case APM_SYS_SUSPEND:
++	case APM_USER_SUSPEND:
++		if (down) {
++			printk(KERN_DEBUG "pci-scan: Received extra suspend event\n");
++			break;
++		}
++		down = 1;
++		for (devi = dev_list; devi; devi = devi->next)
++			if (devi->drv_id->pwr_event)
++				devi->drv_id->pwr_event(devi->dev, DRV_SUSPEND);
++		break;
++	case APM_NORMAL_RESUME:
++	case APM_CRITICAL_RESUME:
++		if (!down) {
++			printk(KERN_DEBUG "pci-scan: Received bogus resume event\n");
++			break;
++		}
++		for (devi = dev_list; devi; devi = devi->next)
++			if (devi->drv_id->pwr_event)
++				devi->drv_id->pwr_event(devi->dev, DRV_RESUME);
++		down = 0;
++		break;
++	}
++	return 0;
++}
++#endif /* CONFIG_APM */
++
++#ifdef MODULE
++int init_module(void)
++{
++#if defined(CONFIG_APM)  &&  LINUX_VERSION_CODE < 0x20400 
++	apm_register_callback(&handle_apm_event);
++#endif
++	return 0;
++}
++void cleanup_module(void)
++{
++#if defined(CONFIG_APM)  &&  LINUX_VERSION_CODE < 0x20400 
++	apm_unregister_callback(&handle_apm_event);
++#endif
++	if (dev_list != NULL)
++		printk(KERN_WARNING "pci-scan: Unfreed device references.\n");
++	return;
++}
++#endif
++
++
++/*
++ * Local variables:
++ *  compile-command: "gcc -DMODULE -D__KERNEL__ -DEXPORT_SYMTAB -Wall -Wstrict-prototypes -O6 -c pci-scan.c"
++ *  c-indent-level: 4
++ *  c-basic-offset: 4
++ *  tab-width: 4
++ * End:
++ */
+diff -Naur linux/drivers/net/pci-scan.h linux.cplant/drivers/net/pci-scan.h
+--- linux/drivers/net/pci-scan.h	Wed Dec 31 17:00:00 1969
++++ linux.cplant/drivers/net/pci-scan.h	Tue Dec 11 12:32:38 2001
+@@ -0,0 +1,90 @@
++#ifndef _PCI_SCAN_H
++#define _PCI_SCAN_H
++/*
++  version 1.02 $Version:$ $Date: 2002/10/04 16:27:08 $
++   Copyright 1999-2001 Donald Becker / Scyld Computing Corporation
++   This software is part of the Linux kernel.  It may be used and
++   distributed according to the terms of the GNU Public License,
++   incorporated herein by reference.
++*/
++
++/*
++  These are the structures in the table that drives the PCI probe routines.
++  Note the matching code uses a bitmask: more specific table entries should
++  be placed before "catch-all" entries.
++
++  The table must be zero terminated.
++*/
++enum pci_id_flags_bits {
++	/* Set PCI command register bits before calling probe1(). */
++	PCI_USES_IO=1, PCI_USES_MEM=2, PCI_USES_MASTER=4,
++	/* Read and map the single following PCI BAR. */
++	PCI_ADDR0=0<<4, PCI_ADDR1=1<<4, PCI_ADDR2=2<<4, PCI_ADDR3=3<<4,
++	PCI_ADDR_64BITS=0x100, PCI_NO_ACPI_WAKE=0x200, PCI_NO_MIN_LATENCY=0x400,
++	PCI_UNUSED_IRQ=0x800,
++};
++
++struct pci_id_info {
++	const char *name;
++	struct match_info {
++		int	pci, pci_mask, subsystem, subsystem_mask;
++		int revision, revision_mask; 				/* Only 8 bits. */
++	} id;
++	enum pci_id_flags_bits pci_flags;
++	int io_size;				/* Needed for I/O region check or ioremap(). */
++	int drv_flags;				/* Driver use, intended as capability flags. */
++};
++
++enum drv_id_flags {
++	PCI_HOTSWAP=1, /* Leave module loaded for Cardbus-like chips. */
++};
++enum drv_pwr_action {
++	DRV_NOOP,			/* No action. */
++	DRV_ATTACH,			/* The driver may expect power ops. */
++	DRV_SUSPEND,		/* Machine suspending, next event RESUME or DETACH. */
++	DRV_RESUME,			/* Resume from previous SUSPEND  */
++	DRV_DETACH,			/* Card will-be/is gone. Valid from SUSPEND! */
++	DRV_PWR_WakeOn,		/* Put device in e.g. Wake-On-LAN mode. */
++	DRV_PWR_DOWN,		/* Go to lowest power mode. */
++	DRV_PWR_UP,			/* Go to normal power mode. */
++};
++
++struct drv_id_info {
++	const char *name;			/* Single-word driver name. */
++	int flags;
++	int pci_class;				/* Typically PCI_CLASS_NETWORK_ETHERNET<<8. */
++	struct pci_id_info *pci_dev_tbl;
++	void *(*probe1)(struct pci_dev *pdev, void *dev_ptr,
++					long ioaddr, int irq, int table_idx, int fnd_cnt);
++	/* Optional, called for suspend, resume and detach. */
++	int (*pwr_event)(void *dev, int event);
++	/* Internal values. */
++	struct drv_id_info *next;
++	void *cb_ops;
++};
++
++/*  PCI scan and activate.
++	Scan PCI-like hardware, calling probe1(..,dev,..) on devices that match.
++	Returns -ENODEV, a negative number, if no cards are found. */
++
++extern int pci_drv_register(struct drv_id_info *drv_id, void *initial_device);
++extern void pci_drv_unregister(struct drv_id_info *drv_id);
++
++
++/*  ACPI routines.
++	Wake (change to ACPI D0 state) or set the ACPI power level of a sleeping
++	ACPI device.  Returns the old power state.  */
++
++int acpi_wake(struct pci_dev *pdev);
++enum  acpi_pwr_state {ACPI_D0, ACPI_D1, ACPI_D2, ACPI_D3};
++int acpi_set_pwr_state(struct pci_dev *pdev, enum acpi_pwr_state state);
++
++
++/*
++ * Local variables:
++ *  c-indent-level: 4
++ *  c-basic-offset: 4
++ *  tab-width: 4
++ * End:
++ */
++#endif
+diff -Naur linux/drivers/net/tulip.c linux.cplant/drivers/net/tulip.c
+--- linux/drivers/net/tulip.c	Sun Dec 10 17:49:42 2000
++++ linux.cplant/drivers/net/tulip.c	Tue Dec 11 12:32:38 2001
+@@ -32,7 +32,8 @@
+ #define MAX_UNITS 8
+ /* Used to pass the full-duplex flag, etc. */
+ static int full_duplex[MAX_UNITS] = {0, };
+-static int options[MAX_UNITS] = {0, };
++static int options[MAX_UNITS] = {3,3 };
++/*static int options[MAX_UNITS] = {0, };*/
+ static int mtu[MAX_UNITS] = {0, };			/* Jumbo MTU for interfaces. */
+ 
+ /*  The possible media types that can be set in options[] are: */
+diff -Naur linux/fs/nfs/dir.c linux.cplant/fs/nfs/dir.c
+--- linux/fs/nfs/dir.c	Sun Dec 10 17:49:44 2000
++++ linux.cplant/fs/nfs/dir.c	Thu Jul 12 22:52:10 2001
+@@ -698,6 +698,7 @@
+ 
+ 	if (!error) {
+ 		error = -EACCES;
++if (dentry->d_inode) while (1) printk("wedgy: i = %p, di = %p\n", inode, dentry->d_inode);
+ 		inode = nfs_fhget(dentry, &fhandle, &fattr);
+ 		if (inode) {
+ 	    no_entry:
+@@ -719,6 +720,8 @@
+ 	struct inode *inode;
+ 	int error = -EACCES;
+ 
++	if (dentry->d_inode)
++		return 0;
+ 	inode = nfs_fhget(dentry, fhandle, fattr);
+ 	if (inode) {
+ 		d_instantiate(dentry, inode);
+diff -Naur linux/fs/nfs/file.c linux.cplant/fs/nfs/file.c
+--- linux/fs/nfs/file.c	Sun Dec 10 17:49:44 2000
++++ linux.cplant/fs/nfs/file.c	Fri Feb  2 15:13:26 2001
+@@ -44,6 +44,8 @@
+ static int  nfs_fsync(struct file *, struct dentry *dentry);
+ static int  nfs_prepare_write(struct file *, struct page *, unsigned, unsigned);
+ static int  nfs_sync_page(struct page *page);
++static int  nfs_file_ioctl(struct inode*, struct file*, unsigned,
++                           unsigned long);
+ 
+ static struct file_operations nfs_file_operations = {
+ 	NULL,			/* lseek - default */
+@@ -51,7 +53,7 @@
+ 	nfs_file_write,		/* write */
+ 	NULL,			/* readdir - bad */
+ 	NULL,			/* select - default */
+-	NULL,			/* ioctl - default */
++	nfs_file_ioctl,		/* ioctl - default */
+ 	nfs_file_mmap,		/* mmap */
+ 	nfs_open,		/* open */
+ 	nfs_file_flush,		/* flush */
+@@ -284,4 +286,33 @@
+ 		nfs_zap_caches(inode);
+ 	}
+ 	return status;
++}
++
++/*
++ * Ioctl
++ */
++static int
++nfs_file_ioctl(struct inode *inode, struct file *filp, unsigned cmd,
++          unsigned long arg)
++{
++        int     err;
++
++        switch (cmd) {
++
++        case BLKFLSBUF:
++                /*
++                 * Write (synchronous) dirty pages and then invalidate the
++                 * page maps for this file. Eventually, want to be able to
++                 * "flush/invalidate" only a region but the whole file works
++                 * for now.
++                 */
++                err = nfs_file_flush(filp);
++                if (!err)
++                        invalidate_inode_pages(inode);
++                break;
++        default:
++                return -ENOTTY;
++        }
++
++        return err;
+ }
+diff -Naur linux/fs/nfs/inode.c linux.cplant/fs/nfs/inode.c
+--- linux/fs/nfs/inode.c	Sun Dec 10 17:49:44 2000
++++ linux.cplant/fs/nfs/inode.c	Tue Mar 13 16:09:17 2001
+@@ -1226,7 +1226,18 @@
+ 		inode->i_blksize = inode->i_sb->s_blocksize;
+  	} else {
+  		inode->i_blocks = fattr->du.nfs2.blocks;
+- 		inode->i_blksize = fattr->du.nfs2.blocksize;
++		/*
++		 * Imitate the Linux 2.2.13 behavior. The redhat
++		 * linux 6.2 distribution contains a bad readdir/getdents
++		 * in the glibc that cause programs to core dump when using
++		 * our SGI server.
++		 *
++		 * --Lee; Wed Feb 21 16:58:49 MST 2001
++		 *
++		 * Dump this ASAP. Fix glibc, redhat, or something but
++		 * this lie is not a wonderful solution.
++		 */
++		inode->i_blksize = inode->i_sb->s_blocksize;
+  	}
+  	inode->i_rdev = 0;
+  	if (S_ISCHR(inode->i_mode) || S_ISBLK(inode->i_mode))
+diff -Naur linux/include/linux/mm.h linux.cplant/include/linux/mm.h
+--- linux/include/linux/mm.h	Sun Dec 10 17:49:44 2000
++++ linux.cplant/include/linux/mm.h	Fri Feb  2 15:13:27 2001
+@@ -353,20 +353,24 @@
+ {
+ 	unsigned long grow;
+ 
+-	address &= PAGE_MASK;
+-	grow = vma->vm_start - address;
+-	if ((vma->vm_end - address
+-	    > current->rlim[RLIMIT_STACK].rlim_cur) ||
+-	    ((current->rlim[RLIMIT_AS].rlim_cur < RLIM_INFINITY) &&
+-	    ((vma->vm_mm->total_vm << PAGE_SHIFT) + grow
+-	    > current->rlim[RLIMIT_AS].rlim_cur)))
+-		return -ENOMEM;
+-	vma->vm_start = address;
+-	vma->vm_offset -= grow;
+-	vma->vm_mm->total_vm += grow >> PAGE_SHIFT;
+-	if (vma->vm_flags & VM_LOCKED)
+-		vma->vm_mm->locked_vm += grow >> PAGE_SHIFT;
+-	return 0;
++        address &= PAGE_MASK;
++        grow = vma->vm_start - address;
++        if ((vma->vm_end - address
++            > current->rlim[RLIMIT_STACK].rlim_cur) ||
++            ((current->rlim[RLIMIT_AS].rlim_cur < RLIM_INFINITY) &&
++            ((vma->vm_mm->total_vm << PAGE_SHIFT) + grow
++            > current->rlim[RLIMIT_AS].rlim_cur)) ||
++            ((vma->vm_mm->locked_vm << PAGE_SHIFT) + grow
++            > (unsigned long) current->rlim[RLIMIT_MEMLOCK].rlim_cur))
++                return -ENOMEM;
++        vma->vm_start = address;
++        vma->vm_offset -= grow;
++        vma->vm_mm->total_vm += grow >> PAGE_SHIFT;
++        if (vma->vm_flags & VM_LOCKED) {
++                vma->vm_mm->locked_vm += grow >> PAGE_SHIFT;
++                make_pages_present(address, address + grow);
++        }
++        return 0;
+ }
+ 
+ /* Look up the first VMA which satisfies  addr < vm_end,  NULL if none. */
+diff -Naur linux/include/linux/nfs.h linux.cplant/include/linux/nfs.h
+--- linux/include/linux/nfs.h	Sun Dec 10 17:49:44 2000
++++ linux.cplant/include/linux/nfs.h	Fri Feb  2 15:13:28 2001
+@@ -67,7 +67,6 @@
+ 	NFFIFO = 8
+ };
+ 
+-
+ #if defined(__KERNEL__) || defined(NFS_NEED_KERNEL_TYPES)
+ /* 
+  * Mount support for NFSroot
+@@ -103,6 +102,9 @@
+ 	NFS_DATA_SYNC = 1,
+ 	NFS_FILE_SYNC = 2
+ };
++
++/* NFS ioctl() extension for ROMIO locking: get the NFS file handle */
++#define NFSGETFH                _IOR('N', 0x00, struct nfs_fh)
+ 
+ #endif /* __KERNEL__ */
+ #endif /* _LINUX_NFS_H */
+diff -Naur linux/kernel/ksyms.c linux.cplant/kernel/ksyms.c
+--- linux/kernel/ksyms.c	Sun Dec 10 17:49:44 2000
++++ linux.cplant/kernel/ksyms.c	Fri Feb  2 15:13:31 2001
+@@ -84,6 +84,9 @@
+ #endif
+ EXPORT_SYMBOL(get_options);
+ 
++/* Cplant hack */
++EXPORT_SYMBOL(make_pages_present);
++
+ /* process memory management */
+ EXPORT_SYMBOL(do_mmap);
+ EXPORT_SYMBOL(do_munmap);
+diff -Naur linux/mm/mlock.c linux.cplant/mm/mlock.c
+--- linux/mm/mlock.c	Wed Aug 25 18:29:53 1999
++++ linux.cplant/mm/mlock.c	Fri Feb  2 15:13:33 2001
+@@ -129,8 +129,11 @@
+ 	struct vm_area_struct * vma, * next;
+ 	int error;
+ 
++/* Cplant hack */
++#if 0
+ 	if (on && !capable(CAP_IPC_LOCK))
+ 		return -EPERM;
++#endif
+ 	len = (len + ~PAGE_MASK) & PAGE_MASK;
+ 	end = start + len;
+ 	if (end < start)
+@@ -226,8 +229,11 @@
+ 	unsigned int def_flags;
+ 	struct vm_area_struct * vma;
+ 
++/* Cplant hack */
++#if 0
+ 	if (!capable(CAP_IPC_LOCK))
+ 		return -EPERM;
++#endif
+ 
+ 	def_flags = 0;
+ 	if (flags & MCL_FUTURE)
+diff -Naur linux/mm/mmap.c linux.cplant/mm/mmap.c
+--- linux/mm/mmap.c	Sun Dec 10 17:49:44 2000
++++ linux.cplant/mm/mmap.c	Fri Feb  2 15:13:33 2001
+@@ -761,6 +761,11 @@
+ {
+ 	struct vm_area_struct **pprev;
+ 	struct file * file;
++/* Cplant hack */
++        unsigned long jflags;
++
++        save_flags(jflags);
++        cli();
+ 
+ 	if (!mm->mmap_avl) {
+ 		pprev = &mm->mmap;
+@@ -798,6 +803,7 @@
+ 		*head = vmp;
+ 		vmp->vm_pprev_share = head;
+ 	}
++        restore_flags(jflags);
+ }
+ 
+ /* Merge the list of memory segments if possible.
+diff -Naur linux/net/ipv4/ipconfig.c linux.cplant/net/ipv4/ipconfig.c
+--- linux/net/ipv4/ipconfig.c	Sun Dec 10 17:49:44 2000
++++ linux.cplant/net/ipv4/ipconfig.c	Tue Jul 10 16:00:59 2001
+@@ -1150,7 +1150,7 @@
+ 	 */
+ 	if (ic_myaddr == INADDR_NONE ||
+ #ifdef CONFIG_ROOT_NFS
+-	    (root_server_addr == INADDR_NONE && ic_servaddr == INADDR_NONE) ||
++	    (root_server_addr == INADDR_NONE || ic_servaddr == INADDR_NONE) ||
+ #endif
+ 	    ic_first_dev->next)
+ 	{

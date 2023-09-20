@@ -1,0 +1,52 @@
+#
+# $Id: Makefile-arch,v 1.2 2001/12/22 00:01:18 rbbrigh Exp $
+#
+
+include ../../../../../../Makefile-common
+
+CFLAGS      +=  -g -DFORTRANUNDERSCORE -DHAVE_MPICHCONF_H -DMPID_DEVICE_CODE
+
+INCLUDEDIRS  = -I.. -I/usr/include -I../../../include \
+               -I../../../src/coll \
+               -I$(CPLANT_TOP)/compute/OS/linux/include \
+               -I$(CPLANT_TOP)/compute/lib/p30/include \
+               -I$(CPLANT_TOP)/compute/OS/Myrinet/rtscts
+
+CSOURCES     = adi2recv.c adi2send.c adi2init.c adi2probe.c adi2ssend.c \
+               adi2hsend.c adi2hrecv.c adi2hssend.c adi2pack.c adi2mpack.c \
+               adi2req.c adi2cancel.c adi2hrsend.c adi2rsend.c \
+               tr2.c sbcnst2.c cmnargs.c queue.c \
+               p31init.c p31priv.c p31short.c p31debug.c \
+               p31long.c p31ready.c p31sshort.c p31recv.c 
+
+COBJECTS     = $(CSOURCES:.c=.o)
+
+LIBDIR       = ../../../$(CPLANT_ARCH)-$(OS)
+LIB          = $(LIBDIR)/libmpi.a
+
+all: $(LIB)
+
+$(LIB): $(LIBDIR) $(LIB)($(COBJECTS))
+
+$(LIBDIR):
+	@-mkdir $(LIBDIR)
+
+$(COBJECTS): %.o : ../%.c ../mpiddev.h
+	$(CC) $(CFLAGS) $(INCLUDEDIRS) -c $<
+
+../mpiddev.h: ../p31_default_long_msg.$(CPLANT_ARCH).h
+	rm -rf $@
+	ln -s p31dev.$(CPLANT_ARCH).h $@
+
+../p31_default_long_msg.$(CPLANT_ARCH).h: mpi_lsize
+	./mpi_lsize > $@
+
+mpi_lsize: ../mpi_lsize.c ../../../../p30/include/lib-p30.h ../../../../../OS/Myrinet/rtscts/Pkt_module.h ../../../../../OS/Myrinet/rtscts/RTSCTS_protocol.h ../../../../../OS/linux/include/asm/page.h
+	$(CC) $(CFLAGS) -o mpi_lsize ../mpi_lsize.c $(INCLUDEDIRS)
+
+install uninstall:
+	@$(MAKE) -C ../../../ $@
+
+clean:
+	@rm -f *~ $(COBJECTS) $(LIB) ../mpiddev.h ../p31_default_long_msg.$(CPLANT_ARCH).h mpi_lsize
+

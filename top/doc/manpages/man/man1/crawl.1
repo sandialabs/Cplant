@@ -1,0 +1,47 @@
+.TH CRAWL 1 "Cplant Myrinet Utilities" "Cplant" \" -*- nroff -*-
+.SH NAME
+.B crawl
+\- self-ping utility (for crawling myrinet routes on Cplant)
+.SH SYNOPSIS
+.B crawl 
+\ node-id
+
+OR
+
+.B crawl 
+\ route-byte-sequence
+
+.SH DESCRIPTION
+.B crawl 
+must be run as the superuser.
+
+.B crawl
+is a self-ping utility for myrinet on Cplant. It is run 
+on a service or compute node to test each hop in a myrinet route
+from the local node to a specified desination node. It takes as argument 
+the node id of the destination machine or a space-separated list of route 
+bytes, each of
+the form 0xST with S and T hex digits.
+
+.B crawl 
+is a perl script that translates its local node id to a machine name by
+calling pnid2hname. In the case of a specified destination node it uses this 
+name along with the specified destination
+node id to parse a route sequence out of the directory of Cplant route files.
+Then it invokes the
+.B troute(1) 
+utility. 
+.B troute 
+in turn makes ioctl() calls to the portals and rtscts devices.
+
+.B crawl 
+performs a self-ping test for each byte of the route on the path to the
+destination machine; each time a ping packet enters a new switch it
+immediately goes back out that port and retraces the route back
+to the node of origin.
+
+.B crawl 
+must be run as the superuser.
+
+.SH SEE ALSO
+

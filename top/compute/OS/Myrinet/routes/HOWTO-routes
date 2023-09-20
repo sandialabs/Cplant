@@ -1,0 +1,48 @@
+
+$Id: HOWTO-routes,v 1.3 2000/06/23 20:45:14 rolf Exp $
+
+This file describes how to generate routes for Siberia. This is an
+off-line procedure and does not require booting the machine with GM to
+use the Myricom mapper. The algorithm used is the same as the one
+built into the mapper, though.
+
+The file top/support/cplant/Documentation/HowToMapMyrinet describes
+how to do it using GM.
+
+gensiberia (in this directory) has hard-coded the topology and
+numbering and naming scheme of Siberia in it. It creates a mapper file
+for Siberia, just like the GM mapper would.
+
+Using Myricom's simple_routes program that comes with GM, we generate
+a route file with all the routes from all the nodes in it.
+
+myr2sandia (in this directory) takes the Myricom route file generated
+above and converts it into a set of routes files. There will be one
+route file for each node, and the format is such that my MCP can
+understand it.
+
+
+    - gensiberia > siberia.map
+    - get the latest GM source and untar it. Assume it is in the
+	directory gm-1.086
+    - cd gm-1.086/mt
+    - make
+	If it says makefile:4: ../config/make.<arch>: No such file or
+	directory, then you'll have to create a Makefile for your
+	architecture. Often you can just copy one of the existing ones:
+	cd config
+	cp make.<similar arch> make.<arch>
+	For example "cp make.intel_linux make.sparc_linux"
+    - cd tools/<arch>
+    - simple_routes siberia.map stdout -route-args | myr2sandia siberia
+
+If the program simple_routes is installed somewhere on $PATH, then
+the Makefile in this directory will build the Siberia tools and
+generate the routes.
+
+The Makefile in this directory does all of the above for siberia, tinyplant,
+and iceberg2:
+
+    make
+    make routes
+

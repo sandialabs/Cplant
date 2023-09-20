@@ -1,0 +1,60 @@
+Functions implemented:
+---------------------
+
+	PtlInit	
+	PtlGetId	
+	PtlNIInit
+	PtlNIFini
+	PtlNIHandle
+	PtlNIBarrier
+	
+	PtlMEAttach
+	PtlMEInsert
+	PtlMEUnlink
+
+	PtlMDAttach
+	PtlMDInsert
+	PtlMDUnlink
+	PtlMDUpdate
+	PtlMDBind
+
+	PtlEQAlloc
+	PtlEQFree
+	PtlEQGet
+
+	PtlPut
+	PtlGet
+
+	PtlEQWait
+		Spin waits right now.  Expensive.
+
+	PtlTransID	
+		Currently no PID information for other nodes
+		is stored or used.
+
+	PtlNIStatus
+		We now support several status registers.
+		PTL_SR_DROP_COUNT, etc are defined in <p30/types.h>
+
+Notes:
+------
+	Access control is not yet in place
+	Some MD options are not checked
+	Address translation is not explicit in example ipnal
+
+	Not all functions have been adaquately tested
+
+Partial:
+-------------
+
+
+Unimplemented:
+---------------------
+
+
+	PtlNIDist
+		There is no "distance" field yet, nor means
+		to translate it.
+
+	PtlACEntry
+		No access controls are in place yet

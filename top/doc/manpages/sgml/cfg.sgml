@@ -1,0 +1,69 @@
+<!--
+    $Id: cfg.sgml,v 1.1.2.1 2002/08/28 21:38:53 jrstear Exp $
+-->
+
+<!doctype qwertz system>
+
+<manpage title="cfg" sectnum="5" date='"28 August 2002"'
+    footer='"Cplant"' main='"Cplant System Manager&quot;s Manual"'>
+
+
+<sect1> NAME
+    <p>
+    <bf/cfg/ &mdash Cplant node-configuration file
+    </p>
+
+
+<sect1> DESCRIPTION
+    <p>
+    <bf/cfg/ is the file which the init.d/cplant script examines to
+    determine node configurations.  It contains lines of the format:
+
+     hostname &lsqb;hostname2&rsqb;... : script&lsqb;=args&rsqb;
+    &lsqb;script&lsqb;=args&rsqb;&rsqb;...
+    
+    where hostname is the output of `hostname` on a node in the
+    cluster, and script&lsqb;=args&rsqb; is the name of a script in
+    cplant/init.d and the arguments that should be passed to it.  
+
+    IMPORTANT: due to the way cfg is parsed, all hostnames MUST BE
+    padded with whitespace on both sides.  Ie- even if there is only
+    a single hostname listed, it must have a space before and after it
+    in order for the <bf/cplant/ script to identify it correctly (ie- 
+    no spaces, the line won't be matched and the node may come up with
+    the "default" configuration!).
+
+    There are three special configuration cases: 
+    
+    1) a line with the string " default " before the colon instead of a
+    hostname list indicates the (default) configuration of any node(s)
+    which are not explicitly listed in the file.  This is typically
+    used for compute nodes, as their configuration is the same and
+    they are (generally) the most numerous type of node in the
+    cluster.  Only the first "default" line in the cfg file is
+    significant.
+    
+    2)  a line with the string " disabled " after the colon instead of a
+    script&lsqb;=args&rsqb; list identifies node(s) which are disabled
+    from the cplant perspective and should not attempt to start
+    cplant.  This is typically used to temporarily disable nodes with
+    known hardware problems etc.  There can be any number of disabled
+    lines, as well as any number of hostnames listed before the colon
+    of such a line.
+
+    3) the third case is a line which has " bebopd_arguments " before
+    the colon.  after the colon should appear the verbatim arguments
+    that should be given to bebopd when it is run (by the
+    init.d/user_env script in the event that it is run with "bebopd"
+    as an argument).  This appears in the cfg file in order to remove
+    it from the user_env which should be cluster-independant (and the
+    arguments can easily be too long and problematic to deal with as
+    the regular script=args format).
+
+<sect1> SEE ALSO
+    <p>
+    <bf>cplant</bf>, 
+    Guide to building and installing Cplant
+    </p>
+
+</manpage>

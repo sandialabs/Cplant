@@ -1,0 +1,53 @@
+#
+# $Id: Makefile-arch,v 1.1 2001/10/29 22:54:35 pumatst Exp $
+#
+
+include ../../../../../../Makefile-common
+
+CC       = $(CPCC)
+FC       = $(CPF77)
+
+P2PUTILITIES        = test.o dtypes.o gcomm.o
+P2PCEXECSWITHTEST   = overtake bsendtest sendrecv self typeub isndrcv typetest ssendtest \
+                      third fourth fifth sixth probe probe1 testtest1 hvectest hvectest2 
+P2PCEXECSWITHDTYPES = sendrecv2 sendrecv3 sendrecv4 irsend testsome testall
+P2PCEXECSALONE      = simple persistent getelm typebase pack waitall alltoall integrity traffic 
+P2PCEXECS           = $(P2PCEXECSWITHTEST) $(P2PCEXECSWITHDTYPES) $(P2PCEXECSALONE)
+#P2PFEXECS           = allpair pingpong
+
+ALLEXECS            = $(P2PCEXECS) $(P2PFEXECS)
+
+include $(INCLUDES) 
+
+vpath %.c ..
+vpath %.a $(CPLANT_TOP)/lib/comm/$(CPLANT_ARCH)-$(OS):$(CPLANT_TOP)/lib/puma/$(CPLANT_ARCH)-$(OS)\
+          $(CPLANT_TOP)/compute/lib/apps/$(CPLANT_ARCH)-$(OS)
+
+EXECS    = $(ALLEXECS)
+
+INSTALLDIR     = $(testdir)
+INSTALLTARGETS = $(EXECS)
+
+all: $(EXECS)
+
+$(P2PUTILITIES): %.o : ../pt2pt/%.c
+	$(CC) -c $<
+
+$(P2PCEXECSWITHTEST) : % : ../pt2pt/%.c test.o
+	$(CC) -o $@ $^ -lmpi -lm 
+
+$(P2PCEXECSWITHDTYPES) : % : ../pt2pt/%.c dtypes.o gcomm.o
+	$(CC) -o $@ $^ -lmpi -lm 
+
+$(P2PCEXECSALONE) : % : ../pt2pt/%.c
+	$(CC) $(CFLAGS) -o $@ $^ -lmpi -lm 
+
+$(P2PFEXECS) : % : ../pt2pt/%.f
+	$(CC) -o $@ $^ -lmpi -lm
+
+install uninstall: $(INSTALLTARGETS)
+	@$($@)
+
+clean:
+	-rm -f $(ALLEXECS) $(P2PUTILITIES)
+

@@ -1,0 +1,52 @@
+
+$Id: README.coding,v 1.7 1999/07/16 21:59:15 rolf Exp $
+
+This file lists some of the coding rules we want to follow for Cplant
+system software. Obviously, the rules don't apply to things such as the
+Linux kernel which is written by someone else.
+
+An updated version of the Indian Hill C coding style guide:
+    http://www.cs.wvu.edu/usr07/hware/public_html/cstyle.html
+
+C programming hints can be found at
+    http://www.isi.edu/~kannan/c-programming.html
+
+Check out the Linux coding style manual in
+    /usr/src/linux/Documentation/CodingStyle
+
+
+Rule #1:	All code has to pass "gcc -Wall" without warnings.
+
+Rule #2:        Put a \dollar_sign Id \dollar_sign without the spaces
+		into the comment section at the beginning of each file.
+		CVS will then expand it with the revision number and who
+		changed it last.  The two \dollar_sign are real $ signs.
+		I just can't use them in this description, otherwise
+		they get expanded as soon as the file gets checked in.
+
+Rule #3:        Indentation is 4 spaces. Don't set your tab-stop to 4!
+		In vi you can use ":set shiftwidth=4" and then Ctrl-t,
+		<<, and >>. Here is how to do it in emacs (thanks to
+		Bill Young). Put this into your ~/.emacs file:
+		(defun my-c-mode-indent-common-hook ()
+		  ;; customizations for all of c-mode, c++-mode, objc-mode, java-mode
+		  (c-set-offset 'defun-block-intro 4)
+		  (c-set-offset 'statement-block-intro 4)
+		  (c-set-offset 'substatement 4)
+		  )
+		(add-hook 'c-mode-common-hook 'my-c-mode-indent-common-hook)
+
+Rule #4:	The names of functions being defined start in the first
+		column. The return type is in the line above. This way
+		grep "^fun_name" *.c will find only the definition, and
+		not all the places it is called:
+
+		int
+		foo(void)
+		{
+		}  /* end of foo() */
+
+Rule #5:	There is at least one white line between the end of one
+		function and the beginning of the next.
+
+Rule #6:	Make each line fit on a 80 column wide terminal.

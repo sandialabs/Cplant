@@ -1,0 +1,82 @@
+#!/usr/bin/perl -w
+
+#
+#    arguments:  test name
+#                test class
+#                directory containing test results
+#                directory to which plot files will be written
+#
+# Open the output files for all size tests of a given benchmark for
+# a given class.
+#
+# Save plottable results to a file:
+#
+#    numNodes   seconds     M total     M/node
+#
+$TNAME=$ARGV[0];
+$TCLASS=$ARGV[1];
+$DIR=$ARGV[2];
+$PLOTDIR=$ARGV[3];
+
+$TROOT=$TNAME.".".$TCLASS;
+$tab = " " x 8;
+
+#
+# process test results files of the form  name.class.size.out
+#
+
+foreach $nextTest (`ls $DIR/$TROOT*`){
+
+    open(TEST, $nextTest) or die "can't open $nextTest: $!\n";
+
+    while ($line = <TEST>){
+
+        if ($line =~ /=/){
+
+	    chop($line);
+
+	    if ($line =~ /Total processes/){
+		($label, $numNodes) = split(/[\s]*=[\s]*/, $line);
+	    }
+	    elsif ($line =~ /Time in seconds/){
+		($label, $seconds) = split(/[\s]*=[\s]*/, $line);
+	    }
+	    elsif ($line =~ /Mop\/s total/){
+		($label, $Mtotal) = split(/[\s]*=[\s]*/, $line);
+	    }
+	    elsif ($line =~ /Mop\/s\/process/){     
+                #
+                # last line of interest in file 
+                #
+		($label, $Mproc) = split(/[\s]*=[\s]*/, $line);
+		last;
+	    }
+	}
+    }
+    push @outLine, $numNodes.$tab.$seconds.$tab.$Mtotal.$tab.$Mproc."\n";
+
+    close(TEST);
+}
+
+#
+# create file suitable for gnuplot input, list data in numNodes order
+#
+sub firstField
+{
+    ($n1, $theRest) = split(" ",$a);
+    ($n2, $theRest) = split(" ",$b);
+    $n1 <=> $n2;
+}
+@sortedOut = sort firstField @outLine;
+
+if (!(-d $PLOTDIR)){
+    mkdir $PLOTDIR, 0777
+}
+
+open(PLOT, ">$PLOTDIR/$TROOT.plot") or die "can't open plot file: $!\n";
+
+for ($i = 0; $i <= $#outLine ; $i++){
+    print PLOT $sortedOut[$i];
+}
+
+close(PLOT);

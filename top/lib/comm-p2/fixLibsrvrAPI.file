@@ -1,0 +1,20 @@
+s/initialize_data_portal/srvr_init_data_ptl/g
+s/release_data_portal/srvr_release_data_ptl/g
+s/add_data_buf/srvr_add_data_buf/g
+s/test_write_data_buf/srvr_test_write_buf/g
+s/test_read_data_buf/srvr_test_read_buf/g
+s/delete_data_buf/srvr_delete_buf/g
+s/await_send_completion/srvr_await_send_completion/g
+s/initialize_control_portal/srvr_init_control_ptl/g
+s/initialize_control_portal_at/srvr_init_control_ptl_at/g
+s/send_to_control_ptl/srvr_send_to_control_ptl/g
+s/get_next_control_msg/srvr_get_next_control_msg/g
+s/free_control_msg/srvr_free_control_msg/g
+s/release_control_portal/srvr_release_control_ptl/g
+s/display_control_msg/srvr_display_control_msg/g
+s/reset_control_portal/srvr_reset_control_ptl/g
+s/PORTAL_INDEX/int/g
+s/ INVAL_NID/ SRVR_INVAL_NID/g
+s/ INVAL_PID/ SRVR_INVAL_PID/g
+s/ INVAL_PTL/ SRVR_INVAL_PTL/g
+s/CHAMELEON/unsigned long/g

@@ -1,0 +1,73 @@
+<!--
+    $Id: PtlMEAttach.sgml,v 1.2 2001/01/10 23:10:41 rbbrigh Exp $
+-->
+
+<!doctype qwertz system>
+
+<manpage title="PtlMEAttach" sectnum="3" date='"04 Jan 2001"'
+    footer='"Portals 3.0"' main='"Portals 3.0 Library"'>
+
+<sect1> NAME
+    <p>
+    <bf/PtlMEAttach/ &mdash Create a match list entry and attach it to a
+    portal
+
+<sect1> SYNOPSIS
+    <p>
+     #include "p30.h"
+
+     int PtlMEAttach( ptl_handle_ni_t interface, ptl_pt_index_t index,
+     ptl_process_id_t matchid, ptl_match_bits_t match_bits, ptl_match_bits_t
+     ignorebits, ptl_unlink_t unlink, ptl_handle_me_t* handle );
+
+<sect1> PARAMETERS
+    <p>
+     <descrip>
+     <tag /interface/
+     A handle for the interface to use
+     <tag /index/
+     The portal table index where the match list should be attached
+     <tag /matchid/
+     Specifies the match criteria for the process id of the requestor
+     <tag /ignorebits/
+     Mask out insignificant bits in the incoming match bits
+     <tag /unlink/
+     Indicates the match list entry should be unlinked when the last memory
+     descriptor associated with this match entry is unlinked
+     <tag /handle/
+     On successful return, this location will hold a handle for the newly
+     created match entry.
+     </descrip>
+
+<sect1> DESCRIPTION
+    <p>
+    <bf /PtlMEAttach/ creates a match list consisting of a single entry and
+    attaches this list to the portal table for <bf /interface/.  If the portal
+    table already has a match list attached to the specified index, they must
+    first be unlinked.
+
+<sect1> RETURN VALUES
+    <p>
+    <descrip>
+    <tag /PTL_OK/
+    Indicates success
+    <tag /PTL_NOINIT/
+    Indicates that the Portals API has not been successfully initialized
+    <tag /PTL_INUSE/
+    Indicates that the portal table entry already has a match entry attached
+    <tag /PTL_INV_PTINDEX/
+    Indicates that \texttt{index} is not a valid portal table index
+    <tag /PTL_INV_PROC/
+    Indicates that \texttt{matchid} is not a valid process identifier
+    <tag /PTL_NOSPACE/
+    Indicates that there is insufficient memory to allocate the match entry
+    <tag /PTL_SEGV/
+    Indicates that <bf /handle/ is not a legal address
+    </descrip>
+
+<sect1> SEE ALSO
+    <p>
+    <bf /PtlMEInsert(3)/, <bf /PtlMEUnlink(3)/<newline>
+    <bf /Portals 3.0 Message Passing Interface document/
+
+</manpage>

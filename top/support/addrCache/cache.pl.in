@@ -1,0 +1,50 @@
+#! /usr/bin/perl
+
+# perl script for requesting addr cache data from compute
+# nodes be sent to this (service) node. then we listen for
+# the responses to come in (one at the end of each application
+# run). we copy each response to a log file.
+
+# configuration section #######################################
+$file_path = "/usr/local/jsotto/cache.log";
+$NODE_LIST= "1-11,15,28-31";
+###############################################################
+
+$cplant_path= "CPLANT_PATH";
+
+# make the cache data req to all the nodes in the
+# system. this node's nid is implicit in the request 
+# packet
+
+$mynid = `$cplant_path/sbin/getNid`;
+chop($mynid);
+
+@clumps = split(/,/,$NODE_LIST);
+
+foreach $j (@clumps) {
+  # get the endpoints of the clump
+  @nodes = split(/-/,$j);
+  $c0 = $nodes[0];
+  if ( @nodes == 1 ) {
+    $cn = $nodes[0];
+  }
+  else {
+    $cn = $nodes[1];
+  }
+  for ($i=$c0; $i<=$cn; $i++) {
+    if ( $i != $mynid ) {
+      `$cplant_path/sbin/cacheReq $i`;
+    }
+  }
+}
+open(DLOG, ">>$file_path");
+
+while(1) {
+  $response = `$cplant_path/sbin/cacheProx`;
+  if ($response ne "") {
+    open(DLOG, ">>$file_path");
+    print(DLOG "$response\n");
+    close(LOG);
+  }
+  sleep(10);
+}

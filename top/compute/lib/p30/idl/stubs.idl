@@ -1,0 +1,32 @@
+/*
+ * boiler plate functions that can be used to write the 
+ * library side routines
+ */
+
+#include <lib-p30.h>
+#include <p30/arg-blocks.h>
+
+%%
+
+int FAKE_${func_name}( nal_cb_t *nal, void *private, void *v_args, void *v_ret )
+{
+	/*
+	 * Incoming:
+@map { "\t *\t$_->[0] $_->[1]\n" } grep $_->[1] =~ /_in/, @args
+	 *
+	 * Outgoing:
+@map { "\t *\t$_->[0] $_->[1]\n" } grep $_->[1] =~ /out$/, @args
+	 */
+	
+	${func_name}_in	*args	= v_args;
+	${func_name}_out	*ret	= v_ret;
+
+	if( !args )
+		return ret->rc = PTL_SEGV;
+
+	return ret->rc = PTL_NOT_IMPLEMENTED;
+}
+
+extern int do_${func_name}(nal_cb_t *nal, void *private, void *v_args, void *v_ret) __attribute__ ((weak,alias("FAKE_${func_name}")));
+
+%%

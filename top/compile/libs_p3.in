@@ -1,0 +1,3 @@
+#dont change this list w/o 1st testing changes on ALL the compilers (gnu, compaq,OSF...)
+CPLANT_LIBS="-lsrvr -lpuma -lgrp_io -lpuma -lenfs -lsrvr -lp30api -lp30myr -lp30lib"
+

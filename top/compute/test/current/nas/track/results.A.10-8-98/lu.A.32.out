@@ -1,0 +1,116 @@
+ 
+ 
+ NAS Parallel Benchmarks 2.2 -- LU Benchmark
+ 
+ Size:  64x 64x 64
+ Iterations: 250
+ Number of processes:    32
+ 
+ Time step    1
+ Time step   20
+ Time step   40
+ Time step   60
+ Time step   80
+ Time step  100
+ Time step  120
+ Time step  140
+ Time step  160
+ Time step  180
+ Time step  200
+ Time step  220
+ Time step  240
+ Time step  250
+ 
+ Verification being performed for class A
+ Accuracy setting for epsilon =  0.1000000000000E-07
+ Comparison of RMS-norms of residual
+           1   0.7790210760669E+03 0.7790210760669E+03 0.1371793790200E-13
+           2   0.6340276525969E+02 0.6340276525969E+02 0.4706860147139E-14
+           3   0.1949924972729E+03 0.1949924972729E+03 0.8308203957537E-14
+           4   0.1784530116042E+03 0.1784530116042E+03 0.3185343769198E-15
+           5   0.1838476034946E+04 0.1838476034946E+04 0.1125443251477E-13
+ Comparison of RMS-norms of solution error
+           1   0.2996408568547E+02 0.2996408568547E+02 0.5928286476171E-15
+           2   0.2819457636500E+01 0.2819457636500E+01 0.1118312028922E-13
+           3   0.7347341269878E+01 0.7347341269877E+01 0.7253059742915E-14
+           4   0.6713922568778E+01 0.6713922568778E+01 0.1852046661013E-14
+           5   0.7071531568839E+02 0.7071531568839E+02 0.1065080870493E-13
+ Comparison of surface integral
+               0.2603092560489E+02 0.2603092560489E+02 0.0000000000000E+00
+ Verification Successful
+ 
+ 
+ LU Benchmark Completed.
+ Class           =                        A
+ Size            =               64x 64x 64
+ Iterations      =                      250
+ Time in seconds =                    53.49
+ Total processes =                       32
+ Compiled procs  =                       32
+ Mop/s total     =                  2230.06
+ Mop/s/process   =                    69.69
+ Operation type  =           floating point
+ Verification    =               SUCCESSFUL
+ Version         =                      2.3
+ Compile date    =              08 Oct 1998
+ 
+ Compile options:
+    MPIF77       = /Net/mp/cplant/bin/f77 
+    FLINK        = $(MPIF77)
+    FMPI_LIB     = -L$(MPIPATH) -lmpi 
+    FMPI_INC     = -I$(MPIPATH)/include
+    FFLAGS       = -O3 -align records -align dcommons -g
+    FLINKFLAGS   = -v
+    RAND         = (none)
+ 
+ 
+ Please send the results of this run to:
+ 
+ NPB Development Team 
+ Internet: npb@nas.nasa.gov
+ 
+ If email is not available, send this to:
+ 
+ MS T27A-1
+ NASA Ames Research Center
+ Moffett Field, CA  94035-1000
+ 
+ Fax: 415-604-3957
+ 
+ 
+ 
+   Node name     Rank  Node   PID   Elapsed  Exit Code  Terminating Signal
+---------------- ----  ----  -----  -------  ---------  ------------------
+SU-003 node-0003    0    17   8395  0:00:58       0       none
+SU-003 node-0005    1    18   8316  0:00:58       0       none
+SU-003 node-0007    2    19   8273  0:00:57       0       none
+SU-003 node-0014    3    24   8258  0:00:58       0       none
+SU-003 node-0010    4    26   8251  0:00:58       0       none
+SU-003 node-0006    5    28   8263  0:00:58       0       none
+SU-003 node-0008    6    29   8252  0:00:58       0       none
+SU-003 node-0004    7    31   8268  0:00:58       0       none
+SU-002 node-0001    8    32   8693  0:00:57       0       none
+SU-002 node-0003    9    33   8464  0:00:57       0       none
+SU-002 node-0005   10    34   8518  0:00:58       0       none
+SU-002 node-0007   11    35   8444  0:00:57       0       none
+SU-002 node-0009   12    36   8438  0:00:58       0       none
+SU-002 node-0011   13    37   8444  0:00:58       0       none
+SU-002 node-0013   14    38   8438  0:00:58       0       none
+SU-002 node-0015   15    39   8486  0:00:58       0       none
+SU-002 node-0014   16    40   8441  0:00:58       0       none
+SU-002 node-0010   17    42   8450  0:00:58       0       none
+SU-002 node-0012   18    43   8424  0:00:57       0       none
+SU-002 node-0008   19    45   8448  0:00:58       0       none
+SU-002 node-0004   20    47   8432  0:00:58       0       none
+SU-001 node-0001   21    48   8310  0:00:57       0       none
+SU-001 node-0003   22    49   8304  0:00:57       0       none
+SU-001 node-0005   23    50   8284  0:00:58       0       none
+SU-001 node-0007   24    51   8284  0:00:58       0       none
+SU-001 node-0009   25    52   8277  0:00:58       0       none
+SU-001 node-0011   26    53   8296  0:00:58       0       none
+SU-001 node-0013   27    54   8289  0:00:58       0       none
+SU-001 node-0015   28    55   8312  0:00:58       0       none
+SU-001 node-0014   29    56    304  0:00:58       0       none
+SU-001 node-0010   30    58   8278  0:00:58       0       none
+SU-001 node-0012   31    59   8269  0:00:58       0       none
+

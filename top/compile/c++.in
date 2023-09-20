@@ -1,0 +1,34 @@
+DoLink=1
+ServiceNode=0
+# link? service node compile?
+for arg in "$@" ; do
+    case "$arg" in 
+        -c)
+        DoLink=0
+        break
+        ;;
+        -service)
+        ServiceNode=1
+        shift
+        break
+        ;;
+    esac
+done
+
+if [ $ServiceNode = 1 ] ; then
+/usr/bin/cxx $FLAGS \
+    $*
+elif [ $DoLink = 1 ] ; then 
+/usr/bin/cxx $FLAGS OPTIFLAGS \
+        $INCLUDE_DIR \
+        $STARTUP_DIR/startup.o \
+        $* \
+        $LIB_DIR \
+	-lcxxstd -lcxx CCC_LINKS \
+	$CPLANT_LIBS
+else
+/usr/bin/cxx $FLAGS OPTIFLAGS \
+        $INCLUDE_DIR \
+        $*
+fi
+

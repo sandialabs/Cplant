@@ -1,0 +1,74 @@
+#!/bin/bash 
+# $Id: enfsd_config,v 1.1.2.3 2002/10/01 19:28:34 rklundt Exp $
+
+CPLANT_PATH=${CPLANT_PATH:-/cplant}
+PATH=$PATH:$CPLANT_PATH/bin:$CPLANT_PATH/sbin
+
+get_mountpoints()
+{
+	while [ "$*" != "" ]; do
+		shift; list="$list $1"; shift
+	done
+	echo $list
+}
+do_mounts()
+{
+	while [ "$*" != "" ]; do
+		serverpartition=$1; shift
+		mountpoint=$1; shift
+		cnx_mount_nfs localhost $serverpartition $mountpoint || \
+		  { echo "enfsd_config: FAILED to mount $serverpartition on $mountpoint"; exit 1; }
+	done
+}
+
+case "$1" in
+    start) 
+	mount_args=`echo $2 | sed -e s/\,/\ /g`
+	mountlist=`get_mountpoints $mount_args`
+	cd /var/tmp
+	( for i in $mountlist; do \
+		echo "$i:0:0:0555"; \
+	  done \
+        ) | \
+	enfsd -L file:/tmp/enfsd.log -n 1 &
+
+	#
+	# Wait for the server to register the control protocol.
+	#
+	count=0
+	while ! ( /usr/sbin/rpcinfo -p | grep 400050 > /dev/null 2>&1 )
+	do
+		count=`expr $count + 1`
+		[ $count -gt 3 ] && echo "$0 $1 $2: rpcinfo poll of local enfsd failed..."
+		sleep 5
+	done
+	
+	#
+	# Create internal mount points and start services
+	#
+	cnx_mount_skelfs localhost / /dev/fd/0 || exit 1
+	sleep 5
+	cnx_start localhost nfs || \
+		{ echo "enfsd_config: FAILED to start nfs service"; exit 1; }
+	cnx_start localhost mount || \
+		{ echo "enfsd_config: FAILED to start mount service"; exit 1; }
+
+	# 
+	# Mount external servers
+	#
+	do_mounts $mount_args
+	;;
+
+    stop)
+        killall -KILL enfsd
+	;;
+
+    restart)
+	$0 stop $2
+	$0 start $2
+	;;
+
+    *)
+	echo "Usage:  {start|stop|restart}"
+
+esac

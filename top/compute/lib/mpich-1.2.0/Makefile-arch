@@ -1,0 +1,41 @@
+#
+# $Id: Makefile-arch,v 1.2.2.1 2002/04/09 17:16:38 galagun Exp $
+#
+ 
+include ../../../../Makefile-common
+
+SUBDIRS = ../mpid ../src
+
+ifeq ($(OS),linux)
+INSTALLLIBS    = libmpi.a libfmpi.a libpmpi.a
+endif
+
+ifeq ($(OS),osf)
+INSTALLLIBS    = libmpi.a
+endif
+
+INSTALLHEADERS = ../include/mpi.h ../include/binding.h ../include/mpi_errno.h \
+                 ../include/mpif.h ../include/mpio.h ../include/mpidefs.h
+
+ifdef INSTALLDIR
+install uninstall: all
+	@$($@)
+else
+install uninstall:
+	$(MAKE) INSTALLDIR=$(libdir) INSTALLTARGETS='$(INSTALLLIBS)' $@
+	$(MAKE) INSTALLDIR=$(includedir) INSTALLTARGETS='$(INSTALLHEADERS)' $@
+endif
+
+all:
+
+%:
+	$(do-subdirs)
+ifeq ($(NO2UNDERSCORE),yes)
+	@mv libmpi.a libfmpi.a
+	@echo "Renaming libmpi.a to libfmpi.a"
+endif
+
+ifeq ($(PMPI),yes)
+	@mv libmpi.a libpmpi.a
+	@echo "Renaming libmpi.a to libpmpi.a"
+endif

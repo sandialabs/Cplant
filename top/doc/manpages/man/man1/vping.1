@@ -1,0 +1,26 @@
+.TH VPING 1 "Cplant Myrinet Utilities" "Cplant" \" -*- nroff -*-
+.SH NAME
+.B vping 
+\- utility (for verifying myrinet routes on Cplant)
+.SH SYNOPSIS
+.B vping 
+\ node-id
+
+.SH DESCRIPTION
+.B vping 
+must be run as the superuser.
+
+.B vping
+is a two-way ping utility for myrinet on Cplant. It is run 
+on a service or compute node to test the myrinet connection to
+another machine. It takes as argument the node id of the other
+machine.
+.B vping 
+relies on the Cplant rtscts myrinet driver/module running on the
+machines in question.
+
+.B vping 
+must be run as the superuser.
+
+.SH SEE ALSO
+mping(1) (a perl wrapper for vping which accepts a list of machine names)

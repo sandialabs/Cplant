@@ -1,0 +1,22 @@
+.TH DO-PING 1 "Cplant Myrinet Utilities" "Cplant" \" -*- nroff -*-
+.SH NAME
+.B do-ping 
+\- utility (for verifying myrinet routes on Cplant)
+.SH SYNOPSIS
+.B do-ping 
+\ target-id
+
+.SH DESCRIPTION
+.B do-ping
+is a 1-way ping utility for myrinet on Cplant. It is run 
+on a compute node in order to send a myrinet PING msg to another
+compute node.
+It takes as argument, the node id of the destination machine.
+.B do-ping is normally used in conjunction with 
+.B get-ping on the target node.
+.B do-ping 
+relies on the Cplant rtscts myrinet driver/module running on the
+machines in question.
+
+.SH SEE ALSO
+get-ping(1) (a 1-way ping util, for checking on the arrival of a PING msg)

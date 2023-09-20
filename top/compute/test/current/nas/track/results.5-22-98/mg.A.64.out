@@ -1,0 +1,124 @@
+
+
+ NAS Parallel Benchmarks 2.3 -- MG Benchmark
+
+ No input file. Using compiled defaults 
+ Size: 256x256x256  (class A)
+ Iterations:   4
+ Number of processes:    64
+
+ Initialization time:           9.005 seconds
+
+ Benchmark completed 
+ VERIFICATION SUCCESSFUL 
+ L2 Norm is   0.243336530907E-05
+ Error is     0.694838067292E-16
+
+
+ MG Benchmark Completed.
+ Class           =                        A
+ Size            =              256x256x256
+ Iterations      =                        4
+ Time in seconds =                    17.93
+ Total processes =                       64
+ Compiled procs  =                       64
+ Mop/s total     =                   217.05
+ Mop/s/process   =                     3.39
+ Operation type  =           floating point
+ Verification    =               SUCCESSFUL
+ Version         =                      2.3
+ Compile date    =              20 May 1998
+
+ Compile options:
+    MPIF77       = /Net/mp/cplant/bin/f77 
+    FLINK        = $(MPIF77)
+    FMPI_LIB     = -L$(MPIPATH) -lmpi 
+    FMPI_INC     = -I$(MPIPATH)/include
+    FFLAGS       = -O3 -align records -align dcommons
+    FLINKFLAGS   = (none)
+    RAND         = randi8
+
+
+ Please send the results of this run to:
+
+ NPB Development Team 
+ Internet: npb@nas.nasa.gov
+ 
+ If email is not available, send this to:
+
+ MS T27A-1
+ NASA Ames Research Center
+ Moffett Field, CA  94035-1000
+
+ Fax: 415-604-3957
+
+
+Contacting node allocation daemon...
+64 nodes are allocated to your job ID 819
+
+   Node name        Rank  Node   PID   Elapsed  Exit Code  Terminating Signal
+------------------- ----  ----  -----  -------  ---------  ------------------
+                       0    18  10411  0:00:29       0       none
+                       1    19  10415  0:00:29       0       none
+                       2    20  10408  0:00:29       0       none
+                       3    21  10412  0:00:30       0       none
+                       4    22  10415  0:00:30       0       none
+                       5    23  10415  0:00:29       0       none
+                       6    24  10408  0:00:29       0       none
+                       7    25  10408  0:00:29       0       none
+                       8    26  10414  0:00:29       0       none
+                       9    28  10403  0:00:29       0       none
+                      10    29  10405  0:00:30       0       none
+                      11    30  10413  0:00:29       0       none
+                      12    32  10720  0:00:29       0       none
+                      13    33  10576  0:00:30       0       none
+                      14    34  10537  0:00:29       0       none
+                      15    35  10529  0:00:29       0       none
+                      16    36  10674  0:00:29       0       none
+                      17    37  10495  0:00:29       0       none
+                      18    38  10467  0:00:30       0       none
+                      19    39  10520  0:00:30       0       none
+                      20    40  10243  0:00:29       0       none
+                      21    41  10258  0:00:29       0       none
+                      22    42  10237  0:00:29       0       none
+                      23    43  10231  0:00:29       0       none
+                      24    44  10284  0:00:30       0       none
+                      25    45  10228  0:00:29       0       none
+                      26    46  10235  0:00:29       0       none
+                      27    48  23813  0:00:29       0       none
+                      28    49  23732  0:00:29       0       none
+                      29    50  23740  0:00:30       0       none
+                      30    51  23718  0:00:30       0       none
+                      31    52  23710  0:00:29       0       none
+                      32    53  23725  0:00:30       0       none
+                      33    54  23700  0:00:30       0       none
+                      34    55  23700  0:00:30       0       none
+                      35    56  23713  0:00:29       0       none
+                      36    57  23689  0:00:29       0       none
+                      37    58  23701  0:00:30       0       none
+                      38    59  23706  0:00:29       0       none
+                      39    60  23701  0:00:29       0       none
+                      40    61  23683  0:00:30       0       none
+                      41    62  23747  0:00:29       0       none
+                      42    64  23701  0:00:29       0       none
+                      43    65  23665  0:00:30       0       none
+                      44    66  23737  0:00:30       0       none
+                      45    67  23743  0:00:30       0       none
+                      46    68  23753  0:00:30       0       none
+                      47    69  23750  0:00:30       0       none
+                      48    70  23770  0:00:29       0       none
+                      49    71  23749  0:00:29       0       none
+                      50    72  23730  0:00:30       0       none
+                      51    73  23717  0:00:30       0       none
+                      52    74  23730  0:00:30       0       none
+                      53    75  23730  0:00:29       0       none
+                      54    76  23730  0:00:29       0       none
+                      55    77  23727  0:00:29       0       none
+                      56    78  23647  0:00:29       0       none
+                      57    80  23684  0:00:29       0       none
+                      58    81  23727  0:00:29       0       none
+                      59    82  23727  0:00:29       0       none
+                      60    83  23718  0:00:30       0       none
+                      61    84  23720  0:00:29       0       none
+                      62    85  23732  0:00:29       0       none
+                      63    86  23729  0:00:29       0       none

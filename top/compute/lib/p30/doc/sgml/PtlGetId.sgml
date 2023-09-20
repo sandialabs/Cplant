@@ -1,0 +1,63 @@
+<!--
+    $Id: PtlGetId.sgml,v 1.1 2001/01/10 21:42:53 rbbrigh Exp $
+-->
+
+<!doctype qwertz system>
+
+<manpage title="PtlGetId" sectnum="3" date='"04 Jan 2001"'
+    footer='"Portals 3.0"' main='"Portals 3.0 Library"'>
+
+<sect1> NAME
+    <p>
+    <bf/PtlGetId/ &mdash Obtain the id of the current process
+
+<sect1> SYNOPSIS
+    <p>
+     #include "p30.h"
+
+     int PtlGetId( ptl_process_id_t* id, ptl_id_t* gsize );
+
+<sect1> PARAMETERS
+    <p>
+     <descrip>
+     <tag /id/
+     On successful return, this location will hold the id for the calling
+     process
+     <tag /gsize/
+     On successful return, this location will hold the number of processes
+     in the process group for this process
+     </descrip>
+
+<sect1> DESCRIPTION
+    <p>
+    <bf /PtlGetId/ can be used to obtain the id of the current process and
+     the number of processes in the process group to which the current process
+     belongs.  A <bf /ptl_process_id_t/ is defined as
+
+<code>
+typedef enum { PTL_ADDR_NID, PTL_ADDR_GID, PTL_ADDR_BOTH } ptl_addr_kind_t;
+
+typedef struct {
+    ptl_addr_kind_t addr_kind;   /* kind of address pair */
+    ptl_id_t        nid, pid;    /* node id, process id  */
+    ptl_id_t        gid, rid;    /* group id, rank id    */
+} ptl_process_id_t;
+</code>
+
+<sect1> RETURN VALUES
+    <p>
+    <descrip>
+     <tag /PTL_OK/
+     Indicates success
+     <tag /PTL_NOINIT/
+     Indicates that the Portals API has not been successfully initialized
+     <tag /PTL_SEGV/
+     Indicates that <bf /id/ <bf /gsize/ is not a legal address
+    </descrip>
+
+<sect1> SEE ALSO
+    <p>
+    <bf /PtlTransId(3)/<newline>
+    <bf /Portals 3.0 Message Passing Interface document/
+
+</manpage>

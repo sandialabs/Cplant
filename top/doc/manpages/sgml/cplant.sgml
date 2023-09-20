@@ -1,0 +1,44 @@
+<!--
+    $Id: cplant.sgml,v 1.1.2.1 2002/08/28 21:38:53 jrstear Exp $
+-->
+
+<!doctype qwertz system>
+
+<manpage title="cplant" sectnum="1M" date='"28 August 2002"'
+    footer='"Cplant"' main='"Cplant System Manager&quot;s Manual"'>
+
+
+<sect1> NAME
+    <p>
+    <bf/cplant/ &mdash Cplant startup script
+    </p>
+
+<sect1> SYNOPSIS
+    <p>
+    <bf/cplant/ start|stop|restart
+    </p>
+
+<sect1> DESCRIPTION<p>
+    <bf/cplant/ is the script in the init.d/ directory which is used
+    to start or stop cplant on a node.  It determines the line from
+    the etc/cfg file (see cfg man page for its format) which is
+    appropriate for the host <bf/cplant/ is being run on, then runs
+    the scripts listed on that line with the arguments given on that
+    line.  If <bf/start/ is given, the scripts are run in the order
+    listed in the cfg file (start is given as the first argument to
+    each script).  If <bf/stop/ is given, the scripts are run in the
+    reverse order they are listed in the cfg file (stop is given as
+    the first argument to each script).  If <bf/restart/ is given, it
+    executes a stop sequence followed by a start sequence.
+
+    The <bf/cplant/ script first looks for " disabled " lines, then
+    regular lines, then " default " lines (see the <bf/cfg/ man page).
+
+
+<sect1> SEE ALSO
+    <p>
+    <bf>cfg</bf>,
+    Guide to building and installing Cplant
+    </p>
+
+</manpage>

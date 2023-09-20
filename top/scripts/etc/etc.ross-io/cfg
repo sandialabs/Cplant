@@ -1,0 +1,17 @@
+##### enfsd nodes
+# node.n-1.y-1 : disabled
+
+ node.n-1.y-1 : ram_disk portals set_mtu=eth1,9000 enfsd_config=172.28.1.1:/enfs/tmp,/cnx/endeavor/enfs/tmp,172.28.1.2:/vol/enfs/tmp,/cnx/sana017/enfs/tmp
+ node.n-3.y-1 : ram_disk portals set_mtu=eth1,9000 enfsd_config=172.28.2.1:/enfs/tmp,/cnx/endeavor/enfs/tmp,172.28.2.2:/vol/enfs/tmp,/cnx/sana017/enfs/tmp
+ node.n-5.y-1 : ram_disk portals set_mtu=eth1,9000 enfsd_config=172.28.3.1:/enfs/tmp,/cnx/endeavor/enfs/tmp,172.28.3.2:/vol/enfs/tmp,/cnx/sana017/enfs/tmp
+ node.n-7.y-1 : ram_disk portals set_mtu=eth1,9000 enfsd_config=172.28.4.1:/enfs/tmp,/cnx/endeavor/enfs/tmp,172.28.4.2:/vol/enfs/tmp,/cnx/sana017/enfs/tmp
+
+ node.n-1.y-2 : ram_disk portals set_mtu=eth1,9000 enfsd_config=172.28.1.1:/enfs/tmp,/cnx/endeavor/enfs/tmp,172.28.1.2:/vol/enfs/tmp,/cnx/sana017/enfs/tmp
+ node.n-3.y-2 : ram_disk portals set_mtu=eth1,9000 enfsd_config=172.28.2.1:/enfs/tmp,/cnx/endeavor/enfs/tmp,172.28.2.2:/vol/enfs/tmp,/cnx/sana017/enfs/tmp
+ node.n-5.y-2 : ram_disk portals set_mtu=eth1,9000 enfsd_config=172.28.3.1:/enfs/tmp,/cnx/endeavor/enfs/tmp,172.28.3.2:/vol/enfs/tmp,/cnx/sana017/enfs/tmp
+ node.n-7.y-2 : ram_disk portals set_mtu=eth1,9000 enfsd_config=172.28.4.1:/enfs/tmp,/cnx/endeavor/enfs/tmp,172.28.4.2:/vol/enfs/tmp,/cnx/sana017/enfs/tmp
+
+ node.n-1.y-3 : ram_disk portals set_mtu=eth1,9000 enfsd_config=172.28.1.1:/enfs/tmp,/cnx/endeavor/enfs/tmp,172.28.1.2:/vol/enfs/tmp,/cnx/sana017/enfs/tmp
+ node.n-3.y-3 : ram_disk portals set_mtu=eth1,9000 enfsd_config=172.28.2.1:/enfs/tmp,/cnx/endeavor/enfs/tmp,172.28.2.2:/vol/enfs/tmp,/cnx/sana017/enfs/tmp
+ node.n-5.y-3 : ram_disk portals set_mtu=eth1,9000 enfsd_config=172.28.3.1:/enfs/tmp,/cnx/endeavor/enfs/tmp,172.28.3.2:/vol/enfs/tmp,/cnx/sana017/enfs/tmp
+ node.n-7.y-3 : ram_disk portals set_mtu=eth1,9000 enfsd_config=172.28.4.1:/enfs/tmp,/cnx/endeavor/enfs/tmp,172.28.4.2:/vol/enfs/tmp,/cnx/sana017/enfs/tmp

@@ -1,0 +1,67 @@
+#! /bin/sh 
+
+# a shortcut for making targets w/ respect to a cplant subtree
+# there is a "portals" subtree and a "basic" subtree 
+#
+# the "portals" tree is just enough stuff through ptltest and the
+# rtscts driver to test portals over myrinet
+#
+# the "basic" tree is enough stuff to test basic applications
+# -- no mpi
+#
+# see ./makefiles/Makefile-portals and ./makefiles/Makefile-basic
+#
+# the idea is you specify the subtree and the target on the command
+# line:
+#
+#             Make portals arg
+#
+# for example, will result in "make arg" being done in the directories 
+# of the "portals" subtree via
+#
+#             make -f ./makefiles/Makefile-portals arg
+#
+# there is also
+#
+#             Make help
+#
+
+if [ "$1" = "help" ] ; then
+   echo "____________________________________________________________________________"
+   echo "Usage: $0 portals|basic make-arg"
+   echo "   or: $0 make-arg (same as make make-arg)"
+   echo ""
+   echo "for example: $0 portals install (same as make -f Makefile-portals install)"
+   echo "         or: $0 basic           (same as make -f Makefile-basic)"
+   echo "____________________________________________________________________________"
+   exit
+fi
+
+if [ "$1" = "all" ] ; then
+    gmake 
+    exit
+fi
+
+if [ "$1" != "portals" ] ; then
+  if [ "$1" != "basic" ] ; then
+    if [ "$1" != "mpi" ] ; then
+      if [ "$1" != "usrsw" ] ; then
+        if [ "$1" != "compile" ] ; then
+          if [ "$1" != "kernel" ] ; then
+            if [ "$1" != "man" ] ; then
+              if [ "$1" != "enfs" ] ; then
+                if [ "$1" != "ethernet" ] ; then
+                    gmake $1
+                    exit
+		fi
+              fi
+            fi
+          fi
+        fi
+      fi
+    fi
+  fi
+fi
+
+cd makefiles
+gmake -f Makefile-$1 $2

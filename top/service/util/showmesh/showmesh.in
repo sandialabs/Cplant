@@ -1,0 +1,317 @@
+#!/usr/bin/perl
+# $Id: showmesh.in,v 1.2 2002/01/02 21:19:18 jbogden Exp $
+#
+# showmesh
+# perl script that parses pingd output and formats it like the
+# Puma showmesh command
+
+$cplant_path = "CPLANT_PATH";
+
+$PINGD         = "$cplant_path/sbin/pingd|";
+
+%nodes         = ();
+%jobs          = ();
+$jobcharbase   = "";
+$jobcharindex  =  0;
+$jobcharlen    =  1;
+
+$maxsu         = -1;
+$maxnode       = -1;
+$nodename = `uname -n`;
+if ($nodename =~ /siberia/i) {
+  $servicenode   = 0;
+} else {
+  $servicenode   = 15;
+}
+
+$stalechar     = "-";
+$availchar     = "*";
+$unknownchar   = "?";
+$allocatedchar = "+";
+$unavailchar   = "X";
+$servicechar   = "S";
+
+sub get_maxsu{
+  my $max = shift(@_);
+  if ( $max > $maxsu ) {
+    $maxsu = $max;
+  }
+  return $maxsu;
+}
+
+sub get_maxnode{
+  my $max = shift(@_);
+  if ( $max > $maxnode ) {
+    $maxnode = $max;
+  }
+  return $maxnode;
+}
+
+# open up a read pipe from pingd
+open PINGD or die "**Internal error** - unable to start $cplant_path/sbin/pingd";
+
+# get the first line of output
+$_= <PINGD>;
+
+# look for problems
+if ( (/Can not register myself as PPID=/)       ||
+     (/can't locate bebopd registry file name/) ||
+     (/Sorry, unable to locate bebopd/)          ) {
+    die "**Internal error** - unable to determine status\n";
+}
+
+# get the next line of output
+$_ = <PINGD>;
+
+# look for problems
+if ( /No reponse with data from bebopd, sorry/ ) {
+    die "**Internal error** - unable to determine status\n";
+}
+
+# everything should be ok
+# eat the next three lines
+$i = 3;
+while ( <PINGD> && --$i ) {};
+
+# grab information about each node    
+while( <PINGD> ) {
+
+    # node has a job running
+    if ( /^\s*(\d+)\s+\(\s+SU-(\d+)\s+n-(\d+)\s+\)\s+(\d+)\s+(\d+)\/\s+(\d+)\s+(\w+)\s+(\d+):(\d+):(\d+)/ ) {
+
+	$pnid = int $1;
+	$su   = int $2;
+        $node = int $3;
+	$jid  = int $4;
+	#$pid  = int $5;
+        $rank = int $6;
+        $user = $7;
+        $hour = int $8;
+        $min  = int $9;
+        $sec  = int $10;
+
+        # figure out the max su number
+        get_maxsu( $su );
+
+        # figure out the max node number
+        get_maxnode( $node );
+
+        # process job not seen before
+	if ( ! defined $jobs{ $jid } ) {
+
+	    if ( $jobcharindex > 25 ) {
+		$jobcharbase .= 'a';
+		$jobcharindex = 0;
+		$jobcharlen++;
+	    }
+
+	    $jobs{$jid}          = $jobcharbase . chr( 97 + $jobcharindex );
+	    $jobs{$jid}{user}    = $user;
+            $jobs{$jid}{maxrank} = $rank;
+            $jobs{$jid}{time}    = 0;
+	    $jobcharindex++;
+	}
+
+        # process a job seen before
+	$nodes{$node}{$su} = $jobs{$jid};
+ 
+        $jobs{$jid}{time} += ($hour * 3600) + ($min * 60) + $sec;
+
+        # figure out how big the job is
+	if ( $jobs{$jid}{maxrank} < $rank ) {
+	    $jobs{$jid}{maxrank} = $rank;
+	}
+
+    }
+
+    # stale node
+    if ( /^\s*(\d+)\s+\(\s+SU-(\d+)\s+n-(\d+)\s+\)\s+node data is stale/ ) {
+
+	$pnid = int $1;
+	$su   = int $2;
+        $node = int $3;
+
+        # figure out the max su number
+        get_maxsu( $su );
+
+        # figure out the max node number
+        get_maxnode( $node );
+
+	$nodes{$node}{$su} = $stalechar;
+
+    }
+
+    # node reported in for allocation
+    if ( /^\s*(\d+)\s+\(\s+SU-(\d+)\s+n-(\d+)\s+\)\s+node reported in for possible allocation/ ) {
+
+        $pnid = int $1;
+        $su   = int $2;
+        $node = int $3;
+
+        # figure out the max su number
+        get_maxsu( $su );
+
+        # figure out the max node number
+        get_maxnode( $node );
+
+        $nodes{$node}{$su} = $allocatedchar;
+
+    }
+
+    # unavailable node
+    if ( /^\s*(\d+)\s+\(\s+SU-(\d+)\s+n-(\d+)\s+\)\s+node is unavailable/ ) {
+
+	$pnid = int $1;
+	$su   = int $2;
+        $node = int $3;
+
+        # figure out the max su number
+        get_maxsu( $su );
+
+        # figure out the max node number
+        get_maxnode( $node );
+
+	$nodes{$node}{$su} = $unavailchar;
+
+    }
+
+    # free node
+    if ( /^\s*(\d+)\s+\(\s+SU-(\d+)\s+n-(\d+)\s+\)\s*$/ ) {
+
+	$pnid = int $1;
+	$su   = int $2;
+        $node = int $3;
+
+        # figure out the max su number
+        get_maxsu( $su );
+
+        # figure out the max node number
+        get_maxnode( $node );
+
+	$nodes{$node}{$su} = $availchar;
+
+    }
+
+    # get total
+    if ( /^Total: (\d+)$/ ) {
+
+	#$total = $1;
+
+    }
+
+    # get total busy
+    if ( /^Total busy: (\d+)$/ ) {
+
+	#$busy = $1;
+
+    }
+
+    # get total free
+    if ( /^Total free: (\d+)$/ ) {
+
+	$free = $1;
+
+    }
+
+    # get total not responding
+    if ( /Total not responding to ping \(try again\): (\d+)$/ ) {
+
+	#$dead = $1;
+
+    }
+
+}
+
+# close the pipe
+close PINGD;
+
+#print the su numbering header
+print "         ";
+$jobwidth = ($jobcharlen + 1);
+$spaces   = $jobwidth * 10;
+for ( $i=0; $i<($maxsu/10); $i++ ) {
+    if ( $i == 0 ) {
+	printf "%${spaces}s", " ";
+    $spaces -= $jobwidth;
+    }
+    else {
+        printf "%${spaces}s", " " unless ($i == 1);
+        printf "%${jobwidth}d",$i;
+    }
+}
+print "\n         ";
+for ( $i=0; $i<=$maxsu; $i++ ) {
+    printf "%${jobwidth}d",$i%10;
+}
+print "\n         +";
+for ( $i=0; $i<=$maxsu; $i++ ) {
+    for ( $j=0; $j<$jobwidth; $j++ ) {
+	print "-";
+    }
+}
+print "+\n";
+
+# print the "mesh"
+for ( $node=0; $node<=$maxnode; $node++ ) {
+    printf("      %3d|",$node);
+    for ( $su=0; $su<=$maxsu; $su++ ) {
+	if ( ! defined $nodes{$node}{$su} ) {
+	    # odds are good that an unknown node 15 is a service node
+	    if ( $node == $servicenode ) {
+		$newstring = $servicechar;
+	    }
+	    else {
+		$newstring = $unknownchar;
+	    }
+	}
+	else {
+	    $newstring = $nodes{$node}{$su};
+	}
+    printf("%${jobcharlen}s ",$newstring);
+    }
+    print "|\n";
+}
+
+print "         +";
+for ( $i=0; $i<=$maxsu; $i++ ) {
+    for ( $j=0; $j<$jobwidth; $j++ ) {
+	print "-";
+    }
+}
+print "+\n";
+
+# print the legend
+print "Legend:\n";
+print " $servicechar    service node\n";
+print " $unknownchar    non-existent node\n";
+print " $unavailchar    dead node\n";
+print " $allocatedchar    allocated node\n";
+print " $stalechar    stale node\n";
+print " $availchar    free node\n\n";
+print "Available Cplant nodes: $free\n\n";
+print " Job    ID      User    Size    Time\n"
+     ."-----  ----  ---------  ----  --------\n";
+
+format JOBS =
+@>>>>  @>>>  @>>>>>>>>  @>>>  @>>>>>>>
+$job, $jobs{$job}, $jobs{$job}{user}, $size, $time
+.
+
+$~ = "JOBS";
+
+# print job info
+foreach $job ( sort keys %jobs ) {
+    $size = $jobs{$job}{maxrank} + 1;
+    $avg  = $jobs{$job}{time} / $size;
+    $hour = $avg / 3600;
+    $avg  = $avg % 3600;
+    $min  = $avg / 60;
+    $sec  = $avg % 60;
+    $time = sprintf "%.2d:%.2d:%.2d", $hour, $min, $sec;
+    write;
+}
+
+$~ = "STDOUT";
+
+print "\n\n";
+

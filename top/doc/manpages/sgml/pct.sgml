@@ -1,0 +1,143 @@
+<!--
+    $Id: pct.sgml,v 1.2 2001/05/04 21:38:06 lafisk Exp $
+-->
+
+<!doctype qwertz system>
+
+<manpage title="PCT" sectnum="8L" date='"04 May 2001"'
+    footer='"Cplant"' main='"Cplant Utilities"'>
+
+
+<sect1> NAME
+    <p>
+    <bf/PCT/ &mdash Process Control Thread
+    </p>
+
+
+
+<sect1> SYNOPSIS
+    <p>
+    <bf/pct/
+	&lsqb;<bf/-nid/ <it/num/ <bf/-pid/ <it/num/ &rsqb
+        &emsp;
+	&lsqb;<bf/-D/&rsqb
+        &emsp;
+	&lsqb;<bf/-S/ &lsqb;1&verbar;0&rsqb;&rsqb
+        &emsp;
+	&lsqb;<bf/-L/ &lsqb;1&verbar;0&rsqb;&rsqb
+        &emsp;
+	&lsqb;<bf/-daemon/&rsqb
+    </p>
+
+<sect1> DESCRIPTION
+    <p>
+    The <bf/PCT/ (Process Control Thread) is a process running on
+    each compute node of the Cplant.  The <bf/PCT/ accepts the
+    parallel application executable image from yod and starts the 
+    user process.  The <bf/PCT/ can respond to bebopd requests
+    for status information about it's state and about the user
+    process it is hosting.
+    </p>
+
+<sect1> OPTIONS
+    <p>
+    <descrip>
+
+    <tag/-nid <it/node-number/ -pid <it/portal-id//
+	<p>
+	The <bf/PCT/ normally registers with the bebopd managing the
+	virtual machine.  If an alternative bebopd is running for test
+	purposes in addition to the regular bebopd, and you wish this
+	<bf/PCT/ to register with the alternative bebopd, then provide
+	the node number and portal ID of that bebopd with these
+	arguments.
+	</p>
+
+    <tag/-D/
+	<p>
+	This option causes the <bf/PCT/ to output information about
+	what it is doing.  Repeating the <it/-D/ option on the command
+	line increases the amount of information.
+	Normally the information goes to the log file (/var/log/cplant)
+	on the compute node.  This can be changed with the <it/-S/
+	and <it/-L/ options.
+	</p>
+
+
+    <tag/-daemon/
+	<p>
+        By default the PCT runs as a foreground process.  Use <it/-d/ to
+	run it in the background.
+	</p>
+
+    <tag/-S &lsqb;0&verbar;1&rsqb
+	<p>
+	The <bf/PCT/ outputs warnings and errors, and, if the
+	<it/-D/ option is used, status information.
+	The <it/0/ switch turns off all output from the <bf/PCT/ to stderr.
+	The <it/1/ switch turns it on.  By default, the <bf/PCT/ <it/does not/
+	write to stderr.
+	</p>
+
+    <tag/-L &lsqb;0&verbar;1&rsqb
+	<p>
+	The <bf/PCT/ outputs warnings and errors, and, if the
+	<it/-D/ option is used, status information.
+	The <it/0/ switch turns off all output from the <bf/PCT/ to the
+	log file.
+	The <it/1/ switch turns it on.  By default, the <bf/PCT/ <it/does/
+	write to log file.
+	</p>
+
+    </descrip>
+
+<sect1> ERRORS
+    <p>
+     The <bf/PCT/ reports error conditions in the log file (/var/log/cplant).
+     It will not exit unless the error makes it impossible for the <bf/PCT/
+     to do it's job, for example if it has no memory to allocate a portal.
+     Errors in loading applications are reported back to yod.
+
+<sect1> SIGNALS
+    <p>
+On receiving a SIGUSR1 or SIGUSR2, the <bf/PCT/ will log the routine it
+is in now, what routines it was in most recently, and the state of the 
+application process it is hosting.  It will also display a loop counter,
+which should increment on subsequent displays, indicating whether the
+PCT is stuck somewhere or has been progressing through it's main service
+loop.
+    </p>
+    <p>
+On receiving a SIGHUP, the <bf/PCT/ will close and reopen it's log file,
+re-read the site file, and re-read the cplant-host file and send a status
+update to the bebopd listed there.
+ 
+<sect1> FILES
+    <p><descrip>
+    <tag>/cplant/cplant-host</tag>
+        <p>
+         This file identifies the location of a bebopd daemon.
+    <tag>/etc/local/site</tag>
+        <p>
+         This file defines site specific information that may be required
+         by the <bf/bebopd/.
+    <tag>/var/log/cplant</tag>
+        <p>
+         This is the log file where Cplant daemons and utilities log
+         status.
+    </descrip>
+
+<sect1> SEE ALSO
+    <p>
+    <bf>pingd</bf>
+    <bf>yod</bf>
+    <bf>bebopd</bf>
+    <bf>site</bf>
+    </p>
+
+<sect1> BUGS
+    <p>
+    Let us know if you locate any (cplant-help@cs.sandia.gov).
+    </p>
+
+</manpage>

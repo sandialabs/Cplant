@@ -1,0 +1,107 @@
+
+
+ NAS Parallel Benchmarks 2.3 -- CG Benchmark
+
+ Size:      14000
+ Iterations:    15
+ Number of active processes:    32
+
+   iteration           ||r||                 zeta
+        1       0.23082748870552E-12    19.9997581277040
+        2       0.51100738544943E-08    17.1140495745537
+        3       0.21657916182711E-05    17.1296668836785
+        4       0.41707250948019E-02    17.1303388790098
+        5       0.13476783520794E+03    17.1610191844493
+        6       0.55892456398849E+05    19.1318081408586
+        7       0.14670853668732E+09    20.6963640660161
+        8       0.40310349085848E+10    20.4241476764024
+        9       0.32486633079269E+11    20.4348516387421
+       10       0.80800476332305E+12    20.7510109156420
+       11       0.15889347647164E+14    20.7509262141140
+       12       0.13236709958763E+15    20.4340115178298
+       13       0.13742688304730E+16    20.4340117462457
+       14       0.31901235528762E+17    20.7509303123407
+       15       0.18133070310873E+14    20.7509303103444
+ Benchmark completed 
+ VERIFICATION FAILED
+ Zeta                  0.207509303103E+02
+ The correct zeta is   0.171302350540E+02
+
+
+ CG Benchmark Completed.
+ Class           =                        A
+ Size            =                    14000
+ Iterations      =                       15
+ Time in seconds =                     6.53
+ Total processes =                       32
+ Compiled procs  =                       32
+ Mop/s total     =                   229.02
+ Mop/s/process   =                     7.16
+ Operation type  =           floating point
+ Verification    =             UNSUCCESSFUL
+ Version         =                      2.3
+ Compile date    =              08 Oct 1998
+
+ Compile options:
+    MPIF77       = /Net/mp/cplant/bin/f77 
+    FLINK        = $(MPIF77)
+    FMPI_LIB     = -L$(MPIPATH) -lmpi 
+    FMPI_INC     = -I$(MPIPATH)/include
+    FFLAGS       = -O3 -align records -align dcommons -g
+    FLINKFLAGS   = -v
+    RAND         = randi8
+
+
+ Please send the results of this run to:
+
+ NPB Development Team 
+ Internet: npb@nas.nasa.gov
+ 
+ If email is not available, send this to:
+
+ MS T27A-1
+ NASA Ames Research Center
+ Moffett Field, CA  94035-1000
+
+ Fax: 415-604-3957
+
+
+Contacting node allocation daemon...
+32 nodes are allocated to your job ID 3650
+Compute partition synchronized
+Application processes begin user code.
+
+   Node name     Rank  Node   PID   Elapsed  Exit Code  Terminating Signal
+---------------- ----  ----  -----  -------  ---------  ------------------
+SU-003 node-0003    0    17   4309  0:00:10       0       none
+SU-003 node-0005    1    18   4233  0:00:10       0       none
+SU-003 node-0007    2    19   4199  0:00:10       0       none
+SU-003 node-0009    3    20   4192  0:00:10       0       none
+SU-003 node-0014    4    24   4196  0:00:10       0       none
+SU-003 node-0010    5    26   4188  0:00:10       0       none
+SU-003 node-0006    6    28   4205  0:00:10       0       none
+SU-003 node-0008    7    29   4194  0:00:11       0       none
+SU-003 node-0004    8    31   4211  0:00:10       0       none
+SU-002 node-0001    9    32   4639  0:00:11       0       none
+SU-002 node-0003   10    33   4410  0:00:11       0       none
+SU-002 node-0005   11    34   4464  0:00:10       0       none
+SU-002 node-0007   12    35   4392  0:00:10       0       none
+SU-002 node-0009   13    36   4387  0:00:11       0       none
+SU-002 node-0011   14    37   4393  0:00:10       0       none
+SU-002 node-0013   15    38   4387  0:00:10       0       none
+SU-002 node-0015   16    39   4441  0:00:10       0       none
+SU-002 node-0014   17    40   4395  0:00:10       0       none
+SU-002 node-0010   18    42   4404  0:00:11       0       none
+SU-002 node-0012   19    43   4378  0:00:10       0       none
+SU-002 node-0008   20    45   4408  0:00:10       0       none
+SU-002 node-0004   21    47   4393  0:00:10       0       none
+SU-001 node-0001   22    48   4254  0:00:10       0       none
+SU-001 node-0003   23    49   4272  0:00:10       0       none
+SU-001 node-0005   24    50   4252  0:00:11       0       none
+SU-001 node-0007   25    51   4252  0:00:10       0       none
+SU-001 node-0009   26    52   4249  0:00:10       0       none
+SU-001 node-0011   27    53   4269  0:00:10       0       none
+SU-001 node-0013   28    54   4263  0:00:10       0       none
+SU-001 node-0015   29    55   4286  0:00:10       0       none
+SU-001 node-0014   30    56    210  0:00:10       0       none
+SU-001 node-0010   31    58   4252  0:00:10       0       none

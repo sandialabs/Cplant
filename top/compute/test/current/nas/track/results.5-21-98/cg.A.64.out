@@ -1,0 +1,137 @@
+
+
+ NAS Parallel Benchmarks 2.3 -- CG Benchmark
+
+ Size:      14000
+ Iterations:    15
+ Number of active processes:    64
+
+   iteration           ||r||                 zeta
+        1       0.23082748870552E-12    19.9997581277040
+        2       0.22388564950900E-14    17.1140495745506
+        3       0.22430340134709E-14    17.1296668946143
+        4       0.22572944904735E-14    17.1302113581192
+        5       0.22497880911402E-14    17.1302338856353
+        6       0.22278556062597E-14    17.1302349879482
+        7       0.22107597844210E-14    17.1302350498916
+        8       0.21927271215759E-14    17.1302350537510
+        9       0.22089135986113E-14    17.1302350540101
+       10       0.21692014536545E-14    17.1302350540284
+       11       0.21247817381242E-14    17.1302350540298
+       12       0.21241626554659E-14    17.1302350540299
+       13       0.20828998028314E-14    17.1302350540299
+       14       0.20589534712525E-14    17.1302350540299
+       15       0.20447125588399E-14    17.1302350540299
+ Benchmark completed 
+ VERIFICATION SUCCESSFUL 
+ Zeta is      0.171302350540E+02
+ Error is     0.895283847058E-12
+
+
+ CG Benchmark Completed.
+ Class           =                        A
+ Size            =                    14000
+ Iterations      =                       15
+ Time in seconds =                   180.62
+ Total processes =                       64
+ Compiled procs  =                       64
+ Mop/s total     =                     8.29
+ Mop/s/process   =                     0.13
+ Operation type  =           floating point
+ Verification    =               SUCCESSFUL
+ Version         =                      2.3
+ Compile date    =              20 May 1998
+
+ Compile options:
+    MPIF77       = /Net/mp/cplant/bin/f77 
+    FLINK        = $(MPIF77)
+    FMPI_LIB     = -L$(MPIPATH) -lmpi 
+    FMPI_INC     = -I$(MPIPATH)/include
+    FFLAGS       = -O3 -align records -align dcommons
+    FLINKFLAGS   = (none)
+    RAND         = randi8
+
+
+ Please send the results of this run to:
+
+ NPB Development Team 
+ Internet: npb@nas.nasa.gov
+ 
+ If email is not available, send this to:
+
+ MS T27A-1
+ NASA Ames Research Center
+ Moffett Field, CA  94035-1000
+
+ Fax: 415-604-3957
+
+
+Contacting node allocation daemon...
+64 nodes are allocated to your job ID 819
+
+   Node name        Rank  Node   PID   Elapsed  Exit Code  Terminating Signal
+------------------- ----  ----  -----  -------  ---------  ------------------
+                       0    18  10436  0:03:14       0       none
+                       1    19  10441  0:03:14       0       none
+                       2    20  10434  0:03:14       0       none
+                       3    21  10438  0:03:15       0       none
+                       4    22  10441  0:03:15       0       none
+                       5    23  10441  0:03:14       0       none
+                       6    24  10434  0:03:15       0       none
+                       7    25  10434  0:03:14       0       none
+                       8    26  10440  0:03:14       0       none
+                       9    28  10429  0:03:14       0       none
+                      10    29  10431  0:03:15       0       none
+                      11    30  10439  0:03:14       0       none
+                      12    32  10746  0:03:14       0       none
+                      13    33  10602  0:03:15       0       none
+                      14    34  10563  0:03:14       0       none
+                      15    35  10555  0:03:15       0       none
+                      16    36  10699  0:03:14       0       none
+                      17    37  10520  0:03:14       0       none
+                      18    38  10492  0:03:15       0       none
+                      19    39  10545  0:03:15       0       none
+                      20    40  10268  0:03:14       0       none
+                      21    41  10283  0:03:14       0       none
+                      22    42  10262  0:03:14       0       none
+                      23    43  10256  0:03:14       0       none
+                      24    44  10309  0:03:15       0       none
+                      25    45  10253  0:03:14       0       none
+                      26    46  10260  0:03:15       0       none
+                      27    48  23838  0:03:14       0       none
+                      28    49  23757  0:03:14       0       none
+                      29    50  23765  0:03:15       0       none
+                      30    51  23743  0:03:15       0       none
+                      31    52  23735  0:03:15       0       none
+                      32    53  23749  0:03:15       0       none
+                      33    54  23724  0:03:15       0       none
+                      34    55  23724  0:03:15       0       none
+                      35    56  23737  0:03:14       0       none
+                      36    57  23713  0:03:14       0       none
+                      37    58  23725  0:03:15       0       none
+                      38    59  23730  0:03:15       0       none
+                      39    60  23725  0:03:14       0       none
+                      40    61  23707  0:03:15       0       none
+                      41    62  23771  0:03:14       0       none
+                      42    64  23725  0:03:14       0       none
+                      43    65  23689  0:03:15       0       none
+                      44    66  23761  0:03:15       0       none
+                      45    67  23767  0:03:15       0       none
+                      46    68  23777  0:03:15       0       none
+                      47    69  23774  0:03:15       0       none
+                      48    70  23794  0:03:14       0       none
+                      49    71  23773  0:03:14       0       none
+                      50    72  23754  0:03:15       0       none
+                      51    73  23741  0:03:15       0       none
+                      52    74  23754  0:03:15       0       none
+                      53    75  23754  0:03:14       0       none
+                      54    76  23754  0:03:14       0       none
+                      55    77  23751  0:03:14       0       none
+                      56    78  23671  0:03:14       0       none
+                      57    80  23710  0:03:15       0       none
+                      58    81  23753  0:03:15       0       none
+                      59    82  23751  0:03:14       0       none
+                      60    83  23742  0:03:15       0       none
+                      61    84  23744  0:03:14       0       none
+                      62    85  23756  0:03:14       0       none
+                      63    86  23753  0:03:15       0       none

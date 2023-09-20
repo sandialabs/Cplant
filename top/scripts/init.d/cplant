@@ -1,0 +1,97 @@
+#!/bin/bash
+
+#
+# define env that will be used throughout!
+#
+
+# set some variables
+export CPLANT_PATH=/cplant
+export PATH=$PATH:/sbin:/usr/sbin:$CPLANT_PATH/bin:$CPLANT_PATH/sbin
+export RAMDISK=/tmp/pct-scratch
+
+export CPLANT_ETC=$CPLANT_PATH/etc
+export CPLANT_CFG=$CPLANT_ETC/cfg
+export HOSTNAME=`hostname`
+
+# set our NodeID
+NID=`grep -hn "^$HOSTNAME\$" $CPLANT_ETC/cplant-map | cut -f 1 -d:`
+# shift by one since NIDS start at zero
+export NodeID=$[NID - 1]
+
+
+cd $CPLANT_PATH/init.d
+
+# err function
+err() {
+	echo "CPLANT: $0: $1"
+	exit 1
+}
+
+# get_cfg function to parse the $CPLANT_CFG file.
+# given a hostname as single argument, sets $cfg to that node's config
+get_cfg() {
+	# check for a valic cfg file
+	test -f $CPLANT_CFG || err "$CPLANT_CFG file missing or empty"
+
+	# check to see if this node is disabled
+	disabled=`grep -v ^# $CPLANT_CFG | grep disabled | grep " $1 "`
+	test -n "$disabled" && \
+	 	err "$CPLANT_CFG lists $1 as disabled, exiting."
+
+	# get the cfg.  note: leading and trailing space is significant!!!
+	cfg=`grep -v ^# $CPLANT_CFG| grep " $1 " | cut -d: -f2-`
+
+	# $1 not found, look for a default
+	test -z "$cfg" && \
+	    cfg=`grep -v ^# $CPLANT_CFG| grep " default :" | cut -d: -f2-`
+
+	# err if still have no cfg
+	test -z "$cfg" && err "$CPLANT_CFG does not specify configuration for $1"
+}
+
+# run_cfg runs the items listed in $cfg
+# requires one argument: start or stop
+run_cfg() {
+
+	# reverse order requested, ie- stopping services
+	if [ $1 == "stop" ]; then
+		for item in $cfg; do rev="$item $rev"; done
+		cfg=$rev
+	fi
+
+	for item in $cfg; do
+		  args=`echo $item | cut -d= -f2`
+		script=`echo $item | cut -d= -f1`
+		test "$script" == "$args" && args=""
+		script="$CPLANT_PATH/init.d/$script"
+		
+		test -f $script  || err "$script is missing, exiting."
+		cmd="$script $1 $args"
+		echo "CPLANT: $0 running: $cmd"
+		if ! eval $cmd ;then
+			# stop on failure if starting...
+			test $1 != "stop" && err "$cmd failed, exiting." 
+		fi
+	done
+}
+
+
+# main stuff
+case "$1" in
+    start) 
+	get_cfg $HOSTNAME
+	run_cfg start
+	;;
+
+    stop)
+	get_cfg $HOSTNAME
+	run_cfg stop
+	;;
+
+    restart)
+	$CPLANT_PATH/init.d/cplant stop
+	$CPLANT_PATH/init.d/cplant start
+	;;
+    *)
+	echo "Usage: cplant {start|stop|restart}" 
+esac

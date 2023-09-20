@@ -1,0 +1,24 @@
+@(#)READWIN.txt	1.2	98/12/19 Connectathon Testsuite
+
+Certain tests do not run in the DOS/Windows environmant, due to
+limitations or implementation differences between DOS and Unix:
+
+            dupreq
+            fstat
+            nfsidem
+	    op_ren (open-rename)
+            rewind
+            truncate
+
+Also, the following tests do not appear to run under Windows, though
+they do appear to run under DOS:
+
+	    negseek
+
+The following tests are new, and nobody has tried to get them running
+under DOS or Windows:
+
+	    telldir
+	    bigfile
+	    bigfile2
+	    freesp

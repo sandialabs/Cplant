@@ -1,0 +1,60 @@
+<!--
+    $Id: PtlNIStatus.sgml,v 1.1 2001/01/10 21:42:54 rbbrigh Exp $
+-->
+
+<!doctype qwertz system>
+
+<manpage title="PtlNIStatus" sectnum="3" date='"04 Jan 2001"'
+    footer='"Portals 3.0"' main='"Portals 3.0 Library"'>
+
+<sect1> NAME
+    <p>
+    <bf/PtlNIStatus/ &mdash Obtain status register info
+
+<sect1> SYNOPSIS
+    <p>
+     #include "p30.h"
+
+     int PtlNIStatus( ptl_handle_ni_t interface, ptl_sr_index_t  register,
+                      ptl_sr_value_t* status );
+
+<sect1> PARAMETERS
+    <p>
+    <descrip>
+    <tag /interface/
+    A handle for the interface to use
+    <tag /register/
+    An index for the status register to read
+    <tag /status/
+    On successful return, this location will hold the current value of the
+    status register
+    </descrip>
+
+<sect1> DESCRIPTION
+    <p>
+    <bf /PtlNIStatus/ returns the value of a status register
+    for the specified interface.
+
+<sect1> RETURN VALUES
+    <p>
+    <descrip>
+    <tag /PTL_OK/
+    Indicates success
+    <tag /PTL_NOINIT/
+    Indicates that the Portals API has not been successfully initialized
+    <tag /PTL_INV_NI/
+    Indicates that <bf /interface/ is not a valid network interface handle
+    <tag /PTL_INV_SR_INDX/
+    Indicates that <bf /register/ is not a valid status register
+    <tag /PTL_SEGV/
+    Indicates that <bf /status/ is not a legal address
+    </descrip>
+    </p>
+
+<sect1> SEE ALSO
+    <p>
+    <bf /PtlNIBarrier(3)/, <bf /PtlNIDist(3)/, <bf /PtlNIFini(3)/,
+    <bf /PtlNIHandle(3)/, <bf /PtlNIInit(3)/<newline>
+    <bf /Portals 3.0 Message Passing Interface document/
+
+</manpage>

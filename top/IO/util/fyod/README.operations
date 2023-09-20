@@ -1,0 +1,110 @@
+FYOD is a persistant demon that runs one copy on each of
+the I/O nodes.
+
+In addition to starting FYOD on the I/O nodes,
+FYOD requires four things from the system administrator.
+
+1.  There must be line in the host file that defines FYOD.
+As seen by the compute node the file in question is
+	/cplant/cplant-host
+
+The service is "fyod", and ALL FYOD nodes must be listed,
+in the form c-n.SU-m, where n and m are correctly choosen.
+(If an I/O node is temporarily removed from service this file
+does NOT have to be editted.  There will be occasional small
+delays seen by the app, if extra nodes are in the list, but it
+should not prevent operations.)   However, the first node in
+the list must be operational, for FYOD files services to be
+available.   This is the only address, YOD passes to the app.
+
+2.  Presently hard coded in FYOD is the assumption, that
+the Raids are mounted as /etc/var/sfyod0 and /etc/var/sfyod1.
+(If one or both is not mounted, it will be gracefully omitted,
+but it is, of course, inaccessible.)
+
+3.  Each Raid must have a file at that lowest level named
+	.raid_master,  for example,
+	/etc/var/sfyod0/.raid_master
+
+The contents of that file is two numbers.  The first is a 
+"unit number" which is of the form xxi, where i is either 
+0 or 1.   
+These numbers must be unique across the raids!
+(There are implementation deficiencies at the moment, but the
+intent is that a raid could be mounted to any IO processor box
+and it would retain its unit number.  That is, the compute nodes
+and the application program do not have, a priori, knowledge of
+where a particular raid unit is located.)
+The second number is called a validation check, but is not
+checked at this time.
+
+Such a file (for unit 51) can be created by
+	echo 51 773355 > /etc/var/sfyod1/.raid_master
+		DO NOT make it "051" as that gets read as octal
+                   and hence comes out as 41 which is not what is
+                   expected!
+
+At least for now, the last digit, the 0 or 1, should match
+between the unit number and sfyod0 or sfyod1.
+
+Note that this is written ONCE, NOT each time we boot.  This
+is, in effect, the identification of the raid. (Probably write
+permission, even for root, should be removed from this file.)
+
+4.  The directory tmp needs to be created on each raid also 
+and given 777 permissions.
+	mkdir /etc/var/sfyod0/tmp
+	chmod 777 /etc/var/sfyod0/tmp
+			(sfyod0 or sfyod1 as the case my be.)
+Likewise, this is done once.
+
+*******************************************************************
+
+In the present 2.0.35, release 0.3, it would appear that all that
+can be supported is one unit per IO node.  Hence, there is only 
+/etc/var/sfyod0 to consider.   The unit numbers should then be
+simple, like 10, 20, 30, 40, 50, 60.  
+Presently we want, require, the I/O nodes to all be in the same
+SU!   Want to mount the raids to that service node as /raid_un0, where
+un0 is the unit number.   Through that service node is the users
+outside access to the files!
+
+********************************************************************
+
+Reiterating --
+
+For the applications the FYOD files are located in
+	/raid_010/tmp
+	/raid_020/tmp
+	/raid_030/tmp
+	/raid_040/tmp
+	/raid_050/tmp
+	/raid_060/tmp
+
+With the NFS mounted to the I/O service node described above, the
+files are also seen at the same location from THAT service node.
+The files are NOT seen (at all) from other service nodes!
+
+If an administrator logs on to an I/O node the files are found
+at /etc/var/sfyod0/tmp.   All six raids are on their individual
+nodes mounted at the exact same name!
+
+The working of FYODs is in terms of "unit numbers".  The path name
+the applications supplies has a three digit unit number in it.  Since
+that is a ASCII string, the unit number there must have THREE digits.
+The raids each have a file written on them, ".raid_master", which
+contains the unit number and that is what FYOD uses to determine
+which raid to use.   Clearly the unit numbers written on the raids
+need to be unique!
+
+There is now a utility, available in binary form, "findunits", that
+will display from ANY service node, information about units that
+are actually accessable from FYOD.   (It is not a pretty, carefully
+formatted display.   It is an adaptation of FYOD debug output.)
+It is useful because it gets the unit information over myrinet from
+the running FYODs.
+
+
+
+
+README.operations

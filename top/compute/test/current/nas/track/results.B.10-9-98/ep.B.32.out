@@ -1,0 +1,99 @@
+ 
+ NAS Parallel Benchmarks 2.3 -- EP Benchmark
+ 
+ Number of random numbers generated:   2147483648  
+ Number of active processes:                   32
+ 
+EP Benchmark Results:
+ 
+CPU Time =   56.4024
+N = 2^   30
+No. Gaussian Pairs =     843345606.
+Sums =     4.033815542440754D+04   -2.660669192810400D+04
+Counts:
+  0     393058470.
+  1     375280898.
+  2      70460742.
+  3       4438852.
+  4        105691.
+  5           948.
+  6             5.
+  7             0.
+  8             0.
+  9             0.
+ 
+ 
+ EP Benchmark Completed.
+ Class           =                        B
+ Size            =               2147483648  
+ Iterations      =                        0
+ Time in seconds =                    56.40
+ Total processes =                       32
+ Compiled procs  =                       32
+ Mop/s total     =                    38.07
+ Mop/s/process   =                     1.19
+ Operation type  = Random numbers generated
+ Verification    =               SUCCESSFUL
+ Version         =                      2.3
+ Compile date    =              09 Oct 1998
+ 
+ Compile options:
+    MPIF77       = /Net/mp/cplant/bin/f77 
+    FLINK        = $(MPIF77)
+    FMPI_LIB     = -L$(MPIPATH) -lmpi 
+    FMPI_INC     = -I$(MPIPATH)/include
+    FFLAGS       = -O3 -align records -align dcommons -g
+    FLINKFLAGS   = -v
+    RAND         = randi8
+ 
+ 
+ Please send the results of this run to:
+ 
+ NPB Development Team 
+ Internet: npb@nas.nasa.gov
+ 
+ If email is not available, send this to:
+ 
+ MS T27A-1
+ NASA Ames Research Center
+ Moffett Field, CA  94035-1000
+ 
+ Fax: 415-604-3957
+ 
+ 
+ 
+   Node name     Rank  Node   PID   Elapsed  Exit Code  Terminating Signal
+---------------- ----  ----  -----  -------  ---------  ------------------
+SU-003 node-0003    0    17   8331  0:00:59       0       none
+SU-003 node-0005    1    18   8252  0:00:59       0       none
+SU-003 node-0007    2    19   8209  0:00:59       0       none
+SU-003 node-0014    3    24   8197  0:01:00       0       none
+SU-003 node-0010    4    26   8190  0:01:00       0       none
+SU-003 node-0006    5    28   8202  0:01:00       0       none
+SU-003 node-0008    6    29   8191  0:00:59       0       none
+SU-003 node-0004    7    31   8207  0:00:59       0       none
+SU-002 node-0001    8    32   8629  0:00:59       0       none
+SU-002 node-0003    9    33   8400  0:00:59       0       none
+SU-002 node-0005   10    34   8454  0:01:00       0       none
+SU-002 node-0007   11    35   8380  0:01:00       0       none
+SU-002 node-0009   12    36   8374  0:01:00       0       none
+SU-002 node-0011   13    37   8380  0:00:59       0       none
+SU-002 node-0013   14    38   8374  0:00:59       0       none
+SU-002 node-0015   15    39   8422  0:00:59       0       none
+SU-002 node-0014   16    40   8378  0:00:59       0       none
+SU-002 node-0010   17    42   8387  0:00:59       0       none
+SU-002 node-0012   18    43   8361  0:00:59       0       none
+SU-002 node-0008   19    45   8385  0:01:00       0       none
+SU-002 node-0004   20    47   8369  0:01:00       0       none
+SU-001 node-0001   21    48   8229  0:00:59       0       none
+SU-001 node-0003   22    49   8244  0:00:59       0       none
+SU-001 node-0005   23    50   8224  0:00:59       0       none
+SU-001 node-0007   24    51   8224  0:00:59       0       none
+SU-001 node-0009   25    52   8217  0:00:59       0       none
+SU-001 node-0011   26    53   8236  0:00:59       0       none
+SU-001 node-0013   27    54   8229  0:00:59       0       none
+SU-001 node-0015   28    55   8252  0:01:00       0       none
+SU-001 node-0014   29    56    292  0:01:00       0       none
+SU-001 node-0010   30    58   8218  0:00:59       0       none
+SU-001 node-0012   31    59   8209  0:00:59       0       none
+

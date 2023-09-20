@@ -1,0 +1,189 @@
+            Cplant Runtime Software Release 2.0 branch
+          ----------------------------------------------
+
+2.0.1.10     Nov 4, 2002 (west)
+	     Oct 31, 2002 (ross, as 2019 emergency patch)
+  - remove obsolete heap setup in enfsd causing panic on large memory 
+    IO nodes
+
+2.0.1.9     Oct 1, 2002 (ross,ross2)
+  - bebopd notifies pbs resources_available.size=0 nodes when bebopd
+    exits (the effect will be that pbs will stop scheduling jobs).
+  - bebopd recalculates pbs nodes and notifies pbs upon every pingd
+    (the effect is that now stale nodes will get reported to pbs)
+  - multi-server ENFSD is now the default
+  - pingd now prints out hosts as how they are listed in cplant-map
+    (ie- hostnames rather than the static "y-06 n-27" etc mapping)
+  - showmesh made cluster-general via some perl libraries in CIT
+  - formatted docmentation added (previously the format conversion was
+    part of the make, which will be fixed to work on the head)
+  - rtscts over rtsmcp and ethernet are now built and installed by
+    default (with non-clashing names of course)
+  - preliminary support for PBS 2.3
+  - various vm init.d script bugfixes
+
+2.0.1.8     Sept 4, 2002 (ross,ross2)
+	    Sept 16, 2002 (alaska)
+	    Sept 18, 2002 (west)
+	    Sept 19, 2002 (ronne)
+  - pbs_mom and pbs_server modified to properly handle SIGFPE.  this
+    had caused pbs death on ross2 due to stomp runs - now pbs slows to
+    a crawl if all services nodes are heavily loaded (ie- load of ~6),
+    but does not die.  system recovers gracefully once service node
+    loads return to normal range (ie- qdel the offending jobs or wait
+    until they finish).  we had over a hundred stomp runs going fine
+    on ross2, then qdelled them and the system returned to normal (the
+    qdels took about 15 minutes to process though).
+  - upgraded to linux-2.2.21 kernel
+    - eliminates "do_try_free_pages" messages due to vm fixes
+    - eliminates "unparseable system call" messages
+  - kernel and runtime system was built on ross-comp!!!
+
+2.0.1.7     Aug 14, 2002 (west)
+  - simplified vm structure, configuration, and initialization
+  - fixed mpi bug where codes would hang due to a buffer overflow when
+    more than 2^12 communicators are created
+  - clarified error message generated when trying to lock too many
+    pages of memory
+  - turned down debug info level in rtscts module
+
+2.0.1.6     July 24, 2002 (ross,ross2)
+  - fix yod to properly set batch mode automatically for pbs jobs
+  - new remap.ROSS file which traverses all three interconnect
+    dimensions recursively; should present slight improvement in 
+    allocating jobs to the most compact set of nodes available
+
+2.0.1.5     July 11, 2002 (ross,ross2)
+  - fix a situation where yod retried a job load when it should quit
+  - change RTSCTS to attempt message resyncs after 5 seconds instead of 10
+    seconds to help prevent race conditions between the server library
+    timeout logic (there are 10 second assumptions in it)
+  - CLIENT_TIMEOUT value in the site file is 7 seconds to help prevent
+    race conditions with RTSCTS
+  - pct prints out something helpful when it decides to prune itself and
+    shutdown
+  - improve the interaction between the RTSCTS layer and the bottom of the
+    Portals library (rtscts has a better knowledge of error codes returned
+    by lib_parse() and what should be done in response)
+    
+2.0.1.4		July 9, 2002 (ross, ross2)
+  - have yod send logs to syslog (enables centralized runtime log collection)
+  - small fix to /proc/cplant rtscts debug info and syslogged messages
+
+2.0.1.3		June 19, 2002 (west)
+		June 17, 2002 (alaska (old pbs_mom and showmesh))
+		June 12, 2002 (ross, ross2)
+  - minor fix to enfs to make it's startup more reliable
+  - fix showmesh to display >26 jobs correctly.  note that "dead" (ie-
+    "unavailable" in pingd") nodes now show as '!' instead of 'X'.
+  - fix yod to not have troubles with /etc/HOSTNAME
+  - fix host configuration so yod no longer generates warnings about
+    /etc/alises.db 
+  - pbs_mom now logs job size, making log postprocessing simpler
+
+
+2.0.1.2		May 30, 2002 (ronne, using gm mcp)
+  - fixes for portals sequencing bug!
+  - fixes for fortran message catalog bug and -bt functionality
+  - make bebopd update PBS of stale nodes in all cases rather than
+    just in the "query all" case.  this should signal PBS to stop
+    scheduling jobs when appropriate (ie- when "all nodes go stale"
+    and other condidtions).
+  
+
+2.0.1.1		May 15, 2002  (ross, ross2)
+  - RAMDISK set to 32M on BOTH ross and ross2 in order to support
+    larger binaries on ross
+  - RTSCTS protocol (software) timeout set to 5/4 sec, switches at
+    1 sec, and nics at 1/4 sec.  observed in testing to reduce the
+    occurance of the portals sequencing bug.
+  - Detect and fix case where cb_table entry is stale, this can cause
+    a service node to fail all job loads (but continue to try new
+    jobs, thus draining the queue)
+
+
+2.0.1.0		May 8, 2002  (west)
+  - Myrinet switch and nic timeouts increased from 1/16 to 1/4 sec
+    intended to fix bug #1 below
+  - more robust throttling of bebopd solicits to pcts to avoid 
+    "all nodes going stale" suddenly
+
+
+2.0.0.3		May 8, 2002 (ross, ross2)
+  - memory leak in mpi implementation of portals introduced in 2.0.0.1
+    (LinkVer will be incremented to 2.0.1 in order to force relink...)
+
+
+2.0.0.2		May 1, 2002 (ross, ross2)
+ Bugs Fixed
+  - Nodes prune themselves from the mesh if they detect network 
+    sequencing problems during job executable fanout, and yod retry
+    frequency has been increased to 60 seconds (from 5).  The net
+    result is that retries are more successful and the queue will not
+    drain due to network sequencing problems during job fanout.
+ Notes
+  - The compile environment has not changed from 2.0.0.1.
+    Consequently if you do a `strings yor_binary | grep Link` you will
+    see the following: 
+       CPLANT LinkVer:2.0.0: Cplant-2_0_0_1 
+    Yod checks the part between the :: which is 2.0.0.  The last
+    number indicates a runtime patch level, it will be taken out of
+    the LinkVer string at later releases to avoid any confusion.  If
+    you see the above string, you're fine to run on any 2.0.0.x
+    release.
+
+
+2.0.0.1		April 22, 2002 (alaska)
+
+ New Features
+  - Best-fit allocation scheme packs jobs into best free node region
+  - Remapable nodespace resulting in jobs being packed into
+    interconnect-compact regions (minimizing interconnect hop count)
+  - Added p3_ping and msgid debugging utilities
+
+ Bugs Fixed
+  - Stripped-down load protocol to provide more robust job loading
+  - More reliable bebopd to alleviate "no response from bebopd"
+  - Resolved issues causing "too many (mpi) unexpected messages"
+  - listing an ENFS directory containing many many files no longer hangs
+  - yod stdout and stderr redirection works again
+  - Fixed cause of "can't write to log" warnings during job loads,
+    eliminating messages and enabling more reliable log capturing
+  - MPI_Abort no longer causes yod to hang
+  - multiple processes opening same file with O_EXCL no longer core
+    dumps
+  - Fixed cdb nontermination bug
+  - f90 wrapper script
+    - Added -c (DoLink) support already present in f77 script
+    - Removed -lc from link list resulting in fewer compiler warnings
+      (full effect will not be known until production use, please let
+      us know of problems or improvements in this area)
+
+ Application Development Tools Support
+  - Totalview (MPI-aware debugger)
+  - Vampir (MPI-aware profiler)
+  - cgdb (cplant-aware gdb)
+  - yod -bt (backtrace inspection)
+ 
+ Release-testing Focus Areas
+  - rapid yod, qsub, qstat, reset, qdel, pingd executions and
+    interruptions
+  - CTH, LAMMPS, Salinas, Alegra, Ladera
+  - Modified Intel Stress suite from ASCI Red
+  - NAS Parallel Benchmarks
+  - ENFS
+
+ ****************
+ *  KNOWN BUGS  *
+ ****************
+
+ 1- loading oversized binaries can result in broken nodes which fail
+    subsequent job loads.  please pay attention to binary size limits
+    and follow them!
+    	32 Mbytes	ross2
+	16 Mbytes	ross, alaska, west
+ 2- MCP can become hung in Receive State 01, requiring a full restart
+    of cplant runtime.  Observed on bebopd node during power-cycling
+    many DS10L nodes simultaneously, and in certain cases when many
+    pcts contact bebopd simultaneously.  Also observed on compute
+    nodes during very large linpack runs (greater than 1521 nodes).

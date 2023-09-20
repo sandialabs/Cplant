@@ -1,0 +1,61 @@
+
+
+Cplant Software Release 0.4 - November 22, 1999
+----------------------------------------------
+
+This release of Cplant software adds support for the Portable Batch System
+(PBS) queueing system, and also includes support for extending the parallel I/O
+capabilities of a cluster.  PBS has been integrated into the Cplant runtime
+environment to provide a queueing system that can be used to submit and monitor
+batch jobs.  The parallel I/O capabilities have been extended to include an I/O
+proxy mechanism that uses a third party vendor cluster filesystem (current
+SGI's CXFS on Alaska).  We have also upgraded the Cplant software to support
+version 2.2.10 of the Linux kernel.  This upgrade was required to support the
+FY99 Cplant hardware, Compaq XP1000 workstations.  580 of these workstations
+running Cplant software achieved 247.6 GFLOPS on MPLINPACK, which is #40 on the
+November 1999 list of the Top 500 supercomputers in the world.  More
+information and documentation on these features will be available at the
+following Cplant web site:
+
+  http://www.cs.sandia.gov/cplant
+
+
+Highlights
+----------
+
+- PBS support
+- Extended Parallel I/O Support
+- Upgrade to Linux 2.2.10
+
+Bug Fixes
+---------
+
+- Fixed bug in open() that caused yod to seg fault
+- Fixed problem of opening more than 20 files on a RAID
+
+System Software Developer Tests
+-------------------------------
+- NAS Parallel Benchmarks version 2.3 Class A up to 256 nodes
+- MPLinpack benchmark on 580 nodes
+- All to All bit error tests on 580 nodes
+
+Changes Since Release 0.35
+-------------------------
+
+- Documentation on generating routes for Siberia
+- Program to generate a Myricom map file
+- Cplant proc files now in a subdirectory
+- Documentation on fyod
+- Modified tulip driver to support 10/100BT negotiation for all cards
+- Tool for converting Myricom-tool routes to Sandia MCP routes
+- Tools for converting Siberia physical node ids to hostnames
+- Traceroute tool for myrinet
+- Removal of sfyod dependencies
+- MCP support for LANai 7.x and 2.2.10
+- Check link version number in startup
+- Support for PBS
+- Open file limitation fix 
+- Consolidation of yod and fyod code
+- MCP support for IP for 2.2.10
+- NFS client modification to allow appication to flush cached data
+

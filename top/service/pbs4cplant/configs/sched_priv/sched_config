@@ -1,0 +1,166 @@
+#         Portable Batch System (PBS) Software License
+# 
+# Copyright (c) 1999, MRJ Technology Solutions.
+# All rights reserved.
+# 
+# Acknowledgment: The Portable Batch System Software was originally developed
+# as a joint project between the Numerical Aerospace Simulation (NAS) Systems
+# Division of NASA Ames Research Center and the National Energy Research
+# Supercomputer Center (NERSC) of Lawrence Livermore National Laboratory.
+# 
+# Redistribution of the Portable Batch System Software and use in source
+# and binary forms, with or without modification, are permitted provided
+# that the following conditions are met:
+# 
+# - Redistributions of source code must retain the above copyright and
+#   acknowledgment notices, this list of conditions and the following
+#   disclaimer.
+# 
+# - Redistributions in binary form must reproduce the above copyright and 
+#   acknowledgment notices, this list of conditions and the following
+#   disclaimer in the documentation and/or other materials provided with the
+#   distribution.
+# 
+# - All advertising materials mentioning features or use of this software must
+#   display the following acknowledgment:
+# 
+#   This product includes software developed by NASA Ames Research Center,
+#   Lawrence Livermore National Laboratory, and MRJ Technology Solutions.
+# 
+#         DISCLAIMER OF WARRANTY
+# 
+# THIS SOFTWARE IS PROVIDED BY MRJ TECHNOLOGY SOLUTIONS ("MRJ") "AS IS" WITHOUT 
+# WARRANTY OF ANY KIND, AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING,
+# BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
+# FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT ARE EXPRESSLY DISCLAIMED.
+# 
+# IN NO EVENT, UNLESS REQUIRED BY APPLICABLE LAW, SHALL MRJ, NASA, NOR
+# THE U.S. GOVERNMENT BE LIABLE FOR ANY DIRECT DAMAGES WHATSOEVER,
+# NOR ANY INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+# OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+# OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE
+# USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# 
+# This license will be governed by the laws of the Commonwealth of Virginia,
+# without reference to its choice of law rules.
+
+
+# This is the config file for the scheduling policy
+# FORMAT:  option: value prime_option
+#	option 		- the name of what we are changing defined in config.h
+#	value  		- can be boolean/string/numeric depending on the option
+#	prime_option	- can be prime/non_prime/all ONLY FOR SOME OPTIONS
+
+# Round Robin - 
+#	run a job from each queue before running second job from the
+#	first queue.
+
+round_robin: False	all
+
+
+# By Queue - 
+#	run jobs by queues.
+#       If it is not set, the scheduler will look at all the jobs on
+#       on the server as one large queue, and ignore the queues set
+#       by the administrator
+#	PRIME OPTION
+
+by_queue: True		prime
+by_queue: True		non_prime
+
+
+# Strict Fifo - 
+#	run jobs in strict fifo order.  If one job can not run
+#	move onto the next queue and do not run any more jobs
+#	out of that queue even if some jobs in the queue could
+#	be run.
+#	If it is not set, it could very easily starve the large
+#	resource using jobs.
+#	PRIME OPTION
+
+strict_fifo: false	ALL
+
+#
+# fair_share - schedule jobs based on usage and share values
+#	PRIME OPTION
+#
+fair_share: true ALL
+
+# Help Starving Jobs - 
+#	Jobs which have been waiting a long time will
+#	be considered starving.  Once a job is considered
+#	starving, the scheduler will not run any jobs 
+#	until it can run all of the starving jobs.  
+#	PRIME OPTION
+
+help_starving_jobs	true	ALL
+
+#
+# sort_queues - sort queues by the priority attribute
+#	PRIME OPTION
+#
+
+#
+# During prime time, we only review one queue, the "prime" queue,
+#   so there's no need to sort queues.
+#
+sort_queues	false prime
+#
+# During non-prime time, we check both queues, but run jobs from the
+#   high-priority non-prime queue first.
+#
+sort_queues	true non_prime
+
+#
+# load_balancing - load balance between timesharing nodes
+#	PRIME OPTION
+#
+load_balancing: true ALL
+
+# sort_by:
+# key:
+# 	to sort the jobs on one key, specify it by sort_by
+#	If multiple sorts are necessary, set sory_by to multi_sort
+# 	specify the keys in order of sorting
+
+# if round_robin or by_queue is set, the jobs will be sorted in their
+# respective queues.  If not the entire server will be sorted.
+
+# different sorts - defined in globals.c
+# no_sort shortest_job_first longest_job_first smallest_memory_first 
+# largest_memory_first high_priority_first low_priority_first multi_sort
+# fair_share large_walltime_first short_walltime_first
+#
+#	PRIME OPTION
+sort_by: no_sort ALL
+
+# filter out prolific debug messages
+# 256 are DEBUG2 messages 
+#	NO PRIME OPTION
+log_filter: 256
+
+# all queues starting with this value are dedicated time queues
+# i.e. dedtime or dedicatedtime would be dedtime queues
+#	NO PRIME OPTION
+dedicated_prefix: ded
+
+# this defines how long before a job is considered starving.  If a job has 
+# been queued for this long, it will be considered starving
+#	NO PRIME OPTION
+max_starve: 24:00:00
+
+# The following three config values are meaningless with fair share turned off
+
+# half_life - the half life of usage for fair share
+#	NO PRIME OPTION
+half_life: 24:00:00
+
+# unknown_shares - the number of shares for the "unknown" group
+#	NO PRIME OPTION
+unknown_shares: 10
+
+# sync_time - the ammount of time between syncing the usage information to disk
+#	NO PRIME OPTION
+sync_time: 0:05:00

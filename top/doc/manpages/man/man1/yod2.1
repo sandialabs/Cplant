@@ -1,0 +1,366 @@
+.if n .ds Q \&"
+.if t .ds Q ``
+.if n .ds U \&"
+.if t .ds U ''
+.TH yod2 1 "24 November 2001" "CPLANT MANPAGE" "Cplant Utilities"
+.tr \&
+.nr bi 0
+.nr ll 0
+.nr el 0
+.de Pp
+.ie \\n(ll>0 \{\
+.ie \\n(bi=1 \{\
+.nr bi 0
+.if \\n(t\\n(ll=0 \{.IP \\(bu\}
+.if \\n(t\\n(ll=1 \{.IP \\n+(e\\n(el.\}
+.\}
+.el .sp 
+.\}
+.el \{\
+.ie \\nh=1 \{\
+.LP
+.nr h 0
+.\}
+.el .PP 
+.\}
+..
+.SH NAME
+    
+
+.Pp
+\fByod2\fP -- Load a Cplant parallel application
+.SH SYNOPSIS
+    
+
+.Pp
+\fByod2\fP {\fIyod2-options\fP} 
+\fBprogram-path-name\fP {\fIprogram-arguments\fP} 
+.Pp
+OR
+.Pp
+\fByod2\fP {\fIyod2-options\fP} \fBload-file-name\fP
+.Pp
+YOD2-OPTIONS:
+.Pp
+[\fB-alloc\fP] [\fB-attach\fP] [\fB-bt\fP ][\fB-D\fP] [\fB-d\fP \fIinfo-type\fP] [\fB-file\fP \fIfile-name\fP] 
+.Pp
+[\fB-help | -vhelp\fP] [\fB-interactive | -batch\fP][\fB-kill\fP ] [\fB-list\fP \fInode-list\fP ]
+.Pp
+[\fB-Log\fP] [
+[\fB-NOBUF\fP] [\fB-quiet\fP] [\fB-show\fP][\fB-sleep\fP \fIwhere\fP]
+.Pp
+[\fB-strace\fP \fIpath-name\fP] [\fB-straceoptions\fP \fIoption-list\fP] [\fB-stracenodes\fP \fIrank-list\fP]
+.Pp
+[\fB-sz\fP \fInodes\fP] [\fB-timing\fP]
+.Pp
+[\fB-history\fP] [\fB-nice\fP]
+.SH DESCRIPTION
+    
+
+.Pp
+\fByod2\fP is a utility that loads parallel applications onto
+a set of compute nodes and services requests from them.  
+It has all the functionality of \fByod\fP, but in addition it
+can process requests from the application to spawn child
+applications, synchronize with them, and obtain information
+about them.  See the \fBcplant\fP man page for an explanation
+of these dynamic process creation requests.  Access to this
+capability should be available from MPI eventually as well.
+.Pp
+It is possible to send a SIGUSR1 or SIGUSR2 to a parallel
+application by sending the signal to \fByod2\fP.  \fByod2\fP will
+forward the signal to all running applications it is
+managing.
+(Type \fIkill -s SIGUSR1 yod2-pid\fP on the node running
+\fByod2\fP to send the application processes a SIGUSR1.)
+.Pp
+Interrupting \fByod2\fP with \f(CRcontrol-c\fR causes it to interrupt
+all applications with a SIGTERM.  \fByod2\fP will await the
+completion messages from the compute nodes.  If the applications
+have not terminated within 10 seconds, \fByod2\fP will terminate
+them with a SIGKILL.  If the SIGKILL command fails to fan out
+because of a mal-functioning compute node, \fByod2\fP will
+wait 10 seconds and reset all the compute nodes that were in
+use by the applications.
+.Pp
+If you try to use \fBTotalview\fP with \fByod2\fP, you will
+only be able to debug the original application loaded by
+\fByod2\fP, not it's descendants.
+.SH YOD2 OPTIONS
+    
+
+.Pp
+.PP
+.nr ll +1
+.nr t\n(ll 2
+
+.TP
+.I "-alloc"
+.nr bi 1
+.Pp
+Choosing \fI-alloc\fP was useful for compute node debugging
+before the availability of \fBcgdb\fP or \fBTotalview\fP.  
+It displays the nodes
+on which your application has been started and waits for you to press
+a key before allowing the processes in your parallel application
+to procede out of system code and into user code.  You 
+could at this point log in to
+a compute node and attach a debugger to your application to
+catch it before it procedes to \fImain\fP.
+Since users are discouraged from logging into compute nodes,
+it would be better for you to use \fI-attach\fP and \fBcgdb\fP.
+Also see the \fI-bt\fP option of yod2.
+
+.TP
+.I "-attach"
+.nr bi 1
+.Pp
+This option is essentially the same as \fI-alloc\fP.  It is intended
+to hold the application processes once they have started executing
+at an instruction prior to user code (prior to \fImain\fP).  You can
+at this point start \fBcgdb\fP to attach a debugger to a process.  See
+the \fBcgdb\fP man page for more help on debugging compute node processes.
+.Pp
+.TP
+.I "-batch"
+.nr bi 1
+.Pp
+This option informs \fByod2\fP that it is not being run 
+interactively.  In this case, \fByod2\fP will not wait for user
+responses in certain circumstances.  For example, if one of your
+application processes terminates abnormally (with a non-zero exit
+code or as the result of a signal), \fByod2\fP will automatically
+kill your parallel application for you.  Normally your application
+is not killed if some processes are still running.
+The default is that you are not running in \fIbatch\fP mode.
+See \fI-interactive\fP.
+
+.TP
+.I "-bt"
+.nr bi 1
+.Pp
+This option will cause \fByod2\fP to display a stack trace for
+user processes that terminate abnormally.
+\fByod2\fP normally displays a one-line completion message for each process in your
+parallel application, listing the exit code or terminating
+signal if any.  If the completion message indicates that your
+application process terminated with a
+signal and you wish to investigate, you may rebuild your application
+with debugging symbols and re-run it with the \fI-bt\fP option of
+\fByod2\fP.  The PCT will then attach a debugger to your process,
+collect the stack trace when it faults, and send the stack
+trace to \fByod2\fP for display.
+
+
+.TP
+.I "-D"
+.nr bi 1
+.Pp
+Turn on debugging of the application load.  The steps in 
+the load protocol are displayed as the application load progresses. 
+Application process file IO requests are displayed as \fByod2\fP
+receives them.
+
+.TP
+.I "-file \fIfile-name\fP"
+.nr bi 1
+.Pp
+When all processes in the parallel application have completed,
+\fByod2\fP displays a one line completion message for each process.
+This message lists the wall-clock time elapsed from start to
+finish for the process, and the exit code and terminating
+signal, if any, for the process.  By default the listing goes
+to stdout, but may be redirected to a file with this option.
+
+.TP
+.I "-help"
+.nr bi 1
+.TP
+.I "-vhelp"
+.nr bi 1
+.Pp
+\fI-help\fP option displays a usage message for \fByod2\fP, \fI-vhelp\fP
+displays a more verbose message.
+
+.TP
+.I "-history"
+.nr bi 1
+.Pp
+This option causes a history of all jobs started to be
+displayed when \fByod2\fP terminates.
+
+
+.TP
+.I "-interactive"
+.nr bi 1
+.Pp
+This option informs \fByod2\fP that it is being run interactively
+by a living user.  This is the default mode.  If \fByod2\fP is
+being run by a script, be certain to specify \fB-batch\fP on the
+command line.  One difference between interactive mode and
+batch mode is that if the load fails on one node, interactive 
+mode waits for the user to interrupt \fByod2\fP with control-c
+before cancelling the load on all allocated nodes.  Batch mode
+goes ahead and cancels the load.
+
+.TP
+.I "-kill"
+.nr bi 1
+.Pp
+When \fByod2\fP is run in interactive mode (the default) and a process
+of a parallel application terminates abnormally, \fByod2\fP displays the
+fact that the process terminated but does not kill the other
+processes in the job.  The user may choose to abort the job by
+terminating \fByod2\fP with control-C.
+.Pp
+If the user wishes \fByod2\fP to automatically kill the application when
+one or more processes terminates abnormally, then use the \fI-kill\fP
+option to yod2.
+
+.TP
+.I "-list \fInode-list\fP"
+.nr bi 1
+.Pp
+If a \fInode-list\fP is provided on the \fByod2\fP command line, then
+the nodes requested will be allocated out of this list.  If 
+\f(CR-sz\fR \fIn\fP is specified as well, then \fIn\fP nodes will be allocated
+out of the list.  If there does not exist \fIn\fP free nodes in the list,
+\fByod2\fP will display an error message.  If no \f(CR-sz\fR option is
+specified, \fByod2\fP will assume you want all the nodes in the
+\fInode-list\fP.
+.Pp
+A \fInode-list\fP is a list of node specifiers separated by commas.
+A node specifier is a physical node number or
+a node range.  A node range is specified by two physical
+node numbers separated
+by one or more dots.  No white space may be included in
+the \fInode-list\fP.  Example: \f(CR-l 25..35,112..140,160,165\fR
+ 
+.TP
+.I "-Log"
+.nr bi 1
+.Pp
+This option causes the compute node application load protocol 
+steps to be logged to \f(CR/var/log/cplant\fR on the compute node.
+It is intended for use by Cplant system debuggers.
+
+.TP
+.I "-nice"
+.nr bi 1
+.Pp
+This option runs your job in a low priority mode.  If a regular
+priority job requests nodes, your job may be killed to make
+way for it.  Your job will be signalled with a SIGTERM, and 5 minutes
+later with a SIGKILL, if necessary.
+
+.TP
+.I "-NOBUF"
+.nr bi 1
+.Pp
+\fByod2\fP displays it's own messages and also text printed by the parallel
+application processes while they are running.  Normally this
+combination of buffered (yod2's status messages) and unbuffered
+(application output and yod2's error messages) messages appear
+sensibly on the tty that started yod2.  But if \fByod2\fP was started
+by an rsh from a remote node, the output appears garbled.  The
+\fI-NOBUF\fP option solves this problem by making all \fByod2\fP output unbuffered.
+
+.TP
+.I "-quiet"
+.nr bi 1
+.Pp
+\fByod2\fP, like this man page, is quite verbose.  It lists many status and
+error messages as it loads and runs a parallel application.  If you wish to have
+these messages suppressed, run yod2 with the \fI-quiet\fP option.
+ 
+.TP
+.I "-show"
+.nr bi 1
+.Pp
+Cplant parallel applications are encoded with a version string.  \fByod2\fP will
+not load an application encoded with the wrong version string (unless you
+run \fByod2\fP with the secret \fI-xxx\fP option).  The \fI-show\fP option lists
+the correct version string and the version string found in your executable.
+
+.TP
+.I "-sleep \fIwhere\fP"
+.nr bi 1
+.Pp
+Cplant system debuggers may want to attach a debugger to a Cplant application
+before it is in user code.  This option provides 4 different points at which a
+the processes can be held for 60 seconds.  The options are \fI-sleep 1\fP 
+(right after the fork), \fI-sleep 2\fP (just before the exec), \fI-sleep 3\fP
+(right after entering system startup code), \fI-sleep 4\fP (just before
+proceeding to \fImain\fP).
+
+.TP
+.I "-strace \fIpath-name\fP"
+.nr bi 1
+.Pp
+Yet another debugging tool.  \fIpath-name\fP should be a directory which
+is mounted writable on the compute node.  This option will cause the PCT
+to run the application process under strace which will list all
+system calls (and their arguments) made by the application process.  By
+default, only the rank 0 process is traced.  The strace output goes to
+a file in directory \fIpath-name\fP.  The file name contains the Cplant job ID
+and the rank of the process being traced.
+
+.TP
+.I "-straceoptions \fIoption-list\fP"
+.nr bi 1
+.Pp
+The PCT will invoke strace with the options you specify in the quoted
+string \fIoption-list\fP.   
+You must use the \fI-strace\fP option with this option.
+
+.TP
+.I "-stracenodes \fIrank-list\fP"
+.nr bi 1
+.Pp
+The PCT will invoke \fIstrace\fP on the processes with the ranks given in the
+\fIrank-list\fP.  The format for the \fIrank-list\fP is the same as the format
+for a node list.  By default, strace is invoked only on the rank 0 process.
+You must use the \fI-strace\fP option with this option.
+
+.TP
+.I "-sz \fInodes\fP"
+.nr bi 1
+.Pp
+The number of compute nodes required to run the parallel
+application.  One member (process) of the application will
+run on each node.  The default if no node list is specified
+is \f(CR-sz 1\fR.  The default if a node list is specified is
+the number of nodes in the node list.
+
+.TP
+.I "-timing"
+.nr bi 1
+.Pp
+Interested in how long the different stages of application
+load are taking?  The \fI-timing\fP option times them and displays
+the results in seconds.  (If our name was \fBmpirun\fP instead
+of \fByod2\fP we would display it in minutes!)
+.nr ll -1
+.PP
+.Pp
+.SH RETURN VALUES
+       
+
+.Pp
+The return value of \fByod2\fP indicates the result of the original
+parallel application it loaded, not the descendants of that application.
+\fByod2\fP returns 0 if the original application terminated normally, 
+1 if the application ran and terminated abnormally, and 2 if the application
+load failed and the application never started.
+Abnormal termination occurs if one or more of the
+processes of parallel application exited with a non-zero exit code, or
+was terminated by a signal.
+.SH SEE ALSO
+    
+
+.Pp
+\fByod\fP
+\fBpingd\fP
+\fBPCT\fP
+\fBbebopd\fP
+\fBcgdb\fP

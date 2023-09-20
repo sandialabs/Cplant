@@ -1,0 +1,56 @@
+<!--
+    $Id: PtlEQAlloc.sgml,v 1.2 2001/01/11 00:22:11 rbbrigh Exp $
+-->
+
+<!doctype qwertz system>
+
+<manpage title="PtlEQAlloc" sectnum="3" date='"04 Jan 2001"'
+    footer='"Portals 3.0"' main='"Portals 3.0 Library"'>
+
+<sect1> NAME
+    <p>
+    <bf/PtlEQAlloc/ &mdash Allocate a Portals 3.0 event queue
+    </p>
+
+<sect1> SYNOPSIS
+    <p>
+     #include "p30.h"
+
+     int PtlEQAlloc( ptl_handle_ni_t interface, ptl_size_t count,
+                     ptl_handle_eq_t* handle );
+    </p>
+
+<sect1> PARAMETERS
+    <p>
+     <descrip>
+     <tag /interface/
+     a handle for the interface with which the event queue will be associated
+     <tag /count/
+     number of events that can be stored in the event queue
+     <tag /handle/
+     on successful return, this location will hold a handle for the newly created
+     event queue
+     </descrip>
+
+<sect1> DESCRIPTION
+    <p>
+    <bf /PtlEQAlloc/ allocates the resources need for an event queue.
+    </p>
+
+<sect1> RETURN VALUES
+    <p>
+    <descrip>
+     <tag /PTL_OK/
+     on success
+     <tag /PTL_FAIL/
+     indicates an error during initialization
+    </descrip>
+
+<sect1> SEE ALSO
+    <p>
+    <bf /PtlEQFree(3)/, <bf /PtlEQCount(3)/, <bf /PtlEQGet(3)/,
+    <bf /PtlEQWait(3)/ <newline>
+    <bf /Portals 3.0 Message Passing Interface document/
+    </p>
+
+</manpage>

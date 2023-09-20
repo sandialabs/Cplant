@@ -1,0 +1,107 @@
+.if n .ds Q \&"
+.if t .ds Q ``
+.if n .ds U \&"
+.if t .ds U ''
+.TH CPLANTPBSQUEUE 3 "20 November 2001" "CPLANT MANPAGE" "Cplant Runtime Libraries"
+.tr \&
+.nr bi 0
+.nr ll 0
+.nr el 0
+.de Pp
+.ie \\n(ll>0 \{\
+.ie \\n(bi=1 \{\
+.nr bi 0
+.if \\n(t\\n(ll=0 \{.IP \\(bu\}
+.if \\n(t\\n(ll=1 \{.IP \\n+(e\\n(el.\}
+.\}
+.el .sp 
+.\}
+.el \{\
+.ie \\nh=1 \{\
+.LP
+.nr h 0
+.\}
+.el .PP 
+.\}
+..
+.SH NAME
+    
+
+.Pp
+CplantPBSQueue, CplantPBSqstat, CplantPBSqueues, CplantPBSserver
+.SH SYNOPSIS
+    
+
+.Pp
+\fB#include <cplant.h>\fP
+.Pp
+\fBint CplantPBSQueue(char *\fP\fIqueue-name\fP \fB, char **\fP \fIqueue-info\fP \fB)\fP   
+.br
+\fBint CplantPBSqstat(qstat_entry **\fP \fIqstat-info\fP \fB)\fP   
+.br
+\fBint CplantPBSqueues(char ***\fP \fIqueue-list\fP \fB)\fP   
+.br
+\fBint CplantPBSserver(server_info *\fP \fIsinfo\fP \fB)\fP   
+.br
+.SH DESCRIPTION
+    
+
+.Pp
+The function \fBCplantPBSQueue\fP returns the results of the command
+\fBqmgr -c "list queue \fP\fIqueue_name\fP\fB"\fP.  It
+allocates storage for the result and sets \fIqueue-info\fP to the location.
+This storage should be freed when the caller is done with it.
+.Pp
+The function \fBCplantPBSqstat\fP returns the results of the command
+\fBqstat -a\fP.  It allocates an array having one array element for each
+line in the qstat display.  
+This \fIqstat-info\fP array should be freed when the caller is done with it.
+.Pp
+\f(CR#define EXITING "E" 
+.br
+#define HELD "H" 
+.br
+#define QUEUED "Q" 
+.br
+#define RUNNING "R" 
+.br
+#define MOVED "T" 
+.br
+#define WAITING_EXEC "W" 
+.br\fR
+.Pp
+\f(CRtypedef struct {    /* Information from qstat */  
+.br
+int job_id;         /* PBS job ID */  
+.br
+char *username;  
+.br
+char *queue;  
+.br
+char *jobname;  
+.br
+int sessID;         /* Session ID */  
+.br
+int q_time;         /* Time in queue */  
+.br
+int req_nodes;      /* number of nodes requested */  
+.br
+int req_time;    /* Amount of time requested */  
+.br
+char status;        /* Status of job, i.e. queued, running etc. */  
+.br
+int elapsed_time;   /* Elapsed time */  
+.br
+/* int core; */     /* amount of 'core' nodes requested */  
+.br
+} \fBqstat_entry\fP;  
+.br\fR
+.SH ERRORS
+
+.SH BUGS 
+
+.SH SEE ALSO
+    
+
+.Pp
+

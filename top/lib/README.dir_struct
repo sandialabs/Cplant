@@ -1,0 +1,23 @@
+$Id: README.dir_struct,v 1.1 1997/09/28 20:47:34 lafisk Exp $
+
+    This directory contains objects and libraries required by processes
+    on more than one partition.
+
+    comm contains files with communications routines used by yod, pct
+    and others
+
+    puma contains libpuma.a sources
+
+    start contains the startup code required by processes desiring to
+    use portals
+
+    old contains the yod and startup code written by Nicolas Droux, which
+    starts a parallel application by rsh'ing to the remote nodes.
+
+    +---/top
+    |   +---/lib
+    |   |   +---/comm
+    |   |   +---/puma
+    |   |   +---/start
+    |   |   +---/old
+

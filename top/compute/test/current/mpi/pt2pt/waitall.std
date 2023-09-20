@@ -1,0 +1,4 @@
+*** Testing MPI_Waitall ***
+done.  eventId = 1
+Test complete
+*** Testing MPI_Waitall ***

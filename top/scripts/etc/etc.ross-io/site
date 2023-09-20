@@ -1,0 +1,120 @@
+The code in service/util/bebopd/config.c searches the site file 
+for definition names.  It takes the subsequent text on the line 
+as the value of the definition.  So don't include the definition 
+names in comments.  And no special character is interpreted
+as starting a comment.  If someone wants to make the parsing 
+of the site file fancier, go ahead.
+
+yod and friends operate this way:  If a definition name is
+defined in it's environment, that is the value used.  Otherwise
+if it is defined in this site file, that is the value used.
+Otherwise the default in config.c is used.
+
+#
+# the location of PBS executables, since bebopd has to invoke
+# qmgr to update the PBS server when it is running in PBS
+# support mode.  This is the path above "bin", "sbin", etc.
+PBS_PREFIX	                   /
+
+#
+if NODE_NAME_LOOKUP is defined at compile time, node names
+come from this file.
+#
+NODE_NAMES_FILE	                  /cplant/etc/cplant-map
+
+#
+# The path to which the PCT writes application executables
+# prior to exec'ing them.  It's RAM disk on some Cplants.
+PCT_SCRATCH	                  /tmp/pct-scratch
+
+#
+# An overflow path, if pct-scratch is full
+#
+PCT_OVERFLOW	                   none
+
+#
+# The timeout for Cplant client components, i.e. yod and pct
+#
+CLIENT_TIMEOUT					7
+
+#
+# The timeout used by bebopd for its communications
+#
+DAEMON_TIMEOUT					60
+
+#
+# the user log file, yod writes a line to this when it's done
+#
+LOGFILENAME	                   /etc/local/userlog
+
+#
+# list of administrators who should receive mail from yod when
+# compute nodes deadlock or crash.  Make it none if you don't
+# want yod to send such mail.  Turns out this has to be a single
+# address due to the way this file is parsed.  For multiple addresses,
+# set it as a shell environment variable.
+#
+NOTIFYLIST	                   loadfails@mercy.sandia.gov
+
+#
+# file containing the name of the virtual machine, this name
+# substitutes for the %s in the subsequent format definitions
+#
+VM_NAME_FILE	                  /cplant/etc/vmname
+
+#
+# The next 8 definitions are used when copying large executables
+# to a disk from which the PCT can exec them.  This scheme
+# should be used rarely, and not at all once Cplant compute node
+# OS componenets are modified to be able to manage the node memory.
+#
+# On some Cplants, the application executable file is stored
+# in RAM disk on the compute nodes.  Sometimes it doesn't fit
+# there, so yod tries to copy it to a file system mounted
+# by the compute nodes.  For scalability, it is copied to a
+# global file system, and from there to a file system local
+# to each scalable unit.  If all the compute nodes are in 
+# one scalable unit, the executable is just copied to the
+# global file system.  These paths indicate how to copy to
+# these file systems.  A %s in these path names will be
+# substituted with the virtual machine name.
+# 
+# path name of global storage on machine hosting global storage
+VM_GLOBAL_STORAGE	          /usr/local/%s
+
+# path name of global storage from the service nodes
+VM_GLOBAL_STORAGE_FROM_SRV_NODE	 /etc/local
+
+# path name of storage local to scalable unit on the machine
+# hosting the storage
+SU_GLOBAL_STORAGE	         /cplant/nfs-cplant
+
+# path name of storage local to scalable unit from the
+# compute nodes
+LOCAL_EXEC_PATH	                 /cplant
+
+# if all compute nodes are in one SU (so we don't do a two
+# level copy) this is the path from the service node to
+# storage accesible to all compute nodes
+SINGLE_LEVEL_GLOBAL_STORAGE	 /etc/local 
+
+
+# if all compute nodes are in one SU (so we don't do a two
+# level copy) this is the path from the compute nodes to the
+# storage accesible to all compute nodes
+SINGLE_LEVEL_LOCAL_EXEC_PATH	 /usr/local/%s
+
+#
+# a format string for the name of the administrative support
+# station for an SU.  It's the machine the local storage resides
+# on.  The %d will be replaced with an SU number
+SU_NAME_FORMAT	                 z-%d
+
+#
+# the name of the machine hosting the global storage
+VM_GLOBAL_MACHINE	          ross-sss2-0 
+
+#
+bebopd registry file is defunct
+#
+BEBOPD_REG_FILE	                  /etc/local/bebopd_reg

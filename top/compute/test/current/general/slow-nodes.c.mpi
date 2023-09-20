@@ -1,0 +1,142 @@
+/*
+ * slow-nodes.c
+ *
+ * Attempts to track down bad nodes by the length of time to do a dummy
+ * loop with floating point math.  Some nodes in siberia have been
+ * observed to take twice as long as others to do simple problems,
+ * so this exercises the floating point unit and may determine
+ * which nodes are bad.
+ *
+ */
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/time.h>
+#include <unistd.h>
+#include <mpi.h>
+
+static int my_rank = 0;
+static int nnodes = 0;
+static int verbose = 0;
+
+/*********************************/
+
+static struct timeval start_buf;
+void start( void )
+{
+	gettimeofday( &start_buf, NULL );
+}
+
+double stop( void )
+{
+	struct timeval	now;
+	double		diff;
+
+	gettimeofday( &now, NULL );
+	diff = 1000000.0 * ( now.tv_sec - start_buf.tv_sec );
+	diff += 1.0 * ( now.tv_usec - start_buf.tv_usec );
+
+	return diff;
+}
+
+double timethis( unsigned long loops, void (*f)( unsigned long int ) )
+{
+	unsigned long int i;
+
+	start();
+	for( i=0 ; i<loops ; i++ )
+		f( i );
+	return stop();
+}
+
+
+/*****************************/
+
+
+void delay_func( unsigned long int iter )
+{
+	static double block[ 1024 ];
+	int i;
+
+	for( i=0 ; i<1024 ; i++ )
+		block[i] = iter + i;
+
+	for( i=0 ; i<1024 ; i++ )
+		if( block[i] != iter + i )
+			printf( "%d: Failed on %p: %lf != %lf\n",
+				my_rank,
+				&block[i],
+				block[i],
+				(double)(iter + i)
+			);
+}
+
+int main( int argc, char *argv[] )
+{
+	unsigned long int loops = 100000;
+	double diff, per_loop, *times;
+	double range = 2;	/* # of std deviations allowed */
+
+	MPI_Init( &argc, &argv );
+	MPI_Comm_rank( MPI_COMM_WORLD, &my_rank );
+	MPI_Comm_size( MPI_COMM_WORLD, &nnodes );
+
+	if( argc > 1 )
+		loops = atoi( argv[1] );
+	if( argc > 2 )
+		range = atoi( argv[2] );
+
+	if( my_rank == 0 ) {
+		printf( "%d: Will time %ld loops of %p on %d nodes.  "
+			"%lf std deviations is acceptable\n",
+			my_rank, loops, delay_func, nnodes, range );
+		times = malloc( sizeof(double) * nnodes );
+	}
+
+	diff = timethis( loops, delay_func );
+	per_loop = diff / loops;
+
+	if( verbose )
+		printf( "%d: %ld loops took %lf useconds or %lf usec/loop\n",
+			my_rank, loops, diff, per_loop );
+
+	MPI_Gather( &per_loop, 1, MPI_DOUBLE, times, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD );
+
+	if( my_rank == 0 ) {
+		int i;
+		double avg = 0;
+		double dev = 0;
+		double min = 10000000000;
+		double max = 0;
+
+		for( i=0 ; i<nnodes ; i++ ) {
+			double x_i = times[i];
+
+			avg += x_i;
+			dev += x_i * x_i;
+			if( x_i < min )
+				min = x_i;
+			if( max < x_i )
+				max = x_i;
+		}
+
+		avg /= nnodes;
+		dev /= nnodes;
+		dev -= avg * avg;
+
+		printf( "Times: %lf/%lf/%lf std=%lf\n",
+			min, avg, max, dev );
+
+		for( i=0 ; i<nnodes ; i++ ) {
+			double x_i = times[i];
+
+			if( x_i < (avg - range * dev)
+			||  (avg + range * dev) < x_i )
+				printf( "Rank %d took %lf usec: "
+					"avg*%lf %lf dev\n",
+					i, x_i, x_i / avg, (x_i - avg) / dev );
+		}
+	}
+
+	MPI_Finalize();
+	return 0;
+}

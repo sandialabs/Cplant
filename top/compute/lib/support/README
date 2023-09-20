@@ -1,0 +1,15 @@
+$Id: README,v 1.2 2002/04/25 22:55:35 rklundt Exp $
+
+We want the DEC Tru 64 fortran message catalog available to fortran
+applications at run time, for OSF compiled codes. A different message
+catalog is needed for Compaq Linux compiled codes.
+
+The NLSPATH setting used to locate the catalog is selected at compile
+time in startup.c, and exported into the application environment at
+runtime. The defaults are /cplant/lib/linux or /cplant/lib/osf as
+appropriate.
+
+Developers are asked to note when for_msg.cat changes with new
+releases of Tru 64 libraries, or of Compaq Linux compilers, and put
+the new version in the repository.
+

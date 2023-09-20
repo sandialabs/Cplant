@@ -1,0 +1,173 @@
+#
+# $Id: README,v 1.2 2001/09/30 21:30:51 pumatst Exp $
+#
+
+Introduction
+------------
+    This directory contains a Linux kernel module that allows IP
+    traffic over Myrinet using the RTSCTS module which is used by the
+    Portals module.
+
+    Using (TCP)/IP on a SAN that connects thousands of nodes of a
+    high-performance cluster is not scalable. This module is a
+    temporary solution to assist Lee's I/O effort. At a later time Lee
+    will rewrite his code to use Portals. DO NOT WRITE ANY CODE THAT
+    DEPENDS ON ALL THE NODES BEING ACCESSIBLE VIA IP! This service
+    will go away in the future!
+
+    That said, here is some information about what the module
+    provides, how it is to be used, and how it works.
+
+    There were a few minimal changes to the RTSCTS module. Exporting a
+    function to send packets other than Portal packets, and a function
+    to register a function to handle non-Portal packets where the main
+    functional changes. I also added counters and fields in the /proc
+    files for IP packets. The rest of the functionality resides in a
+    separate module in this directory.
+
+    The module is called myrIP.mod and depends on the presence of the
+    Portals, RTSCTS, and cTask modules. This readme assumes those two
+    modules have been loaded and initialized. It is also assumed that
+    an MCP has been loaded and initialized in conjunction with the
+    RTSCTS module. All this is done by /cplant/etc/ptl-config. The
+    steps needed to activate the IP module are outlined below. They
+    will become part of ptl-config.
+
+IP Module Usage
+---------------
+    The IP module has to be inserted (after portals.mod and
+    rtscts.mod) and upped using ifconfig, and the network
+    ID and netmask have to be fed to the cTask module:
+
+	insmod myrIP.mod
+	ifconfig myrIP0 `pnid2ip 10.0.0.0 255.0.0.0 $pnid` up
+	/sbin/route add -net 10.0.0.0 netmask 255.0.0.0 dev myrIP0
+        /cplant/sbin/setRoute 10.0.0.0 255.0.0.0
+
+    The utility "pnid2ip" determines the ip address based on
+    the network id, netmask, and physical node id...
+    
+    An lsmod and ifconfig after those three steps might show
+
+	[root@c-4 rolf]# lsmod
+	Module         Pages    Used by
+	myrIP              3            1
+	rtscts            17    [myrIP] 0
+	portals           30    [myrIP rtscts]  0
+	[root@c-4 rolf]# ifconfig
+	lo        Link encap:Local Loopback  
+		  inet addr:127.0.0.1  Bcast:127.255.255.255  Mask:255.0.0.0
+		  UP BROADCAST LOOPBACK RUNNING  MTU:7168  Metric:1
+		  RX packets:0 errors:0 dropped:0 overruns:0
+		  TX packets:0 errors:0 dropped:0 overruns:0
+
+	eth0      Link encap:Ethernet  HWaddr 00:00:F8:76:64:A5
+		  inet addr:192.168.0.5  Bcast:192.168.0.255  Mask:255.255.255.0
+		  UP BROADCAST RUNNING  MTU:1500  Metric:1
+		  RX packets:23597 errors:0 dropped:0 overruns:0
+		  TX packets:18212 errors:1 dropped:0 overruns:0
+		  Interrupt:24 Base address:0x8000 
+
+	myrIP0    Link encap:Ethernet  HWaddr 00:00:80:00:00:05
+		  inet addr:10.0.0.5  Bcast:10.255.255.255  Mask:255.0.0.0
+		  UP RUNNING NOARP  MTU:7890  Metric:1
+		  RX packets:6 errors:0 dropped:0 overruns:0
+		  TX packets:6 errors:0 dropped:0 overruns:0
+
+    To test it, try a ping to another node that has the module
+    installed.
+
+	[root@c-4 rolf]# ping -c 6 10.0.0.3
+	PING 10.0.0.3 (10.0.0.3): 56 data bytes
+	64 bytes from 10.0.0.3: icmp_seq=0 ttl=64 time=0.9 ms
+	64 bytes from 10.0.0.3: icmp_seq=1 ttl=64 time=0.0 ms
+	64 bytes from 10.0.0.3: icmp_seq=2 ttl=64 time=0.0 ms
+	64 bytes from 10.0.0.3: icmp_seq=3 ttl=64 time=0.0 ms
+	64 bytes from 10.0.0.3: icmp_seq=4 ttl=64 time=0.0 ms
+	64 bytes from 10.0.0.3: icmp_seq=5 ttl=64 time=0.0 ms
+
+	--- 10.0.0.3 ping statistics ---
+	6 packets transmitted, 6 packets received, 0% packet loss
+	round-trip min/avg/max = 0.0/0.1/0.9 ms
+    
+    When the IP module is not needed anymore, do this:
+
+	ifconfig myrIP0 down
+	rmmod myrIP
+
+    
+
+Addressing
+----------
+    To avoid ARP and keep things simple, we mandate the following
+    addressing scheme. Every node has a physical node ID (pnid) from
+    the Portals module. They range from 0 to n-1, where n is the total
+    number of nodes in the system.  MAC addresses will contain this
+    pnid + 1 such that when printed in the usual hexadecimal notation,
+    the pnid + 1 shows up in decimal.  For example, on node 112
+    ifconfig would show the MAC as 00:00:80:00:01:13.  IP addresses,
+    when printed in the usual fashion, display the pnid + 1: on node
+    112 it would be 10.0.1.13.  Here are some more examples:
+
+       pnid     MAC                     IP
+	    0   00:00:80:00:00:01       10.0.0.1
+	    1   00:00:80:00:00:02       10.0.0.2
+	   10   00:00:80:00:00:11       10.0.0.11
+	   99   00:00:80:00:01:00       10.0.1.00
+	  100   00:00:80:00:01:01       10.0.1.1
+       123456   00:00:80:12:34:57       10.12.34.57
+
+    Note that MAC address 00:00:80:00:00:A0 or IP address 10.0.0.100
+    are not used in this scheme.
+
+
+
+The /proc File System
+---------------------
+    The RTSCTS module installs /proc/myrpkt, /proc/rtscts,
+    /proc/sndbuf, and /proc/rcvbuf. The IP module installs
+    /proc/myrIP. To view these "files", simply cat them. For example:
+
+	cat /proc/rtscts
+
+    It is now possible to clear the counters in these "files" by
+    writing to the file. For example:
+
+	echo "" > /proc/myrIP
+
+    clears all the counters in the IP module. Since sndbuf and rcvbuf
+    are simply views into the last 32 buffers sent and received, they
+    cannot be cleared. (Any write of one or more bytes to
+    /proc/myrpkt, /proc/myrIP, or /proc/rtscts will clear the
+    appropriate counters. "cat /dev/null > /proc/myrIP" doesn't work
+    because the write function never gets called for zero bytes.)
+
+    Below a certain layer in this networking stack, the software knows
+    only about packets; i.e. other than length, all packets are
+    considered the same.  This is true for the MCP and the lowest
+    layer of the rtscts module. /proc/myrpkt provides information from
+    this level.
+
+    One layer up, we have protocol packets, such as IP, RTS, CTS,
+    PING, etc.  Information about that level is provided by
+    /proc/rtscts. The file /proc/myrIP contains information about the
+    interface between the RTSCTS module and the IP stack in Linux;
+    i.e. the IP module. /proc/rtscts also contains information about
+    the Portals message level. So, /proc/rtscts counts how many
+    messages have been sent and received, as well as the number of
+    packets that were transmitted to send and receive these messages.
+
+    There is a lot of information provided by these /proc files. A lot
+    of it may not make sense unless you look at the source code and
+    know the details of the protocol.
+
+
+
+TO DO
+-----
+    More testing is needed, especially in conjunction with Portals
+    traffic.  The RTSCTS module has some flow-control built in for
+    Portals messages.  Currently, IP packets are not subject to that
+    flow-control. Therefore, it is possible to flood a node with IP
+    packets and make it drop Portals packets. If this proves to be a
+    problem, I will fix it.

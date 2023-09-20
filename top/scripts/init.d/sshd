@@ -1,0 +1,20 @@
+#!/bin/bash
+#$Id: sshd,v 1.1.2.2 2002/09/03 23:16:25 jrstear Exp $
+
+case "$1" in
+    start)
+
+        if [ -f /usr/local/sbin/sshd ]
+        then
+	    echo "Starting sshd...."
+	    /usr/local/sbin/sshd -f /usr/local/etc/ssh2/sshd2_config
+        fi
+        ;;
+
+    stop)
+	killall /usr/local/sbin/sshd
+        ;;
+    *)
+        echo "Usage: $0  {start|stop}"
+esac
+

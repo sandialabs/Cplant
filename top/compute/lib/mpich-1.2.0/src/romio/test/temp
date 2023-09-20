@@ -1,0 +1,16 @@
+/usr/local-3/jrjohns/cpcc -I/usr/local-3/jrjohns/cplant/src/new/top/compute/lib/mpich-1.2.0/include -I../include -o simple simple.o -lmpi 
+simple.o: In function `main':
+simple.c(.text+0x368): undefined reference to `MPI_File_open'
+simple.c(.text+0x36c): undefined reference to `MPI_File_open'
+simple.c(.text+0x394): undefined reference to `MPI_File_write'
+simple.c(.text+0x398): undefined reference to `MPI_File_write'
+simple.c(.text+0x3ac): undefined reference to `MPI_File_close'
+simple.c(.text+0x3b0): undefined reference to `MPI_File_close'
+simple.c(.text+0x414): undefined reference to `MPI_File_open'
+simple.c(.text+0x418): undefined reference to `MPI_File_open'
+simple.c(.text+0x440): undefined reference to `MPI_File_read'
+simple.c(.text+0x444): undefined reference to `MPI_File_read'
+simple.c(.text+0x458): undefined reference to `MPI_File_close'
+simple.c(.text+0x45c): undefined reference to `MPI_File_close'
+collect2: ld returned 1 exit status
+make: *** [simple] Error 1

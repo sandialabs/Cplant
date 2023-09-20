@@ -1,0 +1,74 @@
+<!--
+    $Id: PtlEQGet.sgml,v 1.2 2001/01/11 00:22:11 rbbrigh Exp $
+-->
+
+<!doctype qwertz system>
+
+<manpage title="PtlEQGet" sectnum="3" date='"04 Jan 2001"'
+    footer='"Portals 3.0"' main='"Portals 3.0 Library"'>
+
+<sect1> NAME
+    <p>
+    <bf/PtlEQGet/ &mdash Get the next event in an event queue
+
+<sect1> SYNOPSIS
+    <p>
+     #include "p30.h"
+
+     int PltEQGet( ptl_handle_eq_t eventq, ptl_event_t* event );
+
+<sect1> PARAMETERS
+    <p>
+     <descrip>
+     <tag /eventq/
+     event queue handle
+     <tag /event/
+     on successful return, this location will hold the values
+     associated with the next event in the event queue
+     </descrip>
+
+<sect1> DESCRIPTION
+    <p>
+    <bf /PtlEQGet/ is a nonblocking function that can be used to get
+    the next event in an event queue.  The event is removed from the queue.
+    The <bf /ptl_event_t/ is defined as:
+<code>
+typedef struct {
+    ptl_event_kind_t      type;
+    ptl_process_id_t      initiator;
+    ptl_pt_index_t        portal;
+    ptl_match_bits_t      match_bits;
+    ptl_size_t            rlength;
+    ptl_size_t            mlength;
+    ptl_size_t            offset;
+    ptl_md_t              mem_desc;
+} ptl_event_t;
+</code>
+
+<sect1> RETURN VALUES
+    <p>
+    <descrip>
+     <tag /PTL_OK/
+     success
+    <tag /PTL_EQ_DROPPED/
+     indicates success (i.e., an event is returned) and that at least one
+     event between this event and the last event obtained (using <bf /PtlEQGet/
+     or <bf /PtlEQWait/) from this event queue has been dropped due to limited
+     space in the event queue
+    <tag /PTL_NOINIT/
+     the Portals API has not been successfully initialized
+    <tag /PTL_EQ_EMPTY/
+    <bf /eventq/ is empty
+    <tag /PTL_INV_EQ/
+    <bf /eventq/ is not a valid event queue handle
+    <tag /PTL_SEGV/
+    <bf /event/ is not a legal address
+    </descrip>
+
+<sect1> SEE ALSO
+    <p>
+    <bf /PtlEQAlloc(3)/, <bf /PtlEQFree(3)/, <bf /PtlEQCount(3)/,
+    <bf /PtlEQWait(3)/ <newline>
+    <bf /Portals 3.0 Message Passing Interface document/
+
+</manpage>

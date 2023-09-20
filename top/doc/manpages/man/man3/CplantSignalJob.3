@@ -1,0 +1,59 @@
+.if n .ds Q \&"
+.if t .ds Q ``
+.if n .ds U \&"
+.if t .ds U ''
+.TH SIGNALJOB 3 "20 November 2001" "CPLANT MANPAGE" "Cplant Runtime Libraries"
+.tr \&
+.nr bi 0
+.nr ll 0
+.nr el 0
+.de Pp
+.ie \\n(ll>0 \{\
+.ie \\n(bi=1 \{\
+.nr bi 0
+.if \\n(t\\n(ll=0 \{.IP \\(bu\}
+.if \\n(t\\n(ll=1 \{.IP \\n+(e\\n(el.\}
+.\}
+.el .sp 
+.\}
+.el \{\
+.ie \\nh=1 \{\
+.LP
+.nr h 0
+.\}
+.el .PP 
+.\}
+..
+.SH NAME
+    
+
+.Pp
+CplantSignalJob
+.SH SYNOPSIS
+    
+
+.Pp
+\fB#include <cplant.h>\fP
+.Pp
+\fBint CplantSignalJob(int \fP\fIsig\fP\fB, jobFamilyInfo *\fP\fIotherjob\fP\fB)\fP
+.SH DESCRIPTION
+    
+
+.Pp
+The function \fBCplantSignalJob\fP causes the specified signal
+to be sent to all processes in the specified application.  
+\fIotherjob\fP
+is a handle returned by \fBCplantSpawnJob\fP, \fBCplantMyParent\fP
+or \fBCplantMySelf\fP. 
+.SH RETURN VALUE
+    
+
+.Pp
+This function return -1 on error, and 0 on success.  
+.SH SEE ALSO
+    
+
+.Pp
+\fBCplantSpawnJob\fP
+\fBCplantMyParent\fP
+\fBCplantMySelf\fP

@@ -1,0 +1,76 @@
+<!--
+  $Id: CplantFamilyMap.sgml,v 1.1 2001/11/24 23:23:16 lafisk Exp $
+-->
+
+<!doctype qwertz system>
+
+<manpage title="FAMILYMAP" sectnum="3" date='"20 November 2001"'
+    footer='"CPLANT MANPAGE"' main='"Cplant Runtime Libraries"'>
+
+
+<sect1> NAME
+    <p>
+CplantFamilyMap, CplantFamilyMapGrp
+    </p>
+
+
+<sect1> SYNOPSIS
+    <p>
+    <bf/#include &lt;cplant.h>/
+    </p>
+    <p>
+    <bf/int CplantFamilyMap(jobFamilyInfo */<it/job/<bf/, int */<it/nidmap/<bf/, int */<it/pidmap/<bf/, int /<it/len/<bf/)/
+
+    <bf/int CplantFamilyMapGrp(jobFamilyInfo */<it/job/<bf/, int */<it/nidmap/<bf/, int */<it/pidmap/<bf/, int /<it/len/<bf/, int /<it/nMembers/<bf/, int */<it/rankList/<bf/, int /<it/tmout/<bf/)/
+    </p>
+
+<sect1> DESCRIPTION
+    <p>
+    The function <bf/CplantFamilyMap/ returns physical node ID map and
+    portals process ID map for the parallel application
+    specified by <it/job/.  These maps are required in order to use
+    the Cplant portals library to communicate with the application.
+    The <it/job/ is a 
+    handle returned by <bf/CplantSpawnJob/, <bf/CplantMyParent/
+    or <bf/CplantMySelf/.  
+    </p>
+    <p>
+    If <it/nidmap/ is not NULL, it is taken to point to an array of size <it/len/.
+    <it/nidmap&lsqb;p&rsqb;/ is set to the physical node ID of the process 
+    with rank <it/p/.
+    Similarly, if <it/pidmap/ is not NULL, it is taken to point to an array 
+    of size <it/len/, and
+    <it/pidmap&lsqb;p&rsqb;/ is set to the portals process ID of the 
+    rank <it/p/ process.
+    </p>
+    <p>
+    The function <bf/CplantFamilyMapGrp/ is a collective call.
+    Every process that participates in the
+    request must make the call with the same list of participants.
+    <it/nMembers/ is the number of processes participating in the call,
+    <it/rankList/ is the list of participating process ranks, and <it/tmout/
+    is the number of seconds to wait before judging a collective operation
+    among the pariticpants to be a failure.  In our implementation of this
+    call, the first process in the <it/rankList/ makes the request to <bf/yod2/
+    and broadcasts the results to the others.
+    </p>
+    <p>
+    If <it/nMembers/ is zero, or <it/rankList/ is NULL, then this is taken
+    to mean that all processes in the application are participating.
+    </p>
+    
+
+<sect1> RETURN VALUE
+    <p>
+     Both functions return -1 on error, and 0 on success.  
+    </p>
+
+<sect1> SEE ALSO
+    <p>
+    <bf/yod2/
+    <bf/CplantSpawnJob/
+    <bf/CplantMyParent/
+    <bf/CplantMySelf/
+    </p>
+
+</manpage>

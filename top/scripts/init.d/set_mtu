@@ -1,0 +1,23 @@
+#!/bin/sh
+
+IF=`echo $2 | cut -d, -f1`
+if [ $# != 2 ]
+then
+    echo 'Usage: set_mtu {start <if>,<mtu>| stop <if>}'
+    exit 1
+fi
+
+case "$1" in
+    start)
+        MTU=`echo $2 | cut -d, -f2`
+        /sbin/ifconfig $IF mtu $MTU
+        ;;
+
+    stop)
+	# take no action
+        #/sbin/ifconfig $IF down
+        ;;
+    *)
+        echo 'Usage: set_mtu {start <if>,<mtu>| stop <if>}'
+        exit 1
+esac

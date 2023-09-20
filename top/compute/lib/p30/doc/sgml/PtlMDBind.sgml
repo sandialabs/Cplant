@@ -1,0 +1,64 @@
+<!--
+    $Id: PtlMDBind.sgml,v 1.1 2001/01/11 00:21:56 rbbrigh Exp $
+-->
+
+<!doctype qwertz system>
+
+<manpage title="PtlMDBind" sectnum="3" date='"04 Jan 2001"'
+    footer='"Portals 3.0"' main='"Portals 3.0 Library"'>
+
+<sect1> NAME
+    <p>
+    <bf/PtlMDBind/ &mdash Create a new free-floating memory descriptor
+
+<sect1> SYNOPSIS
+    <p>
+     #include "p30.h"
+
+     int PtlMDBind( ptl_handle_ni_t interface, ptl_md_t mem_desc, ptl_handle_md_t*
+                    handle );
+
+
+<sect1> PARAMETERS
+    <p>
+     <descrip>
+     <tag /interface/
+     A handle for the network interface that the memory descriptor will be
+     associated with
+     <tag /mem_desc/
+     Provides initial values for the application visible parts of a memory
+     descriptor
+     <tag /handle/
+     On successful return, this location will hold a handle for the newly created
+     memory descriptor
+     </descrip>
+
+<sect1> DESCRIPTION
+    <p>
+    <bf /PtlMDBind/ create a &dquot free floating &dquot memory
+     descriptor &mdash a memory descriptor that is not part of the
+     memory descriptor list for a match entry.
+
+<sect1> RETURN VALUES
+    <p>
+    <descrip>
+    <tag /PTL_OK/
+    Indicates success
+    <tag /PTL_NOINIT/
+    Indicates that the Portals API has not been successfully initialized
+    <tag /PTL_INV_NI/
+    Indicates that <bf /interface/ is not a valid match entry handle
+    <tag /PTL_ILL_MD/
+    Indicates that <bf /mem_desc/ is not a legal memory descriptor
+    <tag /PTL_NOSPACE/
+    Indicates that there is insufficient memory to allocate the memory descriptor
+    <tag /PTL_SEGV/
+    Indicates that <bf /handle/ is not a legal address
+    </descrip>
+
+<sect1> SEE ALSO
+    <p>
+    <bf /PtlMDAttach(3)/, <bf /PtlMDUnlink(3)/, <bf /PtlMDUpdate(3)/ <newline>
+    <bf /Portals 3.0 Message Passing Interface document/
+
+</manpage>

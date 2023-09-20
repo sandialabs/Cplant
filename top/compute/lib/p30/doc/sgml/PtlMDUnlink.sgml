@@ -1,0 +1,50 @@
+<!--
+    $Id: PtlMDUnlink.sgml,v 1.2 2001/01/11 00:22:11 rbbrigh Exp $
+-->
+
+<!doctype qwertz system>
+
+<manpage title="PtlMDUnlink" sectnum="3" date='"04 Jan 2001"'
+    footer='"Portals 3.0"' main='"Portals 3.0 Library"'>
+
+<sect1> NAME
+    <p>
+    <bf/PtlMDUnlink/ &mdash Unlink a memory descriptor
+
+<sect1> SYNOPSIS
+    <p>
+     #include "p30.h"
+
+     int PtlMDUnlink( ptl_handle_md_t mem_desc );
+
+<sect1> PARAMETERS
+    <p>
+     <descrip>
+     <tag /mem_desc/
+     A handle for the memory descriptor to be released
+     </descrip>
+
+<sect1> DESCRIPTION
+    <p>
+    <bf /PtlMDUnlink/ unlinks the memory descriptor from any memory descriptor
+    list it may be linked to and releases the resources associated with a memory
+    descriptor.
+
+<sect1> RETURN VALUES
+    <p>
+    <descrip>
+    <tag /PTL_OK/
+    Indicates success
+    <tag /PTL_NOINIT/
+    Indicates that the Portals API has not been successfully initialized
+    <tag /PTL_INV_MD/
+    Indicates that <bf /mem_desc/ is not a valid memory descriptor handle
+    </descrip>
+
+<sect1> SEE ALSO
+    <p>
+    <bf /PtlMDAttach(3)/, <bf /PtlMDBind(3)/, <bf /PtlMDInsert(3)/,
+    <bf /PtlMDUpdate(3)/ <newline>
+    <bf /Portals 3.0 Message Passing Interface document/
+
+</manpage>

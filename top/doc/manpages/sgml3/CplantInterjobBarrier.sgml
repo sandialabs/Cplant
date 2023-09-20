@@ -1,0 +1,101 @@
+<!--
+  $Id: CplantInterjobBarrier.sgml,v 1.1 2001/11/24 23:23:16 lafisk Exp $
+-->
+
+<!doctype qwertz system>
+
+<manpage title="INTERJOBBARRIER" sectnum="3" date='"20 November 2001"'
+    footer='"CPLANT MANPAGE"' main='"Cplant Runtime Libraries"'>
+
+
+<sect1> NAME
+    <p>
+CplantInterjobBarrier, CplantInterjobBarrierGrp <newline>
+CplantBarrierStatus, CplantBarrierStatusGrp
+    </p>
+
+
+<sect1> SYNOPSIS
+    <p>
+    <bf/#include &lt;cplant.h>/
+    </p>
+    <p>
+    <bf/int CplantInterjobBarrier(jobFamilyInfo */<it/otherjob/<bf/)/
+
+    <bf/int CplantBarrierStatus(jobFamilyInfo */<it/otherjob/<bf/)/
+
+    <bf/int CplantInterjobBarrierGrp(jobFamilyInfo */<it/otherjob/<bf/, int /<it/nMembers/<bf/, int */<it/rankList/<bf/, int /<it/tmout/<bf/)/
+
+    <bf/int CplantBarrierStatusGrp(jobFamilyInfo */<it/otherjob/<bf/, int /<it/nMembers/<bf/, int */<it/rankList/<bf/, int /<it/tmout/<bf/)/
+    </p>
+
+<sect1> DESCRIPTION
+    <p>
+    When a Cplant application spawns a child application, it will probably
+    be neccesary to synchronize the two them before message passing can commence.  
+    These
+    calls can be used to create a non-blocking barrier between two jobs in
+    the same family.  (A <it/family/ is all jobs started by one original
+    Cplant application and it's descendants.)
+    </p>
+    <p>
+    The barrier is implemented through <bf/yod2/, the utility that launched
+    both applications and remains running on the service node to service
+    their requests.  When <bf/yod2/ receives a request from one process in
+    a job (call it <it/job1/) to synchronize with another job (<it/job2/),
+    it notes that the synchronization is in progress, and replies to <it/job1/
+    with this fact.  
+    When it receives a request
+    from <it/job2/ to synchronize with <it/job1/, it notes that the synchronization
+    is complete, and replies with this fact to <it/job2/, and notes that it has
+    informed <it/job2/ that the synchronization is complete.  When the next 
+    status request is received from <it/job1/, <bf/yod2/ replies
+    that the synchronization request is complete.  Now since <bf/yod2/ has told
+    each job that the synchronization is complete, it forgets about the
+    synchronization request.
+    </p>
+    <p>
+    This means that the synchronization
+    operation is identified by the two job IDs, so only one synchronization
+    per job ID pair can be in progress at any time.  Only one process
+    in each job should request the synchronization, and only one should
+    receive the reply that the synchronization is completed.
+    </p>
+    <p>
+    The function <bf/CplantInterjobBarrier/ sends the request to <bf/yod2/
+    to provide a synchronziation point for the calling job and the
+    <it/otherjob/.
+    The function <bf/CplantBarrierStatus/ requests the current status
+    of the effort to synchronize with the job <it/otherjob/.
+    <p>
+    The functions <bf/CplantInterjobBarrierGrp/ and <bf/CplantBarrierStatusGrp/
+    are collective calls.
+    Every process that participates in the synchronization
+    request must make the call with the same list of participants.
+    <it/nMembers/ is the number of processes participating in the call,
+    <it/rankList/ is the list of participating process ranks, and <it/tmout/
+    is the number of seconds to wait before judging a collective operation
+    among the pariticpants to be a failure.  In our implementation of this
+    call, the first process in the <it/rankList/ makes the request to <bf/yod2/
+    and broadcasts the results to the others.
+    </p>
+    <p>
+    If <it/nMembers/ is zero, or <it/rankList/ is NULL, then this is taken
+    to mean that all processes in the application are participating.
+    </p>
+    
+
+<sect1> RETURN VALUE
+    <p>
+     Both functions return SYNC_COMPLETED if the synchronization is
+     complete, SYNC_IN_PROGRESS if the synchronization is in progress,
+     or SYNC_ERROR if the synchronization request failed.
+    </p>
+
+<sect1> SEE ALSO
+    <p>
+    <bf/yod2/
+    <bf/CplantSpawnJob/
+    </p>
+
+</manpage>

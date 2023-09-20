@@ -1,0 +1,18 @@
+Some very simple MPI tests (that don't even have command line options).
+They are so simple that one can easily determine by a quick look at the
+code if they are doing the right thing...
+
+baby -- find out MPI size and rank, and print them out. 
+        this can be run as any number of processes.
+
+two  -- two processes exchange messages. must be run as
+        exactly two (hence the name, "four") processes.
+        each process should receive a 0 from the other one.
+
+pc   -- producer/consumer; producer sends 100 messages to
+        the consumer. must be run as two processes.
+
+ring -- pass a token around a ring and increment its value
+        at each hop. when it gets back to the first guy
+        check its value. 
+        can be run with any number of processes.

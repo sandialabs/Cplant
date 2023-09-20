@@ -1,0 +1,39 @@
+#! /usr/bin/perl
+
+  # su.pl
+  # verify routes from all nodes in given SU to all nodes in all SUS
+  # RUN FROM ADMIN NODE as ROOT
+  # usage: su.pl su-num
+
+  $cplant_path = "CPLANT_PATH";
+
+  $NODES_PER_SU = 16;
+
+  $su = $ARGV[0];
+
+  if ($su eq "") {
+    print("Usage: su.pl su-num\n");
+    exit(-1);
+  }
+
+  $file_loc= "/tmp/routing";
+
+  print("removing file in $file_loc\n");
+  system("rm $file_loc/*"); 
+
+  for ($i=0; $i<$NODES_PER_SU; $i++) {
+
+    open(ERRORS,">$file_loc/c-$i.SU-$su");
+
+    print("doing all.pl on c-$i.SU-$su...\n");
+    $ec = `rsh c-$i.SU-$su $cplant_path/sbin/all.pl`;
+    @lines = split(/\n/, $ec);
+
+    foreach $i (@lines) {
+      $_ = $i;
+      if (/FAILED/ || /skipping/ || /pinging/) {
+        print(ERRORS "$i\n");
+      }
+    }
+    close(ERRORS);
+  }

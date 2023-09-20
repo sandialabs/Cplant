@@ -1,0 +1,65 @@
+<!--
+  $Id: CplantInitCollective.sgml,v 1.1 2001/11/24 23:23:16 lafisk Exp $
+-->
+
+<!doctype qwertz system>
+
+<manpage title="INITCOLLECTIVE" sectnum="3" date='"20 November 2001"'
+    footer='"CPLANT MANPAGE"' main='"Cplant Runtime Libraries"'>
+
+
+<sect1> NAME
+    <p>
+CplantInitCollective, CplantDoneCollective
+    </p>
+
+
+<sect1> SYNOPSIS
+    <p>
+    <bf/#include &lt;cplant.h>/
+    </p>
+    <p>
+    <bf/int CplantInitCollective(int */<it/tmout/<bf/)/
+
+    <bf/void CplantDoneCollective(void)/
+
+<sect1> DESCRIPTION
+    <p>
+    The <bf/Cplant*Grp/ functions make use of the collective
+    operations of the Cplant server library.  Before an application
+    can use these functions, every process in the parallel application
+    must call <bf/CplantInitCollective/ (even if only a subset 
+    will be using the calls).  In this call the structures
+    required for server library collective communication are set up,
+    and the processes synchronize.  Upon returning from the call,
+    the <bf/Cplant*Grp/ functions may safely be called.
+    </p>
+    <p>
+    The <it/tmout/ in seconds is the length of time the call will
+    wait for the synchronization to complete before determining that
+    the call has failed.
+    </p>
+    <p>
+    <bf/CplantDoneCollective/ may be called when the collective
+    functions are no longer needed.  It frees the memory required
+    to support the collective operations of the server library.
+
+
+<sect1> RETURN VALUE
+    <p>
+     <bf/CplantInitCollective/ returns -1 on error and zero on success.
+    </p>
+
+<sect1> SEE ALSO
+    <p>
+<bf/CplantSpawnJobGrp/
+<bf/CplantFamilyStatusGrp/
+<bf/CplantMyParentGrp/
+<bf/CplantMySelfGrp/
+<bf/CplantInterjobBarrierGrp/
+<bf/CplantBarrierStatusGrp/
+<bf/CplantFamilyTerminationGrp/
+<bf/CplantFamilyMapGrp/
+    </p>
+
+</manpage>

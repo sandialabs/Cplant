@@ -1,0 +1,39 @@
+# !!! ALL UNCOMMENTED LINES MUST BEGIN WITH A LEADING SPACE !!!
+# (due to nodes being matched as " nodename ")
+
+##### Bebopd
+ node.n-0.g-2 : portals local_disk user_env=bebopd pbs-env=bebopd-support-only
+ bebopd_arguments : -remap /cplant/etc/remap -PBSupdate -PBSlist 24..55 -d
+
+##### PBS scheduler node
+ node.n-2.g-2 : portals local_disk default_route=132.175.55.254 mount_nfs=132.175.55.20:/home,/home mount_nfs=132.175.55.20:/projects,/projects ntpd enfs_client=10.0.0.4,10.0.0.6,10.0.0.10,10.0.0.12,10.0.0.14,10.0.0.16,10.0.0.18,10.0.0.20,10.0.0.22,10.0.0.24 pbs-env=scheduler pbs-env=server user_env=yod sshd
+
+##### Login nodes
+ node.n-0.g-1 node.n-2.g-1 node.n-4.g-1 node.n-6.g-1 node.n-4.g-2 node.n-6.g-2 node.n-0.g-3 node.n-2.g-3 node.n-4.g-3 node.n-6.g-3 : portals local_disk default_route=132.175.55.254 mount_nfs=132.175.55.20:/home,/home mount_nfs=132.175.55.20:/projects,/projects ntpd enfs_client=10.0.0.4,10.0.0.6,10.0.0.10,10.0.0.12,10.0.0.14,10.0.0.16,10.0.0.18,10.0.0.20,10.0.0.22,10.0.0.24 pbs-env=mom user_env=yod lbcd sshd
+
+##### IO proxy nodes
+ node.n-1.g-1 : portals set_mtu=eth1,9000 enfsd_config=172.28.9.1:/enfs/tmp,/
+ node.n-3.g-1 : portals set_mtu=eth1,9000 enfsd_config=172.28.10.1:/enfs/tmp,/
+ node.n-5.g-1 : portals set_mtu=eth1,9000 enfsd_config=172.28.11.1:/enfs/tmp,/
+ node.n-7.g-1 : portals set_mtu=eth1,9000 enfsd_config=172.28.12.1:/enfs/tmp,/
+
+ node.n-1.g-2 : portals set_mtu=eth1,9000 enfsd_config=172.28.9.1:/enfs/tmp,/
+ node.n-3.g-2 : portals set_mtu=eth1,9000 enfsd_config=172.28.10.1:/enfs/tmp,/
+ node.n-5.g-2 : portals set_mtu=eth1,9000 enfsd_config=172.28.11.1:/enfs/tmp,/
+ node.n-7.g-2 : portals set_mtu=eth1,9000 enfsd_config=172.28.12.1:/enfs/tmp,/
+
+ node.n-1.g-3 : portals set_mtu=eth1,9000 enfsd_config=172.28.9.1:/enfs/tmp,/
+ node.n-3.g-3 : portals set_mtu=eth1,9000 enfsd_config=172.28.10.1:/enfs/tmp,/
+ node.n-5.g-3 : portals set_mtu=eth1,9000 enfsd_config=172.28.11.1:/enfs/tmp,/
+ node.n-7.g-3 : portals set_mtu=eth1,9000 enfsd_config=172.28.12.1:/enfs/tmp,/
+
+##### compute nodes
+ default : portals ram_disk=16384 enfs_client=10.0.0.4,10.0.0.6,10.0.0.10,10.0.0.12,10.0.0.14,10.0.0.16,10.0.0.18,10.0.0.20,10.0.0.22,10.0.0.24 user_env=pct
+
+##### disabled nodes
+
+# node.n-5.g-3 : disabled
+# JRS 020814 - eth1 sometimes fails to initialize.  since this 
+# is the 10.0.0.22 enfsd node, i'm taking that ip out of client lists
+# This just in: Donna replaced the gige card and it is now working.
+#               Comment left in for historical purposes.

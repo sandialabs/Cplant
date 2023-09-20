@@ -1,0 +1,7 @@
+I guess this directory should be called "srvr".
+
+These are routines required by the cplant daemons bebopd and
+pct and utility processes like yod.
+
+There is a communication library (the srvr*.c files) and
+error logging (srvr_err.c).

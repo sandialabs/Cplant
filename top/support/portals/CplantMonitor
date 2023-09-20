@@ -1,0 +1,93 @@
+#!/bin/sh
+#
+# $Id: CplantMonitor,v 1.1 1998/04/26 05:10:11 rolf Exp $
+#
+# This script starts and stops Cplant monitoring services on a sss0
+# Right now it only starts watchMCP which sends Mail if an MCP faults
+# in this SU.
+#
+# This script should probably reside in /cplant/sbin with execute
+# permissions. Symbolic links from /etc/rc.d should be created to
+# invoke this script when a change in run level occurs:
+#
+# ln -s /cplant/bin/CplantMonitor /etc/rc.d/rc0.d/K80CplantMonitor
+# ln -s /cplant/bin/CplantMonitor /etc/rc.d/rc1.d/K80CplantMonitor
+# ln -s /cplant/bin/CplantMonitor /etc/rc.d/rc2.d/K80CplantMonitor
+# ln -s /cplant/bin/CplantMonitor /etc/rc.d/rc3.d/S80CplantMonitor
+# ln -s /cplant/bin/CplantMonitor /etc/rc.d/rc5.d/S80CplantMonitor
+# ln -s /cplant/bin/CplantMonitor /etc/rc.d/rc6.d/K80CplantMonitor
+#
+
+# Source function library.
+. /etc/rc.d/init.d/functions
+
+# Figure out what SU we're on. Mike, there has to be a better way!
+getSU ()   {
+    hname=`cat /etc/HOSTNAME`
+    if [ $hname = "sss0-1" ] ; then
+        echo 1
+    elif [ $hname = "sss0-2" ] ; then
+        echo 2
+    elif [ $hname = "sss0-3" ] ; then
+        echo 3
+    elif [ $hname = "sss0-4" ] ; then
+        echo 4
+    elif [ $hname = "sss0-5" ] ; then
+        echo 5
+    elif [ $hname = "sss0-6" ] ; then
+        echo 6
+    elif [ $hname = "sss0-7" ] ; then
+        echo 7
+    elif [ $hname = "sss0-8" ] ; then
+        echo 8
+    else
+	echo unknown
+    fi
+}
+
+
+# Start the watchers. One for each compute node.
+StartWatchMCP ()   {
+    # First, we figure out what machine we're on. You almost certainly
+    # have to change this for another Cplant!
+    hname=`hostname`
+    if [ $hname = "cplant-sss0.cs.sandia.gov" ] ; then
+        sysname="TinyPlant"
+        suNum="0"
+        mailto="rolf@cs.sandia.gov"
+
+	cd /cplant/current/alpha_root/local
+	for i in * ; do
+	    nohup /cplant/sbin/watchMCP $i/var/log/messages $suNum $sysname \
+			$mailto&
+	done
+    else
+        sysname="SandiaCplant"
+        suNum=`getSU`
+        mailto="cplant-help@cs.sandia.gov"
+	cd /alpha_root/local/var/log
+	nohup /cplant/sbin/watchMCP messages $suNum $sysname $mailto&
+    fi
+}
+
+
+# See how we were called.
+case "$1" in
+  start)
+        # Start daemons.
+        echo -n "Starting Cplant monitors: "
+        StartWatchMCP
+        echo
+        ;;
+  stop)
+        # Stop daemons.
+        echo -n "Shutting down Cplant monitors: "
+        killall watchMCP
+        echo
+        ;;
+  *)
+        echo "Usage: CplantMonitor {start|stop}"
+        exit 1
+esac
+
+exit 0

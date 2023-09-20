@@ -1,0 +1,6 @@
+totalview*bulkLaunchBaseTimeout: 30
+totalview*bulkLaunchIncrTimeout: 30
+totalview*bulkLaunchEnabled: True
+totalview*bulkLaunchString: /cplant/sbin/start-tvdsvr %t1
+totalview*tmpFile1HeaderString: %N
+totalview*tmpFile1HostString: %R/%P/%L

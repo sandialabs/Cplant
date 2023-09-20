@@ -1,0 +1,92 @@
+
+
+ NAS Parallel Benchmarks 2.3 -- MG Benchmark
+
+ No input file. Using compiled defaults 
+ Size: 256x256x256  (class A)
+ Iterations:   4
+ Number of processes:    32
+
+ Initialization time:           9.317 seconds
+
+ Benchmark completed 
+ VERIFICATION SUCCESSFUL 
+ L2 Norm is   0.243336530907E-05
+ Error is     0.694778774985E-16
+
+
+ MG Benchmark Completed.
+ Class           =                        A
+ Size            =              256x256x256
+ Iterations      =                        4
+ Time in seconds =                    16.73
+ Total processes =                       32
+ Compiled procs  =                       32
+ Mop/s total     =                   232.59
+ Mop/s/process   =                     7.27
+ Operation type  =           floating point
+ Verification    =               SUCCESSFUL
+ Version         =                      2.3
+ Compile date    =              20 May 1998
+
+ Compile options:
+    MPIF77       = /Net/mp/cplant/bin/f77 
+    FLINK        = $(MPIF77)
+    FMPI_LIB     = -L$(MPIPATH) -lmpi 
+    FMPI_INC     = -I$(MPIPATH)/include
+    FFLAGS       = -O3 -align records -align dcommons
+    FLINKFLAGS   = (none)
+    RAND         = randi8
+
+
+ Please send the results of this run to:
+
+ NPB Development Team 
+ Internet: npb@nas.nasa.gov
+ 
+ If email is not available, send this to:
+
+ MS T27A-1
+ NASA Ames Research Center
+ Moffett Field, CA  94035-1000
+
+ Fax: 415-604-3957
+
+
+Contacting node allocation daemon...
+32 nodes are allocated to your job ID 819
+
+   Node name        Rank  Node   PID   Elapsed  Exit Code  Terminating Signal
+------------------- ----  ----  -----  -------  ---------  ------------------
+                       0    18  10407  0:00:28       0       none
+                       1    19  10411  0:00:28       0       none
+                       2    20  10404  0:00:28       0       none
+                       3    21  10408  0:00:29       0       none
+                       4    22  10411  0:00:29       0       none
+                       5    23  10411  0:00:28       0       none
+                       6    24  10404  0:00:28       0       none
+                       7    25  10404  0:00:28       0       none
+                       8    26  10410  0:00:28       0       none
+                       9    28  10399  0:00:28       0       none
+                      10    29  10401  0:00:28       0       none
+                      11    30  10409  0:00:28       0       none
+                      12    32  10716  0:00:28       0       none
+                      13    33  10572  0:00:29       0       none
+                      14    34  10533  0:00:28       0       none
+                      15    35  10525  0:00:28       0       none
+                      16    36  10670  0:00:28       0       none
+                      17    37  10491  0:00:28       0       none
+                      18    38  10463  0:00:28       0       none
+                      19    39  10516  0:00:29       0       none
+                      20    40  10239  0:00:28       0       none
+                      21    41  10254  0:00:28       0       none
+                      22    42  10233  0:00:28       0       none
+                      23    43  10227  0:00:28       0       none
+                      24    44  10280  0:00:28       0       none
+                      25    45  10224  0:00:28       0       none
+                      26    46  10231  0:00:28       0       none
+                      27    48  23809  0:00:28       0       none
+                      28    49  23728  0:00:28       0       none
+                      29    50  23736  0:00:29       0       none
+                      30    51  23714  0:00:29       0       none
+                      31    52  23706  0:00:28       0       none

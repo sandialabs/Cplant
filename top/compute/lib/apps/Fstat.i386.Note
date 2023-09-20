@@ -1,0 +1,26 @@
+ok, i found out why i386 applications (tshello) were
+breaking on our sandia/redhat version of cplant as opposed
+to our unm/slackware version.
+
+apparently the standard header file sys/stat.h in redhat 5.0 
+has a definition of "struct stat" that is incompatible with the
+one assumed in Fstat.c (and the functions called there).
+
+the preferred definition (for the i386) seems to be the one in
+the header files from the Linux C library, as opposed to the
+GNU C library (although the former is based on the latter). 
+
+redhat 5.0 apparently uses the GNU header files as its standard
+header files, whereas slackware (yeah) uses the Linux libc
+header files as its standard header files (the ones in /usr/include...).
+
+it took forever (a couple of days) to find this bug, but it might have 
+been worse if i had not originally done the i386 work under slackware 
+(slackerware) at unm.
+
+i do not know what the motivation is for having a Linux C library
+that replaces the GNU C library...it may be the case that whatever
+motivation exists is going away as GNU libc is being revised...that
+seems to be the gist of a document i read recently on glibc 2.
+does anybody know this?
+

@@ -1,0 +1,51 @@
+<!--
+    $Id: PtlNIBarrier.sgml,v 1.1 2001/01/10 21:42:54 rbbrigh Exp $
+-->
+
+<!doctype qwertz system>
+
+<manpage title="PtlInit" sectnum="3" date='"04 Jan 2001"'
+    footer='"Portals 3.0"' main='"Portals 3.0 Library"'>
+
+<sect1> NAME
+    <p>
+    <bf/PtlNIBarrier/ &mdash Blocks calling process until all processes have
+    called this function
+
+<sect1> SYNOPSIS
+    <p>
+     #include "p30.h"
+
+     int PtlNIBarrier( ptl_handle_ni_t interface );
+
+<sect1> PARAMETERS
+    <p>
+     <descrip>
+     <tag /interface/
+     A handle for the communication interface to use
+     </descrip>
+
+<sect1> DESCRIPTION
+    <p>
+    <bf /PtlNIBarrier/ blocks the calling process until all processes
+    in the process group have invoked the <bf /PtlNIBarrier/ function
+    for the specified interface.
+
+<sect1> RETURN VALUES
+    <p>
+    <descrip>
+    <tag /PTL_OK/
+    Indicates success
+    <tag /PTL_NOINIT/
+    Indicates that the Portals API has not been successfully initialized
+    <tag /PTL_INV_NI/
+    Indicates that <bf /interface/ is not a valid network interface handle.
+    </descrip>
+
+<sect1> SEE ALSO
+    <p>
+    <bf /PtlNIDist(3)/, <bf /PtlNIFini(3)/, <bf /PtlNIHandle(3)/,
+    <bf /PtlNIInit(3)/, <bf /PtlNIStatus(3)/<newline>
+    <bf /Portals 3.0 Message Passing Interface document/
+
+</manpage>

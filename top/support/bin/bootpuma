@@ -1,0 +1,42 @@
+#!/bin/sh
+# $Id: bootpuma,v 1.2 1997/08/27 04:34:22 rolf Exp $
+
+# -k kernel
+# -l node list
+
+kernel=default
+
+. /etc/cplant-functions
+
+while [ "$#" -gt 0 ]; do
+  if [ X"$1" = X"-k" ]; then
+	kernel="$2"
+	shift ; shift
+  fi
+
+  if [ X"$1" = X"-l" ]; then
+	nodes="`expand_nodes $2`";
+	shift ; shift
+  fi
+done
+
+
+for node in $nodes; do
+  echo "Setting node $node to boot kernel $kernel"
+
+  # Set the node to boot the appropriate kernel
+  $CPLANT_BIN/set_node $node -kernel $kernel
+
+  # If it is a linux node, go ahead and try to shut it down before
+  # powercycling.  Kill the rsh, just in case -- if the rsh doesn't
+  # time out before Linux comes up then it will immediately shut it
+  # back down.
+  # 15 seconds seems to be the right time for Linux to shutdown but
+  # it may be too short...
+  ( rsh node-$node /sbin/shutdown -r now & 		\
+    sleep 15 ;						\
+    kill $! ;						\
+    $CPLANT_BIN/powercontrol -reset $node ) &
+done
+
+

@@ -1,0 +1,216 @@
+.if n .ds Q \&"
+.if t .ds Q ``
+.if n .ds U \&"
+.if t .ds U ''
+.TH site  7L "09 March 1999" "Cplant" "Cplant Administration"
+.tr \&
+.nr bi 0
+.nr ll 0
+.nr el 0
+.de Pp
+.ie \\n(ll>0 \{\
+.ie \\n(bi=1 \{\
+.nr bi 0
+.if \\n(t\\n(ll=0 \{.IP \\(bu\}
+.if \\n(t\\n(ll=1 \{.IP \\n+(e\\n(el.\}
+.\}
+.el .sp 
+.\}
+.el \{\
+.ie \\nh=1 \{\
+.LP
+.nr h 0
+.\}
+.el .PP 
+.\}
+..
+.SH NAME
+    
+
+.Pp
+\fBsite file\fP -- Cplant site configuration file
+.SH DESCRIPTION
+    
+
+.Pp
+Certain runtime configuration information required by yod, pct, and
+bebopd can be set up in a text file.  
+For every item that can be defined in the site file, there is also an
+environment variable that can define this item, and there is a default
+coded into the Cplant utilities and daemons.  Definition of the items
+at runtime procedes like this:
+.Pp
+.nr bi 1
+If there is an environment value defining the item, this is the value
+used.
+ 
+.nr bi 1
+Else if there is a definition in the site file, this is the value used.
+ 
+.nr bi 1
+Else the default coded into the utilities and daemons is used.
+.Pp
+.Pp
+The format of the site file is to list the environment variable name
+followed by the definition of the environment variable.
+.Pp
+.Pp
+Values that can be defined in the site file or by way of environment
+variables are the following:
+.Pp
+.PP
+.nr ll +1
+.nr t\n(ll 2
+.TP
+.I "PCT_SCRATCH"
+.nr bi 1
+.Pp
+ 
+The path name to a directory in RAM disk on the compute nodes where
+the PCT will store the user's executable.
+Default: /tmp/pct-scratch
+.Pp
+.TP
+.I "PCT_OVERFLOW"
+.nr bi 1
+ 
+.Pp
+ 
+The path name to local disk on the compute node where the PCT can
+store user executables that don't fit in RAM disk.  A value \f(CRnone\fR
+tells the PCT there is no disk storage for user executables.
+Default: none
+.Pp
+.TP
+.I "LOGFILENAME"
+.nr bi 1
+ 
+.Pp
+ 
+The pathname from the service node to the user log file written by
+yod.
+Default: /tmp/userlog
+.Pp
+.TP
+.I "VM_NAME_FILE"
+.nr bi 1
+ 
+.Pp
+ 
+The pathname (from compute and service nodes) to a text file containing
+the name of the current virtual machine.
+Default: /cplant/etc/vmname
+.Pp
+.TP
+.I "PBS_PREFIX"
+.nr bi 1
+ 
+.Pp
+ 
+The location of the \fIbin\fP and \fIsbin\fP directories containing PBS
+executables.
+Default: /
+.Pp
+.nr ll -1
+.PP
+.Pp
+.Pp
+ 
+The following values are used by yod when it tries to load an executable
+that is too large to fit in the compute node RAM disk.  yod instead copies
+the executable to the SSS1, and then uses the SUID yod\_site\_priv to rsh
+to SSS1 and rcp the executable to the SSS0's on SUs which contain compute
+nodes of the job.  yod tells the PCTs the pathname to these copies of the
+executable and the PCTs exec them from there.  (If all the compute nodes
+of the job are in one SU, then yod just copies the executable to the SSS1
+and tells the PCTs to exec it from there.)
+.Pp
+A \f(CR%s\fR in these definitions is replaced at runtime with the virtual machine
+name.
+.Pp
+.PP
+.nr ll +1
+.nr t\n(ll 2
+.TP
+.I "VM_GLOBAL_STORAGE"
+.nr bi 1
+ 
+.Pp
+ 
+The path name on the SSS1 to a directory where the executable will be
+stored.
+Default: /usr/local/%s
+.Pp
+.TP
+.I "VM_GLOBAL_STORAGE_FROM_SRV_NODE"
+.nr bi 1
+ 
+.Pp
+ 
+The path name to VM_GLOBAL_STORAGE from the service nodes.
+Default: /etc/local
+.Pp
+.TP
+.I "SU_GLOBAL_STORAGE"
+.nr bi 1
+ 
+.Pp
+ 
+The path name on the SSS0 to a directory where the executable will
+be stored.
+Default: /cplant/nfs-cplant
+.Pp
+.TP
+.I "LOCAL_EXEC_PATH"
+.nr bi 1
+ 
+.Pp
+ 
+The path name to SU_GLOBAL_STORAGE from the compute node.
+Default: /cplant
+.Pp
+.TP
+.I "SINGLE_LEVEL_GLOBAL_STORAGE"
+.nr bi 1
+ 
+.Pp
+ 
+The path name to global storage on the SSS1 from the service nodes.
+If all the compute nodes of a job are in one SU, a single copy of
+the executable will be made by yod to the directory on the SSS1.
+Default: /etc/local
+.Pp
+.TP
+.I "SINGLE_LEVEL_LOCAL_EXEC_PATH"
+.nr bi 1
+ 
+.Pp
+ 
+The path name to SINGLE_LEVEL_GLOBAL_STORAGE from the compute nodes.
+Default: /usr/local/%s
+.Pp
+.TP
+.I "SU_NAME_FORMAT"
+.nr bi 1
+ 
+.Pp
+ 
+At runtime, an SU machine name is formed by replacing \f(CR%d\fR in this
+format with the SU number.  It is the machine name used in the rcp
+from the SSS1 to the SSS0.
+Default: z-%d
+.Pp
+.TP
+.I "VM_GLOBAL_MACHINE"
+.nr bi 1
+ 
+.Pp
+ 
+The machine name of the SSS1, for yod's rsh from the service node.
+Default: alaska-sss1-0
+.nr ll -1
+.PP
+.Pp
+.Pp
+The default location of the site file is \f(CR/etc/local/site\fR.  This can be
+overridden at runtime with the environment variable SITE_FILE.

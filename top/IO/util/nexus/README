@@ -1,0 +1,13 @@
+BUGS
+
+libc:nis & libc:nisplus
+
+Under RedHat 6.1 (at least) NIS and NISPLUS attempt to free() a buffer
+that was not previously malloc'd. While malloc (and electric fence) don't
+seem to mind, the allocator used here does. Since we don't run NIS we
+usually disable it. It might be that this only occurs when the nsswitch.conf
+specifies that NIS or NISPLUS be used but that it's not really enabled. If
+that's so, please let us know.
+
+The workaround, for us, is to remove all mention of NIS and NISPLUS from
+the nsswitch.conf file.

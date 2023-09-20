@@ -1,0 +1,15 @@
+eeprom --  o a myrinet utility like Myricom's l3prom for reading
+             the lanai eeprom. 
+
+           o they only provide a binary, whereas we may find the
+             source useful. 
+
+           o this version asks for a copy of the eeprom structure
+             from a new LinuxDevice.a library routine, 
+             get_lanai_eeprom_linux(),
+             which is a hack of open_lanai_device_linux() and which
+             I added to ../lib/LinuxDevice.c
+
+jim otto
+5/17/99
+

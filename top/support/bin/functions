@@ -1,0 +1,49 @@
+#!/bin/sh
+# $Id: functions,v 1.5 1997/12/16 23:04:51 lafisk Exp $
+
+# Export globals:
+export CPLANT_ROOT CPLANT_BIN CPLANT_LIB CPLANT_DB
+export node_id plug port
+
+CPLANT_ROOT=/cplant/admin
+CPLANT_BIN=${CPLANT_ROOT}/bin
+CPLANT_LIB=${CPLANT_ROOT}/lib
+
+CPLANT_DB=${CPLANT_LIB}/power_db
+
+
+# Globals returned by the node_info function
+node_id=""
+plug=""
+port=""
+
+
+# Properly expand a node number into 000n 
+expand_nodes() {
+  nodes=""
+
+  for node in $*; do
+    new_node="`echo $node | /bin/awk '{printf "%04d",$1}' `"
+    if [ "$nodes" = "" ]; then
+        nodes=$new_node
+    else
+        nodes="${nodes} ${new_node}"
+    fi
+  done
+  echo $nodes
+}
+
+
+# Return the info from the database about the node
+node_info() {
+  node="`expand_nodes $1`"
+  info="`/bin/grep "^$node" $CPLANT_DB`"
+
+  node_id="`echo $info | /usr/bin/cut -d: -f1`"
+  plug="`echo $info | /usr/bin/cut -d: -f2`"
+  port="`echo $info | /usr/bin/cut -d: -f3`"
+  tty="`echo $port | /usr/bin/cut --delim=' ' -f2`"
+
+  echo $info
+}
+

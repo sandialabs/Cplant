@@ -1,0 +1,80 @@
+#!/bin/bash
+#
+ 
+#
+#  This script sets up the necessary environment to configure the PBS
+#  distribution prior to installing it.
+#
+#  The path names should be relative to the machine on which the PBS
+#  code was built and installed.
+#
+# The PBS server runs on one service node in the vm.  The PBS commands
+# and MOM run on any service node in the vm.  All three will access configuration
+# files and write log files to the PBS_HOME area defined in this file.
+#
+
+#
+# location of PBS source directory
+#
+SRCDIR=/usr/local1/lafisk/pbs/new/patched
+
+OPTS=" "
+#
+# --prefix specifies prefix of install directories.  
+#          User commands will go in prefix/bin, admin
+#          commands will go in prefix/sbin, libraries in prefix/lib, etc.
+#
+OPTS=$OPTS"--prefix=/cplant/nfs-root-alpha "
+ 
+OPTS=$OPTS"--srcdir=$SRCDIR "
+ 
+OPTS=$OPTS"--mandir=/cplant/nfs-root-alpha/man "
+ 
+#
+# For debugging, deamons stay in foreground, and dump debugging data
+# to stdout.  Comment this out if not debugging.
+#
+#OPTS=$OPTS"--enable-debug "
+#
+ 
+#
+# build the C scheduler
+#
+OPTS=$OPTS"--set-sched=c --set-sched-code=fifo "
+#
+# --set-server-home defines the directory for the PBS server's working
+#                   files.  It is PBS_HOME.
+#
+#
+# We install an initial working directory here.  It will be updated
+# with our configuration files and then we'll copy on to the service
+# nodes.
+#
+OPTS=$OPTS"--set-server-home=/usr/local/pbs/working "
+
+# --set-server-name-file sets the name of the file naming the
+# the PBS server.  It is written to PBS_HOME.
+#
+OPTS=$OPTS"--set-server-name-file=PBSserver "
+#
+
+#
+# --set-default-server names the default machine that the PBS server is
+#                      running on.  
+#
+#  This value goes in the PBSserver file in the working directory.  Before
+#  starting PBS you may want to change it to the name of the node hosting 
+#  the PBS server.
+#
+OPTS=$OPTS"--set-default-server=service-6 "
+ 
+#
+# CPLANT_SERVICE_NODE causes the pbs_server to get it's host name 
+# from the PBSserver file in the working directory rather than from 
+# gethostname, which can return the name at an alternate interface.
+#
+# Now configure directories to build and/or install PBS.
+#
+ 
+echo $SRCDIR/configure $OPTS  --set-cflags='-DCPLANT_SERVICE_NODE '
+$SRCDIR/configure $OPTS  --set-cflags='-DCPLANT_SERVICE_NODE '

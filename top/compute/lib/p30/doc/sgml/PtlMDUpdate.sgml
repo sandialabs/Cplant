@@ -1,0 +1,74 @@
+<!--
+    $Id: PtlMDUpdate.sgml,v 1.2 2001/01/11 00:22:11 rbbrigh Exp $
+-->
+
+<!doctype qwertz system>
+
+<manpage title="PtlMDUpdate" sectnum="3" date='"04 Jan 2001"'
+    footer='"Portals 3.0"' main='"Portals 3.0 Library"'>
+
+<sect1> NAME
+    <p>
+    <bf/PtlMDUpdate/ &mdash Conditional atomic memory descriptor update
+
+<sect1> SYNOPSIS
+    <p>
+     #include "p30.h"
+
+     int PtlMDUpdate( ptl_handle_md_t mem_desc, ptl_md_t* old, ptl_md_t* new,
+                      ptl_handle_eq_t testq );
+
+<sect1> PARAMETERS
+    <p>
+     <descrip>
+     <tag /mem_desc/
+     A handle for the memory descriptor to update
+     <tag /old/
+     If <bf /old/ is not the value <bf /NULL/, the current value of the memory
+     descriptor will be stored in the location identified by <bf /old/
+     <tag /new/
+     If <bf /new/ is not the value <bf /NULL/, this argument provides the new
+     values for the memory descriptor, if the update is performed
+     <tag /testq/
+     A handle for an event queue used to predicate the update
+     </descrip>
+
+<sect1> DESCRIPTION
+    <p>
+    <bf /PtlInit/ provides a conditional, atomic update operation for memory
+    descriptors.  If <bf /old/ is not NULL, the current value of the memory
+    descriptor identified by <bf /mem_desc/ is recorded in the location
+    identified by <bf /old/.  If <bf /new/ is not NULL the memory descriptor
+    identified by handle will be updated to reflect the values in the structure
+    pointed to by <bf /new/ if <bf /testq/ has the value <bf /PTL_EQ_NONE/ or
+    if the event queue identified by <bf /testq/ is empty. The conditional
+    update can be used to ensure that the memory descriptor has not changed
+    between the time it was examined and the time it is updated.
+
+<sect1> RETURN VALUES
+    <p>
+    <descrip>
+    <tag /PTL_OK/
+    Indicates success
+    <tag /PTL_NOINIT/
+    Indicates that the Portals API has not been successfully initialized
+    <tag /PTL_NOUPDATE/
+    Indicates that the update was not performed because <bf /testq/ was not empty
+    <tag /PTL_INV_MD/
+    Indicates that <bf /mem_desc/ is not a valid memory descriptor handle
+    <tag /PTL_ILL_MD/
+    Indicates that the value pointed to by <bf /new/ is not a legal memory
+    descriptor
+    <tag /PTL_INV_EQ/
+    Indicates that <bf /testq/ is not a valid event queue handle
+    <tag /PTL_SEGV/
+    Indicates that <bf /new/ or <bf /old/ is not a legal address
+    </descrip>
+
+<sect1> SEE ALSO
+    <p>
+    <bf /PtlMDAttach(3)/, <bf /PtlMDBind(3)/, <bf /PtlMDInsert(3)/,
+    <bf /PtlMDUnlink(3)/ <newline>
+    <bf /Portals 3.0 Message Passing Interface document/
+
+</manpage>

@@ -1,0 +1,92 @@
+.if n .ds Q \&"
+.if t .ds Q ``
+.if n .ds U \&"
+.if t .ds U ''
+.TH CPLANTMYNID 3 "20 November 2001" "CPLANT MANPAGE" "Cplant Runtime Libraries"
+.tr \&
+.nr bi 0
+.nr ll 0
+.nr el 0
+.de Pp
+.ie \\n(ll>0 \{\
+.ie \\n(bi=1 \{\
+.nr bi 0
+.if \\n(t\\n(ll=0 \{.IP \\(bu\}
+.if \\n(t\\n(ll=1 \{.IP \\n+(e\\n(el.\}
+.\}
+.el .sp 
+.\}
+.el \{\
+.ie \\nh=1 \{\
+.LP
+.nr h 0
+.\}
+.el .PP 
+.\}
+..
+.SH NAME
+    
+
+.Pp
+CplantMyNid, CplantMyPpid, CplantMyRank, 
+.br
+CplantMyPid, CplantMySize, CplantMyJobId, 
+.br
+CplantMyPBSid, CplantMyNidMap, CplantMyPidMap
+.SH SYNOPSIS
+    
+
+.Pp
+\fB#include <cplant.h>\fP
+.Pp
+\fBint CplantMyNid(void)\fP    
+.br
+\fBint CplantMyPPid(void)\fP   
+.br
+\fBint CplantMyRank(void)\fP   
+.br
+\fBint CplantMyPid(void)\fP    
+.br
+\fBint CplantMySize(void)\fP   
+.br
+\fBint CplantMyJobId(void)\fP  
+.br
+\fBint CplantMyPBSid(void)\fP  
+.br
+\fBint *CplantMyNidMap(void)\fP
+.br
+\fBint *CplantMyPidMap(void)\fP
+.br
+.SH DESCRIPTION
+    
+
+.Pp
+The function \fBCplantMyNid\fP returns the physical node ID of the caller,
+and \fBCplantMyPPid\fP returns the portals process ID.  These are the
+identifiers required by the message passing routines in the 
+Cplant portals library. \fBCplantMyPid\fP returns the callers Linux system
+process ID.
+.Pp
+The function \fBCplantMyRank\fP returns the rank of the caller in
+it's parallel application.  Process ranks are zero-based.  \fBCplantMySize\fP
+returns the number of processes in it's parallel application.
+.Pp
+The function \fBCplantMyJobId\fP returns the Cplant job ID for the
+parallel application, and \fBCplantMyPBSid\fP returns the PBS ID of
+the PBS job that started the application.  (A single PBS job can
+start many Cplant jobs.)
+.Pp
+\fBCplantMyNidMap\fP returns the list of physical node IDs of the calling
+application in process rank order, and \fBCplantMyPidMap\fP returns the 
+associated list of portal process IDs.  These lists may be freed by the
+caller when they are no longer needed.
+.SH ERRORS
+    The functions do not have error conditions, since these values are always
+    defined for a running Cplant application.  If a non-PBS job requests it's
+    PBS job ID, an invalid ID of -1 will be returned.
+
+.SH SEE ALSO
+    
+
+.Pp
+

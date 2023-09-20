@@ -1,0 +1,16 @@
+#
+include ../Makefile-common
+ 
+ifeq ($(OS),linux)
+SUBDIRS   = ../lib ../compute/OS/portals/p3mod \
+            ../compute/OS/Myrinet/lib \
+            ../compute/OS/Myrinet/rtscts \
+            ../compute/OS/Myrinet/util ../compute/OS/Myrinet/MCP \
+            ../compute/OS/Myrinet/module \
+            ../support/portals
+endif
+
+all:
+
+%:
+	$(do-subdirs)
